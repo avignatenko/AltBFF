@@ -6,49 +6,30 @@
 #include <boost/asio.hpp>
 #include <boost/asio/io_context.hpp>
 
+#include <promise-cpp/promise.hpp>
+
 using namespace boost::asio;
 using namespace boost::asio::ip;
 
+namespace promise
+{
+template <typename RESULT>
+inline void setPromise(Defer d, boost::system::error_code err, const char* errorString, const RESULT& result)
+{
+    if (err)
+    {
+        spdlog::error("{}: {}", errorString, err.message());
+        d.reject(err);
+    }
+    else
+        d.resolve(result);
+}
+
+}  // namespace promise
+
 namespace bffcl
 {
-#pragma pack(push, 1)
-
-struct Axis
-{
-    float fixedForce = 0;
-    float springForce = 0;
-    uint16_t frictionCoeff = 0;
-    uint16_t dumpingCoeff = 0;
-    uint16_t vibrationCh1Hz = 0;
-    uint16_t vibrationCh1Amp = 0;
-    uint16_t vibrationCh2Hz = 0;
-    uint16_t vibrationCh2Amp = 0;
-    uint16_t vibrationCh3Hz = 0;
-    uint16_t vibrationCh3Amp = 0;
-    uint16_t positionFollowingP = 0;
-    uint16_t positionFollowingI = 0;
-    uint16_t positionFollowingD = 0;
-    float positionFollowingSetPoint = 0;
-    uint8_t breakoutForce = 0;
-    uint8_t breakoutAmplitude = 0;
-    uint8_t reserved[14] = {0};
-};
-
-struct CLInput
-{
-    uint32_t packetID = 0;
-    uint8_t loadingEngage = 0;
-    char feederIP[15] = {0};
-    uint16_t returnPort = 0;
-    uint8_t positionFollowingEngage = 0;
-    uint8_t reserved[7] = {0};
-    Axis elevator;
-    Axis aileron;
-    Axis rudder;
-};
-#pragma pack(pop)
-
-static_assert(sizeof(CLInput) == 180, "CLInput size is not correct");
+const std::chrono::milliseconds kTimerInterval = boost::asio::chrono::milliseconds(20);
 
 class ClientSender
 {
@@ -59,22 +40,45 @@ public:
           endpointRemote_(udp::endpoint(address::from_string(addressRemote), portRemote)),
           timer_(io, kTimerInterval)
     {
+        // set CL input defaults
+        {
+            std::scoped_lock lock(currentInputMutex_);
+
+            std::string localAddress = socket_.local_endpoint().address().to_string();
+            localAddress.copy(currentInput_.feederIP, localAddress.size());
+            currentInput_.returnPort = socket_.local_endpoint().port();
+
+            // currentInput_.elevator.fixedForce = 10;
+        }
+
         timer_.async_wait([this](const boost::system::error_code&) { onTimer(); });
     }
     ~ClientSender() { stop(); }
 
     void start() {}
+
     void stop()
     {
         io_.dispatch([this] { stopRequested_ = true; });
     }
 
+    CLInput& lockInput()
+    {
+        currentInputMutex_.lock();
+        return currentInput_;
+    }
+
+    void unlockInput() { currentInputMutex_.unlock(); }
+
+private:
     void onTimer()
     {
         if (stopRequested_) return;
 
         // do send
-        std::shared_ptr<CLInput> clInput = std::make_unique<CLInput>();
+        currentInput_.packetID = packetId_++;
+        std::shared_ptr<CLInput> clInput = std::make_shared<CLInput>(currentInput_);
+
         socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
                               [clInput](const boost::system::error_code& error, std::size_t bytes_transferred) {});
 
@@ -84,13 +88,17 @@ public:
     }
 
 private:
-    const std::chrono::milliseconds kTimerInterval = boost::asio::chrono::milliseconds(20);
     io_service& io_;
     udp::socket& socket_;
     udp::endpoint endpointRemote_;
 
     steady_timer timer_;
     bool stopRequested_ = false;
+
+    unsigned int packetId_ = 1;
+
+    CLInput currentInput_;
+    std::mutex currentInputMutex_;
 
 };  // namespace bffcl
 
@@ -107,9 +115,10 @@ private:
     udp::socket& socket_;
 };
 
-UDPClient::UDPClient(const std::string& toAddress, int toPort, int fromPort) : socket_(io_)
+UDPClient::UDPClient(const std::string& toAddress, int toPort, const std::string& fromAddress, int fromPort)
+    : socket_(io_)
 {
-    udp::endpoint send_endpoint(udp::v4(), fromPort);
+    udp::endpoint send_endpoint(address::from_string(fromAddress), fromPort);
     socket_.open(send_endpoint.protocol());
     socket_.bind(send_endpoint);
 
@@ -124,7 +133,7 @@ bffcl::UDPClient::~UDPClient()
     sender_->stop();
     receiver_->stop();
 
-    socket_.close();
+    io_.post([this] { socket_.close(); });
 
     runner_->join();
 }
@@ -132,6 +141,16 @@ bffcl::UDPClient::~UDPClient()
 void UDPClient::run()
 {
     io_.run();
+}
+
+CLInput& UDPClient::lockInput()
+{
+    return sender_->lockInput();
+}
+
+void UDPClient::unlockInput()
+{
+    return sender_->unlockInput();
 }
 
 }  // namespace bffcl

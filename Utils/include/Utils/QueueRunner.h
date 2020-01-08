@@ -11,6 +11,7 @@ public:
 
     virtual bool run(std::function<void()> func)
     {
+        if (stopped()) return false;
         m_dispatchQueue.put(func);
         return true;
     }
@@ -31,6 +32,7 @@ public:
     }
 
     void stop() { run(nullptr); }
+    bool stopped() const { return m_done; }
 
 private:
     DispatchQueue m_dispatchQueue;
