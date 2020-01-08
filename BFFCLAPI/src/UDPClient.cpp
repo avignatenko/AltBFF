@@ -38,21 +38,20 @@ public:
         : io_(io),
           socket_(socket),
           endpointRemote_(udp::endpoint(address::from_string(addressRemote), portRemote)),
-          timer_(io, kTimerInterval)
+          timer_(io)
     {
         // set CL input defaults
-        {
-            std::scoped_lock lock(currentInputMutex_);
+        CLInput& input = lockInput();
 
-            std::string localAddress = socket_.local_endpoint().address().to_string();
-            localAddress.copy(currentInput_.feederIP, localAddress.size());
-            currentInput_.returnPort = socket_.local_endpoint().port();
+        std::string localAddress = socket_.local_endpoint().address().to_string();
+        localAddress.copy(input.feederIP, localAddress.size());
+        input.returnPort = socket_.local_endpoint().port();
+        unlockInput();
 
-            // currentInput_.elevator.fixedForce = 10;
-        }
-
-        timer_.async_wait([this](const boost::system::error_code&) { onTimer(); });
+        // start sendering (fixme: move to start())
+        send();
     }
+
     ~ClientSender() { stop(); }
 
     void start() {}
@@ -71,20 +70,28 @@ public:
     void unlockInput() { currentInputMutex_.unlock(); }
 
 private:
-    void onTimer()
+    void send()
+    {
+        // reengage the timer
+        timer_.expires_at(timer_.expiry() + kTimerInterval);
+        timer_.async_wait([this](const boost::system::error_code&) { doSend(); });
+    }
+
+    void doSend()
     {
         if (stopRequested_) return;
 
         // do send
-        currentInput_.packetID = packetId_++;
-        std::shared_ptr<CLInput> clInput = std::make_shared<CLInput>(currentInput_);
+        CLInput& input = lockInput();
+        input.packetID = packetId_++;
+        std::shared_ptr<CLInput> clInput = std::make_shared<CLInput>(input);
+        unlockInput();
 
+        // clInput captured in lambda, so will be destroyed after handler completes
         socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
                               [clInput](const boost::system::error_code& error, std::size_t bytes_transferred) {});
 
-        // reengage the timer
-        timer_.expires_at(timer_.expiry() + kTimerInterval);
-        timer_.async_wait([this](const boost::system::error_code&) { onTimer(); });
+        send();
     }
 
 private:
@@ -108,11 +115,47 @@ public:
     ClientReceiver(io_service& io, udp::socket& socket) : io_(io), socket_(socket) {}
     ~ClientReceiver() { stop(); }
     void start() {}
-    void stop() {}
+    void stop()
+    {
+        io_.dispatch([this] { stopRequested_ = true; });
+    }
+
+    CLReturn& lockOutput()
+    {
+        currentOutputMutex_.lock();
+        return currentOutput_;
+    }
+
+    void unlockOutput() { currentOutputMutex_.unlock(); }
+
+private:
+    void receive()
+    {
+        // do receive
+
+        std::shared_ptr<CLReturn> clOutput = std::make_shared<CLReturn>();
+        std::shared_ptr<udp::endpoint> senderEndpoint = std::make_shared<udp::endpoint>();
+        socket_.async_receive_from(
+            boost::asio::buffer(clOutput.get(), sizeof(CLReturn)), *senderEndpoint,
+            [this, clOutput, senderEndpoint](const boost::system::error_code& error, std::size_t reply_length) {
+                // copy to destination
+                CLReturn& currentOutput = lockOutput();
+                currentOutput = *clOutput;
+                unlockOutput();
+
+                if (!stopRequested_) receive();
+            });
+    }
 
 private:
     io_service& io_;
     udp::socket& socket_;
+
+    unsigned int packetId_ = 1;
+    bool stopRequested_ = false;
+
+    CLReturn currentOutput_;
+    std::mutex currentOutputMutex_;
 };
 
 UDPClient::UDPClient(const std::string& toAddress, int toPort, const std::string& fromAddress, int fromPort)
@@ -151,6 +194,15 @@ CLInput& UDPClient::lockInput()
 void UDPClient::unlockInput()
 {
     return sender_->unlockInput();
+}
+
+const CLReturn& UDPClient::lockOutput()
+{
+    return receiver_->lockOutput();
+}
+void UDPClient::unlockOutput()
+{
+    return receiver_->unlockOutput();
 }
 
 }  // namespace bffcl
