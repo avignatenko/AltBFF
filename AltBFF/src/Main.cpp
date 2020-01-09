@@ -127,8 +127,8 @@ int main(int argc, char** argv)
     input.elevator.dumpingCoeff = model.getDumpingCoeff(Model::Elevator);
     cl.unlockInput();
 
-    Timer simModelLoop(std::chrono::milliseconds(1000 / 30), runner, [&cl, &sim, &model] { // run at 30Hz
-        // pass values to sim
+    Timer simModelLoop(std::chrono::milliseconds(1000 / 30), runner, [&cl, &sim, &model] {  // run at 30Hz
+        // 1. pass values to sim
         const bffcl::CLReturn& output = cl.lockOutput();
         float elevator = output.axisElevatorPosition;
         float aileron = output.axisAileronPosition;
@@ -137,11 +137,14 @@ int main(int argc, char** argv)
         sim.writeElevator(elevator);
         sim.writeAileron(aileron);
 
-        // read values from CL and Sim => send to model
-        // ..
+        // 2. read values from CL and Sim => send to model
+        model.setAileron(aileron);
+        model.setElevator(elevator);
+
+        // 3. update model
         model.process();
 
-        // write model calculation results to CL
+        // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
         input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
@@ -169,12 +172,9 @@ int main(int argc, char** argv)
         return false;  // false means call again
     });
 
-    if (sim.connected())
-    {
-        spdlog::info("Starting FSUIPC loop");
-        simModelLoop.start();
-        spdlog::info("FSUIPC loop started");
-    }
+    spdlog::info("Starting sim/model loop");
+    simModelLoop.start();
+    spdlog::info("sim/model loop started");
 
     spdlog::info("Starting main loop");
     runner.run();

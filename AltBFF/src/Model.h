@@ -17,37 +17,23 @@ public:
 
     enum Axis
     {
-        Elevator,
-        Aileron
+        Elevator = 0,
+        Aileron,
+        AxisCount,
     };
 
-    int getFrictionCoeff(Axis axis)
-    {
-        switch (axis)
-        {
-        case Elevator:
-            return settings_.elevatorFrictionCoeff;
-        case Aileron:
-            return settings_.aileronFrictionCoeff;
-        default:
-            return 0;
-        }
-    }
-    int getDumpingCoeff(Axis axis)
-    {
-        switch (axis)
-        {
-        case Elevator:
-            return settings_.elevatorDumpingCoeff;
-        case Aileron:
-            return settings_.aileronDumpingCoeff;
-        default:
-            return 0;
-        }
-    }
+    // inputs
 
-    float getFixedForce(Axis axis) { return 0; }
-    float getSpringForce(Axis axis) { return 0; }
+    void setElevator(float elevator) { elevator_ = elevator; }
+    void setAileron(float aileron) { aileron_ = aileron; }
+
+    // result
+
+    int getFrictionCoeff(Axis axis);
+    int getDumpingCoeff(Axis axis);
+
+    float getFixedForce(Axis axis) { return fixedForce_[axis]; }
+    float getSpringForce(Axis axis) { return springForce_[axis]; }
     uint16_t getVibrationCh1Hz(Axis axis) { return 0; }
     uint16_t getVibrationCh1Amp(Axis axis) { return 0; }
     uint16_t getVibrationCh2Hz(Axis axis) { return 0; }
@@ -56,8 +42,16 @@ public:
     uint16_t getVibrationCh3Amp(Axis axis) { return 0; }
 
     // update internal calculations
-    void process() {}
+    void process();
 
 private:
     Settings settings_;
+
+    // inputs
+    float elevator_ = 0.0f;
+    float aileron_ = 0.0f;
+
+    // outputs
+    float fixedForce_[AxisCount] = {0.0f};
+    float springForce_[AxisCount] = {0.0f};
 };
