@@ -8,7 +8,7 @@ project(BFFCLAPI)
 # Add source to this project's executable.
 add_library (${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME}  PUBLIC CONAN_PKG::boost promise-cpp)
+target_link_libraries(${PROJECT_NAME}  PUBLIC CONAN_PKG::boost promise-cpp CONAN_PKG::spdlog)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} 
@@ -18,4 +18,7 @@ target_include_directories(${PROJECT_NAME}
 target_sources(${PROJECT_NAME} 
 	PRIVATE 
 		"src/UDPClient.cpp"
-		"include/BFFCLAPI/UDPClient.h")
+		"src/ClientReceiver.cpp"
+		"src/ClientSender.cpp"
+		"include/BFFCLAPI/UDPClient.h"
+		"include/BFFCLAPI/CLStructures.h")

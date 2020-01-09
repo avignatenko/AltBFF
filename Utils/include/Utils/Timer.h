@@ -15,9 +15,11 @@ public:
     {
  
         m_timer = std::make_unique<std::thread>([this] {
+            std::chrono::time_point<std::chrono::steady_clock> targetTime = std::chrono::steady_clock::now();
             while (!stopped_)
             {
-                std::this_thread::sleep_for(delay_);
+                targetTime += delay_;
+                std::this_thread::sleep_until(targetTime);
 
                 std::promise<bool> result;
 
