@@ -12,5 +12,8 @@ target_link_libraries(${PROJECT_NAME}  PRIVATE BFFCLAPI Utils FSUIPC CONAN_PKG::
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_sources(${PROJECT_NAME} PRIVATE 
-	"src/AltBFF.cpp"
-	"src/AltBFF.h")
+	"src/Main.cpp"
+	"src/Model.cpp"
+	"src/Model.h"
+	"src/Sim.cpp"
+	"src/Sim.h")

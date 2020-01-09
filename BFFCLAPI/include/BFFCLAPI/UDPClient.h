@@ -14,7 +14,15 @@ class ClientReceiver;
 class UDPClient
 {
 public:
-    UDPClient(const std::string& toAddress, int toPort, const std::string& fromAddress, int fromPort);
+    struct Settings
+    {
+        std::string toAddress;
+        int toPort;
+        std::string fromAddress;
+        int fromPort;
+    };
+
+    UDPClient(const Settings& settings);
     ~UDPClient();
 
     void start();
@@ -26,13 +34,12 @@ public:
     const CLReturn& lockOutput();
     void unlockOutput();
 
-
 private:
     std::unique_ptr<std::thread> runner_;
 
     using io_context = boost::asio::io_context;
     using socket = boost::asio::ip::udp::socket;
-    
+
     io_context io_;
     socket socket_;
 

@@ -16,17 +16,17 @@ using endpoint = boost::asio::ip::udp::endpoint;
 
 using namespace bffcl;
 
-UDPClient::UDPClient(const std::string& toAddress, int toPort, const std::string& fromAddress, int fromPort)
+UDPClient::UDPClient(const Settings& settings)
     : socket_(io_)
 {
-    spdlog::info("Opening socket");
-    spdlog::info("Endpoints: to {}:{}, from {}:{}", toAddress, toPort, fromAddress, fromPort);
-    endpoint send_endpoint(address::from_string(fromAddress), fromPort);
+    spdlog::info("Opening socket, Endpoints: to {}:{}, from {}:{}", settings.toAddress, settings.toPort,
+                 settings.fromAddress, settings.fromPort);
+    endpoint send_endpoint(address::from_string(settings.fromAddress), settings.fromPort);
     socket_.open(send_endpoint.protocol());
     socket_.bind(send_endpoint);
     spdlog::info("Socket opened successfully");
 
-    sender_ = std::make_unique<ClientSender>(io_, socket_, toAddress, toPort);
+    sender_ = std::make_unique<ClientSender>(io_, socket_, settings.toAddress, settings.toPort);
     receiver_ = std::make_unique<ClientReceiver>(io_, socket_);
 
     runner_ = std::make_unique<std::thread>([this] {
