@@ -17,8 +17,13 @@ public:
     void disconnect();
     bool connected() { return connected_; }
 
+    // write
     void writeElevator(float elevator);
     void writeAileron(float aileron);
+
+    // read
+    double readTAS();
+    double readThrust();
 
     void process();
 

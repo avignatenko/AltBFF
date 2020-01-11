@@ -27,6 +27,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <boost/math/constants/constants.hpp>
 #include <filesystem>
 
 using boost::property_tree::ptree;
@@ -86,6 +87,14 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.aileronDumpingCoeff = settings.get<int>("Model.AileronDumpingCoeff");
     modelSettings.elevatorFrictionCoeff = settings.get<int>("Model.ElevatorFrictionCoeff");
     modelSettings.elevatorDumpingCoeff = settings.get<int>("Model.ElevatorDumpingCoeff");
+
+    modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
+    modelSettings.clExponent = settings.get<double>("Model.CLExponent");
+    modelSettings.propWashCoeff = settings.get<double>("Model.PropWashCoeff");
+    modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
+    modelSettings.maxElevatorAngleRadians =
+        settings.get<double>("Model.MaxElevatorAngleDegrees") * boost::math::double_constants::pi / 180.0;
+
     return modelSettings;
 }
 
@@ -140,6 +149,9 @@ int main(int argc, char** argv)
         // 2. read values from CL and Sim => send to model
         model.setAileron(aileron);
         model.setElevator(elevator);
+
+        model.setTAS(sim.readTAS());
+        model.setThrust(sim.readThrust());
 
         // 3. update model
         model.process();

@@ -11,6 +11,12 @@ public:
         int aileronDumpingCoeff = 0;
         int elevatorFrictionCoeff = 0;
         int elevatorDumpingCoeff = 0;
+
+        double elevatorArea = 0.0;
+        double clExponent = 0.0;
+        double propWashCoeff = 0.0;
+        double maxElevatorLift = 0.0;
+        double maxElevatorAngleRadians = 0.0;
     };
 
     Model(const Settings& settings);
@@ -24,8 +30,17 @@ public:
 
     // inputs
 
-    void setElevator(float elevator) { elevator_ = elevator; }
-    void setAileron(float aileron) { aileron_ = aileron; }
+    // +/- 100%, mid = 0
+    void setElevator(double elevator) { elevator_ = elevator; }
+
+    // +/- 100%, mid = 0
+    void setAileron(double aileron) { aileron_ = aileron; }
+
+    // tas in kn
+    void setTAS(double tas) { tas_ = tas; }
+
+    // thrust in pounds
+    void setThrust(double thrust) { thrust_ = thrust; }
 
     // result
 
@@ -48,8 +63,10 @@ private:
     Settings settings_;
 
     // inputs
-    float elevator_ = 0.0f;
-    float aileron_ = 0.0f;
+    double elevator_ = 0.0;
+    double aileron_ = 0.0;
+    double tas_ = 0.0;
+    double thrust_ = 0.0;
 
     // outputs
     float fixedForce_[AxisCount] = {0.0f};

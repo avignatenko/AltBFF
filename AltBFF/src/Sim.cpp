@@ -48,6 +48,26 @@ void Sim::writeAileron(float aileron)
     FSUIPC_Write(0x0BB6, 2, &aileronPosition, &dwResult);
 }
 
+double Sim::readTAS()
+{
+    DWORD dwResult;
+
+    float tasInput = 0.0;
+    FSUIPC_Read(0x02B8, 4, &tasInput, &dwResult);
+
+    return tasInput / 128;
+}
+
+double Sim::readThrust()
+{
+    DWORD dwResult;
+
+    float trustInput = 0.0;
+    FSUIPC_Read(0x02410, 4, &trustInput, &dwResult);
+
+    return trustInput;
+}
+
 void Sim::process()
 {
     DWORD dwResult;
