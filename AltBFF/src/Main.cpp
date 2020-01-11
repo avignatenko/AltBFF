@@ -137,6 +137,10 @@ int main(int argc, char** argv)
     cl.unlockInput();
 
     Timer simModelLoop(std::chrono::milliseconds(1000 / 30), runner, [&cl, &sim, &model] {  // run at 30Hz
+
+        // 0. updae sim
+        sim.process();
+
         // 1. pass values to sim
         const bffcl::CLReturn& output = cl.lockOutput();
         float elevator = output.axisElevatorPosition;
@@ -179,7 +183,7 @@ int main(int argc, char** argv)
 
         cl.unlockInput();
 
-        sim.process();
+      
 
         return false;  // false means call again
     });

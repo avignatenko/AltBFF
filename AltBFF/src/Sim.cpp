@@ -37,39 +37,34 @@ void Sim::disconnect()
 
 void Sim::writeElevator(float elevator)
 {
-    DWORD dwResult;
-    int16_t elevatorPosition = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
-    FSUIPC_Write(0x0BB2, 2, &elevatorPosition, &dwResult);
+    simData_.elevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
 }
 void Sim::writeAileron(float aileron)
 {
-    DWORD dwResult;
-    int16_t aileronPosition = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
-    FSUIPC_Write(0x0BB6, 2, &aileronPosition, &dwResult);
+    simData_.aileron = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
 }
 
 double Sim::readTAS()
 {
-    DWORD dwResult;
-
-    float tasInput = 0.0;
-    FSUIPC_Read(0x02B8, 4, &tasInput, &dwResult);
-
-    return tasInput / 128;
+    auto kn2mps = [](double kn) { return kn * 0.515; };
+    return kn2mps(simData_.tas / 128);
 }
 
 double Sim::readThrust()
 {
-    DWORD dwResult;
-
-    float trustInput = 0.0;
-    FSUIPC_Read(0x02410, 4, &trustInput, &dwResult);
-
-    return trustInput;
+    return simData_.thrust;
 }
 
 void Sim::process()
 {
     DWORD dwResult;
-    FSUIPC_Process(&dwResult);
+
+    BOOL failed = !FSUIPC_Write(0x0BB2, 2, &simData_.elevator, &dwResult) ||
+                  !FSUIPC_Write(0x0BB6, 2, &simData_.aileron, &dwResult) ||
+                  !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
+                  !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) || !FSUIPC_Process(&dwResult);
+
+    spdlog::info("tas: {}, thrust: {}", simData_.tas, simData_.thrust);
+
+    if (failed) spdlog::error("FSUIPC error: {}", dwResult);
 }

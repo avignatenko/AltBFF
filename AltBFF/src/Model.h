@@ -36,7 +36,7 @@ public:
     // +/- 100%, mid = 0
     void setAileron(double aileron) { aileron_ = aileron; }
 
-    // tas in kn
+    // tas in ms/sec
     void setTAS(double tas) { tas_ = tas; }
 
     // thrust in pounds
