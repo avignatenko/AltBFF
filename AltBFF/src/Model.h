@@ -42,6 +42,8 @@ public:
     // thrust in pounds
     void setThrust(double thrust) { thrust_ = thrust; }
 
+    void setCLElevatorTrim(double clElevatorTrim) { clElevatorTrim_ = clElevatorTrim; }
+    
     // result
 
     int getFrictionCoeff(Axis axis);
@@ -71,6 +73,7 @@ private:
     double aileron_ = 0.0;
     double tas_ = 0.0;
     double thrust_ = 0.0;
+    double clElevatorTrim_ = 0.0;
 
     // outputs
     float fixedForce_[AxisCount] = {0.0f};

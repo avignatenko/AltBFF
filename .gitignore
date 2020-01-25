@@ -1,3 +1,4 @@
 out/
 .vs/
 docs-local
+.DS_Store

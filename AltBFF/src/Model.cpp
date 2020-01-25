@@ -39,7 +39,8 @@ int Model::getDumpingCoeff(Axis axis)
 
 // update internal calculations
 
-void Model::process() {
+void Model::process()
+{
     calculateElevatorForces();
 }
 
@@ -61,10 +62,13 @@ void Model::calculateElevatorForces()
                               kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent) / 10.0 / 2550;
 
     spdlog::debug(
-        "Model vars: elevatorDeflectionAngleRad: {}, clCoeffElevator: {}, clElevator: {}, propWashAirSpeed: {}, airSpeed: {}, "
+        "Model vars: elevatorDeflectionAngleRad: {}, clCoeffElevator: {}, clElevator: {}, propWashAirSpeed: {}, "
+        "airSpeed: {}, "
         "tas: {}, flElevator: {}, flElevatorSpring: {}",
         elevatorDeflectionAngleRad, clCoeffElevator, clElevator, propWashAirSpeed, airSpeed, tas_, flElevator,
         flElevatorSpring);
+
+    spdlog::info("Elevator trim: {}", clElevatorTrim_);
 
     // test update elevator
     // fixedForce_[Elevator] = -flElevator;

@@ -6,10 +6,13 @@
 #include <Utils/QueueRunner.h>
 #include <Utils/Timer.h>
 
+#include <stdio.h>
+#include <string>
+#include <windows.h>
+
 using namespace std;
 
-#include <stdio.h>
-#include <windows.h>
+
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
     // todo: add closing
@@ -77,6 +80,8 @@ Sim::Settings readSimSettings(const ptree& settings)
     Sim::Settings simSettings;
     simSettings.invertFSElevator = settings.get<bool>("Sim.InvertElevator");
     simSettings.invertFSAileron = settings.get<bool>("Sim.InvertAileron");
+    simSettings.clElevatorTrimOffset =
+        std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
     return simSettings;
 }
 
@@ -156,6 +161,7 @@ int main(int argc, char** argv)
 
         model.setTAS(sim.readTAS());
         model.setThrust(sim.readThrust());
+        model.setCLElevatorTrim(sim.readCLElevatorTrim());
 
         // 3. update model
         model.process();

@@ -35,11 +35,11 @@ void Sim::disconnect()
     connected_ = false;
 }
 
-void Sim::writeElevator(float elevator)
+void Sim::writeElevator(double elevator)
 {
     simData_.elevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
 }
-void Sim::writeAileron(float aileron)
+void Sim::writeAileron(double aileron)
 {
     simData_.aileron = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
 }
@@ -55,6 +55,11 @@ double Sim::readThrust()
     return simData_.thrust;
 }
 
+double Sim::readCLElevatorTrim() 
+{
+    return simData_.clElevatorTrim / 16383.0;
+}
+
 void Sim::process()
 {
     DWORD dwResult;
@@ -62,9 +67,15 @@ void Sim::process()
     BOOL failed = !FSUIPC_Write(0x0BB2, 2, &simData_.elevator, &dwResult) ||
                   !FSUIPC_Write(0x0BB6, 2, &simData_.aileron, &dwResult) ||
                   !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
-                  !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) || !FSUIPC_Process(&dwResult);
+                  !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult);
 
-    spdlog::info("tas: {}, thrust: {}", simData_.tas, simData_.thrust);
+    if (settings_.clElevatorTrimOffset > 0)
+        failed = failed || !FSUIPC_Read(settings_.clElevatorTrimOffset, 8, &simData_.clElevatorTrim, &dwResult);
+
+    // process
+    failed = failed || !FSUIPC_Process(&dwResult);
+
+    spdlog::debug("tas: {}, thrust: {}", simData_.tas, simData_.thrust);
 
     if (failed) spdlog::error("FSUIPC error: {}", dwResult);
 }
