@@ -59,6 +59,10 @@ public:
     // update internal calculations
     void process();
 
+    private:
+
+        void calculateElevatorForces();
+    
 private:
     Settings settings_;
 

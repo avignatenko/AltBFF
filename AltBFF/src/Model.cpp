@@ -6,6 +6,11 @@
 
 Model::Model(const Settings& settings) : settings_(settings) {}
 
+namespace
+{
+double kAirDensity = 1.2;
+}
+
 int Model::getFrictionCoeff(Axis axis)
 {
     switch (axis)
@@ -34,17 +39,19 @@ int Model::getDumpingCoeff(Axis axis)
 
 // update internal calculations
 
-void Model::process()
-{
-    double kAirDensity = 1.2;
+void Model::process() {
+    calculateElevatorForces();
+}
 
+void Model::calculateElevatorForces()
+{
     double elevatorDeflectionAngleRad = (elevator_ / 100.0) * settings_.maxElevatorAngleRadians;
     double clCoeffElevator = settings_.maxElevatorLift / settings_.maxElevatorAngleRadians;
     double clElevator = clCoeffElevator * elevatorDeflectionAngleRad;
 
-    // add prop wash airspeed to normal airspeed
-    double propWash = std::pow(thrust_ / 10.0, 0.8);
-    double airSpeed = tas_ + (propWash * settings_.propWashCoeff);
+    // add prop wash airspeed to normal airspeed (simple model)
+    double propWashAirSpeed = std::pow(thrust_ / 10.0, 0.8);
+    double airSpeed = tas_ + (propWashAirSpeed * settings_.propWashCoeff);
 
     // Calculate lift force for elevator
     double flElevator =
@@ -53,10 +60,10 @@ void Model::process()
     double flElevatorSpring = clCoeffElevator * settings_.maxElevatorAngleRadians * settings_.elevatorArea *
                               kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent) / 10.0 / 2550;
 
-    spdlog::info(
-        "Model vars: elevatorDeflectionAngleRad: {}, clCoeffElevator: {}, clElevator: {}, propWash: {}, airSpeed: {}, "
+    spdlog::debug(
+        "Model vars: elevatorDeflectionAngleRad: {}, clCoeffElevator: {}, clElevator: {}, propWashAirSpeed: {}, airSpeed: {}, "
         "tas: {}, flElevator: {}, flElevatorSpring: {}",
-        elevatorDeflectionAngleRad, clCoeffElevator, clElevator, propWash, airSpeed, tas_, flElevator,
+        elevatorDeflectionAngleRad, clCoeffElevator, clElevator, propWashAirSpeed, airSpeed, tas_, flElevator,
         flElevatorSpring);
 
     // test update elevator
