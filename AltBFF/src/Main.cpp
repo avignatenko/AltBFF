@@ -7,11 +7,12 @@
 #include <Utils/Timer.h>
 
 #include <stdio.h>
-#include <string>
 #include <windows.h>
+#include <string>
+
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
-
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
@@ -36,12 +37,34 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 using boost::property_tree::ptree;
 using std::filesystem::path;
 
-void initLogging()
+struct LogSettings
+{
+    spdlog::level::level_enum logLevel = spdlog::level::info;
+};
+
+LogSettings readLogSettings(const ptree& settings)
+{
+    LogSettings logSettings;
+
+    auto logLevelStr = boost::algorithm::to_lower_copy(settings.get<std::string>("App.LogLevel"));
+
+    std::map<std::string, spdlog::level::level_enum> settingsStrToEnum = {
+        {"trace", spdlog::level::trace}, {"debug", spdlog::level::debug}, {"info", spdlog::level::info},
+        {"warn", spdlog::level::warn},   {"err", spdlog::level::err},     {"critical", spdlog::level::critical},
+        {"off", spdlog::level::off}};
+
+    if (auto levelFound = settingsStrToEnum.find(logLevelStr); levelFound != settingsStrToEnum.end())
+        logSettings.logLevel = levelFound->second;
+
+    return logSettings;
+}
+
+void initLogging(const LogSettings& settings)
 {
     // init logging
 
     // Set the default logger to file logger
-    spdlog::set_level(spdlog::level::info);  // Set global log level to debug
+    spdlog::set_level(settings.logLevel);  // Set global log level to info
 
     // auto logFilename = exePath / "altfs.log";
     // auto file_logger = spdlog::basic_logger_mt("basic_logger", logFilename.string());
@@ -49,7 +72,7 @@ void initLogging()
     auto console = spdlog::stdout_color_mt("console");
     spdlog::set_default_logger(console);
 
-    spdlog::info("AltBFF started");
+    spdlog::info("AltBFF logging started");
 }
 
 ptree readSettings(const path& file)
@@ -57,9 +80,7 @@ ptree readSettings(const path& file)
     ptree settings;
 
     auto settingsFile = (file / "settings.ini").string();
-    spdlog::info("Reading settings file {}", settingsFile);
     boost::property_tree::read_ini(settingsFile, settings);
-    spdlog::info("Settings file read successfully");
 
     return settings;
 }
@@ -80,8 +101,7 @@ Sim::Settings readSimSettings(const ptree& settings)
     Sim::Settings simSettings;
     simSettings.invertFSElevator = settings.get<bool>("Sim.InvertElevator");
     simSettings.invertFSAileron = settings.get<bool>("Sim.InvertAileron");
-    simSettings.clElevatorTrimOffset =
-        std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
+    simSettings.clElevatorTrimOffset = std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
     return simSettings;
 }
 
@@ -105,14 +125,9 @@ Model::Settings readModelSettings(const ptree& settings)
 
 int main(int argc, char** argv)
 {
-    initLogging();
-
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     QueueRunner runner;  // setup runner for this thread (will be started later)
-
-    // read settings
-    spdlog::info("Starting settings reading and parsing");
 
     path exeName = argv[0];
     path exePath = exeName.parent_path();
@@ -121,8 +136,9 @@ int main(int argc, char** argv)
     bffcl::UDPClient::Settings clSettings = readCLSettings(settings);
     Sim::Settings simSettings = readSimSettings(settings);
     Model::Settings modelSettings = readModelSettings(settings);
+    LogSettings logSettings = readLogSettings(settings);
 
-    spdlog::info("Settings read and parsed successfully");
+    initLogging(logSettings);
 
     // create main components
     spdlog::info("Creating main components");
@@ -142,7 +158,6 @@ int main(int argc, char** argv)
     cl.unlockInput();
 
     Timer simModelLoop(std::chrono::milliseconds(1000 / 30), runner, [&cl, &sim, &model] {  // run at 30Hz
-
         // 0. updae sim
         sim.process();
 
@@ -188,8 +203,6 @@ int main(int argc, char** argv)
         input.aileron.vibrationCh3Amp = model.getVibrationCh3Amp(Model::Aileron);
 
         cl.unlockInput();
-
-      
 
         return false;  // false means call again
     });
