@@ -27,7 +27,6 @@ public:
                     result.set_value(callback_());
                 });
 
-                // fixme: take care of time spent for waiting
                 stopped_ = runOk ? result.get_future().get() : true;
             }
         });

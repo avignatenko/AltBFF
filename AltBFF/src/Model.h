@@ -44,7 +44,7 @@ public:
     // thrust in pounds
     void setThrust(double thrust) { thrust_ = thrust; }
 
-    void setCLElevatorTrim(double clElevatorTrim) { elevatorTrim_ = clElevatorTrim; }
+    void setElevatorTrim(double clElevatorTrim) { elevatorTrim_ = clElevatorTrim; }
     
     // result
 

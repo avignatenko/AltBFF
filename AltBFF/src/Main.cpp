@@ -160,17 +160,17 @@ int main(int argc, char** argv)
     cl.unlockInput();
 
     Timer simModelLoop(std::chrono::milliseconds(1000 / 30), runner, [&cl, &sim, &model] {  // run at 30Hz
-        // 0. updae sim
-        sim.process();
 
-        // 1. pass values to sim
+        // 1. read CL data
         const bffcl::CLReturn& output = cl.lockOutput();
         float elevator = output.axisElevatorPosition;
         float aileron = output.axisAileronPosition;
         cl.unlockOutput();
 
+        // 2. pass values to sim 
         sim.writeElevator(elevator);
         sim.writeAileron(aileron);
+        sim.writeElevatorTrim(0.0); // set default sim trim to zero (fixme: do once)
 
         // 2. read values from CL and Sim => send to model
         model.setAileron(aileron);
@@ -178,11 +178,12 @@ int main(int argc, char** argv)
 
         model.setTAS(sim.readTAS());
         model.setThrust(sim.readThrust());
-        model.setCLElevatorTrim(sim.readCLElevatorTrim());
+        model.setElevatorTrim(sim.readCLElevatorTrim());
 
-        // 3. update model
+        // 3. update model and sim
         model.process();
-
+        sim.process();
+  
         // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
