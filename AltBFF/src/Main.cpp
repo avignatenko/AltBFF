@@ -114,6 +114,8 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorDumpingCoeff = settings.get<int>("Model.ElevatorDumpingCoeff");
 
     modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
+    modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");
+
     modelSettings.clExponent = settings.get<double>("Model.CLExponent");
     modelSettings.propWashCoeff = settings.get<double>("Model.PropWashCoeff");
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");

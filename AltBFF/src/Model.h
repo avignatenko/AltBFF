@@ -17,6 +17,8 @@ public:
         double propWashCoeff = 0.0;
         double maxElevatorLift = 0.0;
         double maxElevatorAngleRadians = 0.0;
+
+        double elevatorTrimGain = 0.0;
     };
 
     Model(const Settings& settings);
@@ -42,7 +44,7 @@ public:
     // thrust in pounds
     void setThrust(double thrust) { thrust_ = thrust; }
 
-    void setCLElevatorTrim(double clElevatorTrim) { clElevatorTrim_ = clElevatorTrim; }
+    void setCLElevatorTrim(double clElevatorTrim) { elevatorTrim_ = clElevatorTrim; }
     
     // result
 
@@ -73,7 +75,7 @@ private:
     double aileron_ = 0.0;
     double tas_ = 0.0;
     double thrust_ = 0.0;
-    double clElevatorTrim_ = 0.0;
+    double elevatorTrim_ = 0.0;
 
     // outputs
     float fixedForce_[AxisCount] = {0.0f};

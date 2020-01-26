@@ -70,7 +70,7 @@ void Sim::process()
                   !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult);
 
     if (settings_.clElevatorTrimOffset > 0)
-        failed = failed || !FSUIPC_Read(settings_.clElevatorTrimOffset, 8, &simData_.clElevatorTrim, &dwResult);
+        failed = failed || !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
 
     // process
     failed = failed || !FSUIPC_Process(&dwResult);

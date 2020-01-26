@@ -55,11 +55,27 @@ void Model::calculateElevatorForces()
     double airSpeed = tas_ + (propWashAirSpeed * settings_.propWashCoeff);
 
     // Calculate lift force for elevator
-    double flElevator =
-        clElevator * settings_.elevatorArea / 100.0 * kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent);
+    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
+    double flElevatorDueToSpeed =
+        settings_.elevatorArea / 100.0 * kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent);
 
-    double flElevatorSpring = clCoeffElevator * settings_.maxElevatorAngleRadians * settings_.elevatorArea *
-                              kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent) / 10.0 / 2550;
+    double flElevator = clElevator * flElevatorDueToSpeed;
+
+    // spring force measures from max elevator force
+    double clElevatorMax = clCoeffElevator * settings_.maxElevatorAngleRadians;
+    double flElevatorSpring = clElevatorMax * flElevatorDueToSpeed / 255;
+
+    // trim works same as elevator, but with gain (effectiveness)
+    double elevatorTrimDeflectionAngleRad = elevatorTrim_ * settings_.maxElevatorAngleRadians;
+    double clElevatorTrim = clCoeffElevator * elevatorTrimDeflectionAngleRad;
+
+    double fElevatorTrim = clElevatorTrim * flElevatorDueToSpeed * settings_.elevatorTrimGain;
+
+    double fStickPusherElevator = 0.0;
+    double fAlphaElevator = 0.0;
+    double fElevatorWeight = 0.0;
+
+    double flElevatorFixed = fStickPusherElevator + fAlphaElevator + fElevatorTrim + fElevatorWeight;
 
     spdlog::debug(
         "Model vars: elevatorDeflectionAngleRad: {}, clCoeffElevator: {}, clElevator: {}, propWashAirSpeed: {}, "
@@ -68,9 +84,10 @@ void Model::calculateElevatorForces()
         elevatorDeflectionAngleRad, clCoeffElevator, clElevator, propWashAirSpeed, airSpeed, tas_, flElevator,
         flElevatorSpring);
 
-    spdlog::info("Elevator trim: {}", clElevatorTrim_);
+    spdlog::debug("Elevator trim: {}", elevatorTrim_);
 
+    spdlog::debug("Spring force: {}, Fixed Force: {}", flElevatorSpring, flElevatorFixed);
     // test update elevator
-    // fixedForce_[Elevator] = -flElevator;
+    fixedForce_[Elevator] = flElevatorFixed;
     springForce_[Elevator] = flElevatorSpring;
 }
