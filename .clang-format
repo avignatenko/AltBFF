@@ -8,4 +8,8 @@ AccessModifierOffset: -4
 IndentCaseLabels: false
 IncludeBlocks: Preserve
 AllowShortFunctionsOnASingleLine: Inline
+
+DerivePointerAlignment: 'false'
+
 ...
+
