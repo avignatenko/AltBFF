@@ -2,13 +2,15 @@
 
 #include <cmath>
 
-#include <spdlog/spdlog.h>
 
 Model::Model(const Settings& settings) : settings_(settings) {}
 
 namespace
 {
 double kAirDensity = 1.2;
+
+inline double clampMinZero(double val) { return val < 0.0 ? 0.0 : val;  
+}
 }
 
 int Model::getFrictionCoeff(Axis axis)
@@ -48,13 +50,13 @@ void Model::process()
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
 {
     // add prop wash airspeed to normal airspeed (simple model)
-    double propWashAirSpeed = std::pow(thrust_ / 10.0, 0.8);
+    double propWashAirSpeed = std::pow(clampMinZero(thrust_) / 10.0, 0.8);
     double airSpeed = tas_ + (propWashAirSpeed * propWashCoeff);
 
     // Calculate lift force for elevator
    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
     double flElevatorDueToSpeed =
-        surfaceArea / 100.0 * kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent);
+        surfaceArea / 100.0 * kAirDensity / 2.0 * std::pow(std::abs(airSpeed), settings_.clExponent);
 
     return flElevatorDueToSpeed;
 }
