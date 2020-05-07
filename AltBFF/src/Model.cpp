@@ -80,7 +80,7 @@ void Model::calculateElevatorForces()
 
     double flElevatorFixed = fStickPusherElevator + fAlphaElevator + fElevatorTrim + fElevatorWeight;
 
-    spdlog::debug("Spring force: {}, Fixed Force: {}", flElevatorSpring, flElevatorFixed);
+    spdlog::debug("El Spring force: {}, El Fixed Force: {}", flElevatorSpring, flElevatorFixed);
     //  update elevator
     fixedForce_[Elevator] = flElevatorFixed;
     springForce_[Elevator] = flElevatorSpring;
@@ -103,6 +103,8 @@ void Model::calculateAileronForces()
     double fAileronWeight = 0.0; // todo
 
     double flAileronFixed = fAlphaAileron + fAileronTrim + fAileronWeight;
+
+    spdlog::debug("Ail Spring force: {}, Ail Fixed Force: {}", flAileronSpring, flAileronFixed);
 
     //  update elevator
     fixedForce_[Aileron] = flAileronFixed;
