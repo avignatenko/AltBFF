@@ -12,13 +12,20 @@ public:
         int elevatorFrictionCoeff = 0;
         int elevatorDumpingCoeff = 0;
 
-        double elevatorArea = 0.0;
         double clExponent = 0.0;
-        double propWashCoeff = 0.0;
+
+        double elevatorArea = 0.0;
+        double propWashElevatorCoeff = 0.0;
         double maxElevatorLift = 0.0;
         double maxElevatorAngleRadians = 0.0;
-
         double elevatorTrimGain = 0.0;
+
+        double aileronArea = 0.0;
+        double propWashAileronCoeff = 0.0;
+        double maxAileronLift = 0.0;
+        double maxAileronAngleRadians = 0.0;
+        double aileronTrimGain = 0.0;
+
     };
 
     Model(const Settings& settings);
@@ -63,10 +70,12 @@ public:
     // update internal calculations
     void process();
 
-    private:
+ private:
 
         void calculateElevatorForces();
-    
+        void calculateAileronForces();
+
+        double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
     Settings settings_;
 

@@ -113,14 +113,21 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorFrictionCoeff = settings.get<int>("Model.ElevatorFrictionCoeff");
     modelSettings.elevatorDumpingCoeff = settings.get<int>("Model.ElevatorDumpingCoeff");
 
-    modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
-    modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");
-
     modelSettings.clExponent = settings.get<double>("Model.CLExponent");
-    modelSettings.propWashCoeff = settings.get<double>("Model.PropWashCoeff");
+
+    modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
+    modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");   
+    modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
     modelSettings.maxElevatorAngleRadians =
         settings.get<double>("Model.MaxElevatorAngleDegrees") * boost::math::double_constants::pi / 180.0;
+
+    modelSettings.aileronArea = settings.get<double>("Model.AileronArea");
+    modelSettings.aileronTrimGain = settings.get<double>("Model.AileronTrimGain");
+    modelSettings.propWashAileronCoeff = settings.get<double>("Model.PropWashAileronCoeff");
+    modelSettings.maxAileronLift = settings.get<double>("Model.MaxAileronLift");
+    modelSettings.maxAileronAngleRadians =
+        settings.get<double>("Model.MaxAileronAngleDegrees") * boost::math::double_constants::pi / 180.0;
 
     return modelSettings;
 }

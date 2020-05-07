@@ -42,24 +42,28 @@ int Model::getDumpingCoeff(Axis axis)
 void Model::process()
 {
     calculateElevatorForces();
+    calculateAileronForces();
+}
+
+double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
+{
+    // add prop wash airspeed to normal airspeed (simple model)
+    double propWashAirSpeed = std::pow(thrust_ / 10.0, 0.8);
+    double airSpeed = tas_ + (propWashAirSpeed * propWashCoeff);
+
+    // Calculate lift force for elevator
+   // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
+    double flElevatorDueToSpeed =
+        surfaceArea / 100.0 * kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent);
+
+    return flElevatorDueToSpeed;
 }
 
 void Model::calculateElevatorForces()
 {
-    double elevatorDeflectionAngleRad = (elevator_ / 100.0) * settings_.maxElevatorAngleRadians;
     double clCoeffElevator = settings_.maxElevatorLift / settings_.maxElevatorAngleRadians;
-    double clElevator = clCoeffElevator * elevatorDeflectionAngleRad;
-
-    // add prop wash airspeed to normal airspeed (simple model)
-    double propWashAirSpeed = std::pow(thrust_ / 10.0, 0.8);
-    double airSpeed = tas_ + (propWashAirSpeed * settings_.propWashCoeff);
-
-    // Calculate lift force for elevator
-    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
-    double flElevatorDueToSpeed =
-        settings_.elevatorArea / 100.0 * kAirDensity / 2.0 * std::pow(airSpeed, settings_.clExponent);
-
-    double flElevator = clElevator * flElevatorDueToSpeed;
+ 
+    double flElevatorDueToSpeed = calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff);
 
     // spring force measures from max elevator force
     double clElevatorMax = clCoeffElevator * settings_.maxElevatorAngleRadians;
@@ -68,26 +72,39 @@ void Model::calculateElevatorForces()
     // trim works same as elevator, but with gain (effectiveness)
     double elevatorTrimDeflectionAngleRad = elevatorTrim_ * settings_.maxElevatorAngleRadians;
     double clElevatorTrim = clCoeffElevator * elevatorTrimDeflectionAngleRad;
-
     double fElevatorTrim = clElevatorTrim * flElevatorDueToSpeed * settings_.elevatorTrimGain;
 
-    double fStickPusherElevator = 0.0;
-    double fAlphaElevator = 0.0;
-    double fElevatorWeight = 0.0;
+    double fStickPusherElevator = 0.0; // todo
+    double fAlphaElevator = 0.0; // todo
+    double fElevatorWeight = 0.0; // todo
 
     double flElevatorFixed = fStickPusherElevator + fAlphaElevator + fElevatorTrim + fElevatorWeight;
 
-    spdlog::debug(
-        "Model vars: elevatorDeflectionAngleRad: {}, clCoeffElevator: {}, clElevator: {}, propWashAirSpeed: {}, "
-        "airSpeed: {}, "
-        "tas: {}, flElevator: {}, flElevatorSpring: {}",
-        elevatorDeflectionAngleRad, clCoeffElevator, clElevator, propWashAirSpeed, airSpeed, tas_, flElevator,
-        flElevatorSpring);
-
-    spdlog::debug("Elevator trim: {}", elevatorTrim_);
-
     spdlog::debug("Spring force: {}, Fixed Force: {}", flElevatorSpring, flElevatorFixed);
-    // test update elevator
+    //  update elevator
     fixedForce_[Elevator] = flElevatorFixed;
     springForce_[Elevator] = flElevatorSpring;
+}
+
+void Model::calculateAileronForces()
+{
+    double clCoeffAileron = settings_.maxAileronLift / settings_.maxAileronAngleRadians;
+
+    // Calculate lift force for aileron
+    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
+    double flAileronDueToSpeed = calculateForceLiftDueToSpeed(settings_.aileronArea, settings_.propWashAileronCoeff);
+
+    // spring force measures from max aileron force
+    double clAileronMax = clCoeffAileron * settings_.maxAileronAngleRadians;
+    double flAileronSpring = clAileronMax * flAileronDueToSpeed / 255;
+
+    double fAlphaAileron = 0.0; // todo
+    double fAileronTrim = 0.0; // todo
+    double fAileronWeight = 0.0; // todo
+
+    double flAileronFixed = fAlphaAileron + fAileronTrim + fAileronWeight;
+
+    //  update elevator
+    fixedForce_[Aileron] = flAileronFixed;
+    springForce_[Aileron] = flAileronSpring;
 }
