@@ -63,14 +63,19 @@ void initLogging(const LogSettings& settings)
 {
     // init logging
 
-    // Set the default logger to file logger
-    spdlog::set_level(settings.logLevel);  // Set global log level to info
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::info);
+ 
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("altfs.log", true);
+    file_sink->set_level(settings.logLevel);
 
-    // auto logFilename = exePath / "altfs.log";
-    // auto file_logger = spdlog::basic_logger_mt("basic_logger", logFilename.string());
-    // spdlog::set_default_logger(file_logger);
-    auto console = spdlog::stdout_color_mt("console");
-    spdlog::set_default_logger(console);
+    auto logger = std::make_shared<spdlog::logger>(
+        "multi_sink", 
+        spdlog::sinks_init_list{console_sink, file_sink});
+
+    logger->set_level(spdlog::level::debug);
+  
+    spdlog::set_default_logger(logger);
 
     spdlog::info("AltBFF logging started");
 }

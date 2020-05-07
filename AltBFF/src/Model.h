@@ -1,5 +1,7 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <cstdint>
 
 class Model
@@ -40,18 +42,37 @@ public:
     // inputs
 
     // +/- 100%, mid = 0
-    void setElevator(double elevator) { elevator_ = elevator; }
+    void setElevator(double elevator) 
+    { 
+        elevator_ = elevator; 
+        spdlog::debug("Elevator set to model: {}", elevator_);
+    }
 
     // +/- 100%, mid = 0
-    void setAileron(double aileron) { aileron_ = aileron; }
+    void setAileron(double aileron) 
+    { 
+        aileron_ = aileron; 
+        spdlog::debug("Aileron set to model: {}", aileron_);
+    }
 
     // tas in ms/sec
-    void setTAS(double tas) { tas_ = tas; }
+    void setTAS(double tas) 
+    { 
+        tas_ = tas; 
+        spdlog::debug("TAS set to model: {}", tas);
+    }
 
     // thrust in pounds
-    void setThrust(double thrust) { thrust_ = thrust; }
+    void setThrust(double thrust)
+    { 
+        thrust_ = thrust; 
+        spdlog::debug("Thrust set to model: {}", thrust_);
+    }
 
-    void setElevatorTrim(double clElevatorTrim) { elevatorTrim_ = clElevatorTrim; }
+    void setElevatorTrim(double clElevatorTrim) { 
+        elevatorTrim_ = clElevatorTrim; 
+        spdlog::debug("Elevator trim set to model: {}", elevatorTrim_);
+    }
     
     // result
 
