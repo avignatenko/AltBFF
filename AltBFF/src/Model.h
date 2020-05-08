@@ -55,6 +55,13 @@ public:
         spdlog::debug("Aileron set to model: {}", aileron_);
     }
 
+    // kg / m^3
+    void setAirDensity(double density)
+    {
+        airDensity_ = density;
+        spdlog::debug("Air density set to model: {}", airDensity_);
+    }
+
     // tas in ms/sec
     void setTAS(double tas) 
     { 
@@ -103,6 +110,8 @@ private:
     // inputs
     double elevator_ = 0.0;
     double aileron_ = 0.0;
+
+    double airDensity_ = 0.0;
     double tas_ = 0.0;
     double thrust_ = 0.0;
     double elevatorTrim_ = 0.0;

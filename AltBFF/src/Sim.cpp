@@ -52,6 +52,12 @@ void Sim::writeElevatorTrim(double trim)
     simDataWriteFlags_.elevatorTrim = true;
 }
 
+double Sim::readAmbientAirDensity()
+{
+    auto densityslugs2kg = [](double density) { return density * 515.38; };
+    return densityslugs2kg(simData_.airDensity);
+}
+
 double Sim::readTAS()
 {
     auto kn2mps = [](double kn) { return kn * 0.515; };
@@ -86,6 +92,7 @@ void Sim::process()
                   !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
                   !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
 
+                  !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
                   !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
                   !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
                   !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);

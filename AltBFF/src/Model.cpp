@@ -7,7 +7,7 @@ Model::Model(const Settings& settings) : settings_(settings) {}
 
 namespace
 {
-double kAirDensity = 1.2;
+const double kBaseAirDensity = 1.2; // at msl, used with tas
 
 inline double clampMinZero(double val) { return val < 0.0 ? 0.0 : val;  
 }
@@ -49,14 +49,23 @@ void Model::process()
 
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
 {
+    // test advanced prop wash calculation
+    // https://www.grc.nasa.gov/www/k-12/airplane/propth.html
+    double thrustN = clampMinZero(thrust_) * 4.45; // pounds to newton
+    const double propArea = 3.14 / 4 * std::pow(1.8, 2); // prop diameter roughly 1.8m
+    double airSpeed2 = std::sqrt(thrustN / (.5 * airDensity_ * propArea) * std::pow(propWashCoeff, 2.0) + tas_ * tas_);
+
     // add prop wash airspeed to normal airspeed (simple model)
     double propWashAirSpeed = std::pow(clampMinZero(thrust_) / 10.0, 0.8);
     double airSpeed = tas_ + (propWashAirSpeed * propWashCoeff);
 
+    spdlog::debug("Airspeeds tas: {}, propwash_old: {}, propwash_new: {}", tas_, airSpeed, airSpeed2);
+
     // Calculate lift force for elevator
    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
+    // note: I sue kBaseAirDensity because it's already accounted in TAS
     double flElevatorDueToSpeed =
-        surfaceArea / 100.0 * kAirDensity / 2.0 * std::pow(std::abs(airSpeed), settings_.clExponent);
+        surfaceArea / 100.0 * kBaseAirDensity / 2.0 * std::pow(std::abs(airSpeed2), settings_.clExponent);
 
     return flElevatorDueToSpeed;
 }

@@ -188,6 +188,7 @@ int main(int argc, char** argv)
         model.setAileron(aileron);
         model.setElevator(elevator);
 
+        model.setAirDensity(sim.readAmbientAirDensity());
         model.setTAS(sim.readTAS());
         model.setThrust(sim.readThrust());
         model.setElevatorTrim(sim.readCLElevatorTrim());

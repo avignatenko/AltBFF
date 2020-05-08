@@ -30,6 +30,9 @@ public:
 
     // read
 
+    // kg / m^3 
+    double readAmbientAirDensity();
+    
     // m/s
     double readTAS();
 
@@ -48,8 +51,9 @@ private:
         int16_t elevator = 0;
         int16_t elevatorTrim = 0;
         int16_t aileron = 0;
-        int32_t tas = 0.0f;
-        double thrust = 0.0f;
+        int32_t tas = 0;
+        double thrust = 0.0;
+        double airDensity = 0.0;
         int16_t clElevatorTrim = 0;
     } simData_;
 
