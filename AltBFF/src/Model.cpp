@@ -112,17 +112,24 @@ void Model::calculateElevatorForces()
     double fElevatorAlpha = -1.0 * clElevatorAlpha * flElevatorDueToSpeed * settings_.elevatorAlphaGain;
 
     spdlog::debug("Alpha force: {} (alpha_pitch = {}, gs = {}, scale = {})", fElevatorAlpha, alphaDueToPitch, gs_, scaleCoeff);
+    spdlog::debug("Trim force: {}", fElevatorTrim);
 
     double fElevatorWeight = 0.0; // todo
 
     double flElevatorFixed = fElevatorAlpha + fElevatorTrim + fElevatorWeight;
-
-    spdlog::debug("Trim force: {}", fElevatorTrim);
-
-    spdlog::debug("El Spring force: {}, El Fixed Force: {}", flElevatorSpring, flElevatorFixed);
+   
     //  update elevator
-    fixedForce_[Elevator] = flElevatorFixed;
+
+    // note: average fixed force to avoid possible oscillations
+    fixedForceAccum_[Elevator](flElevatorFixed);
+    fixedForce_[Elevator] = boost::accumulators::rolling_mean(fixedForceAccum_[Elevator]);
     springForce_[Elevator] = flElevatorSpring;
+
+    spdlog::debug("El Spring force: {}, El Fixed Force average: {}, Src Fixed Force: {}", 
+        springForce_[Elevator], 
+        fixedForce_[Elevator], 
+        flElevatorFixed);
+
 }
 
 void Model::calculateAileronForces()

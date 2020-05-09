@@ -2,8 +2,13 @@
 
 #include <spdlog/spdlog.h>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+
 #include <cstdint>
 
+// Model assumes it's running at certain rate, e.g. 30hz
 class Model
 {
 public:
@@ -100,8 +105,9 @@ public:
     // incidence "alpha" in radians
     void setAlpha(double alpha)
     {
-        alphaAngleRad_ = alpha;
-        spdlog::trace("Alpha set to model: {}", alphaAngleRad_);
+        alphaAngleRadAccum_(alpha);
+        alphaAngleRad_ = boost::accumulators::rolling_mean(alphaAngleRadAccum_);
+        spdlog::trace("Alpha set to model: {}, average: {}", alpha, alphaAngleRad_);
     }
 
     // Pitch velocity in rads/sec relative to the body axes
@@ -147,6 +153,10 @@ public:
 
         double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
+
+    using Accumulator = boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> >;
+    using AccParams = boost::accumulators::tag::rolling_window;
+   
     Settings settings_;
 
     // inputs
@@ -158,6 +168,7 @@ private:
     double gs_ = 0.0;
     double thrust_ = 0.0;
     double alphaAngleRad_ = 0.0;
+    Accumulator alphaAngleRadAccum_ = Accumulator(AccParams::window_size = 5);
     double elevatorTrim_ = 0.0;
     double pitchRate_ = 0.0;
     double cgPosFrac_ = 0.0;
@@ -165,6 +176,12 @@ private:
     bool onGround_ = false;
 
     // outputs
+    Accumulator fixedForceAccum_[AxisCount] = 
+    { 
+        Accumulator(AccParams::window_size = 5), 
+        Accumulator(AccParams::window_size = 5) 
+    };
+
     float fixedForce_[AxisCount] = {0.0f};
     float springForce_[AxisCount] = {0.0f};
 };

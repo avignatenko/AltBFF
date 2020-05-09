@@ -1,16 +1,28 @@
 ﻿
-#include <BFFCLAPI/UDPClient.h>
 #include "Model.h"
 #include "Sim.h"
+
+#include <BFFCLAPI/UDPClient.h>
 
 #include <Utils/QueueRunner.h>
 #include <Utils/Timer.h>
 
-#include <stdio.h>
-#include <windows.h>
-#include <string>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/spdlog.h>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/math/constants/constants.hpp>
+
+#include <windows.h>
+
+#include <filesystem>
+#include <stdio.h>
+#include <string>
+#include <iostream>
 
 using namespace std;
 
@@ -20,19 +32,6 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 
     return FALSE;  // let others work on this
 }
-
-#include <windows.h>
-
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/stdout_sinks.h>
-#include <spdlog/spdlog.h>
-
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-
-#include <boost/math/constants/constants.hpp>
-#include <filesystem>
 
 using boost::property_tree::ptree;
 using std::filesystem::path;
