@@ -69,6 +69,11 @@ double Sim::readThrust()
     return simData_.thrust;
 }
 
+double Sim::readAlpha()
+{
+    return simData_.alpha;
+}
+
 double Sim::readCLElevatorTrim()
 {
     return simData_.clElevatorTrim / 16383.0;
@@ -95,6 +100,7 @@ void Sim::process()
                   !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
                   !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
                   !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
+                  !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||
                   !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
 
     // process

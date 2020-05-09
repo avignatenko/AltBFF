@@ -39,6 +39,9 @@ public:
     // pounds
     double readThrust();
 
+    // incidence "alpha" in radians
+    double readAlpha();
+
     // range [-1, 1]
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
@@ -54,6 +57,7 @@ private:
         int32_t tas = 0;
         double thrust = 0.0;
         double airDensity = 0.0;
+        double alpha = 0.0;
         int16_t clElevatorTrim = 0;
     } simData_;
 

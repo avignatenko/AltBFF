@@ -18,6 +18,7 @@ public:
 
         double elevatorArea = 0.0;
         double propWashElevatorCoeff = 0.0;
+        double elevatorAlphaGain = 0.0;
         double maxElevatorLift = 0.0;
         double maxElevatorAngleRadians = 0.0;
         double elevatorTrimGain = 0.0;
@@ -45,40 +46,50 @@ public:
     void setElevator(double elevator) 
     { 
         elevator_ = elevator; 
-        spdlog::debug("Elevator set to model: {}", elevator_);
+        spdlog::trace("Elevator set to model: {}", elevator_);
     }
 
     // +/- 100%, mid = 0
     void setAileron(double aileron) 
     { 
         aileron_ = aileron; 
-        spdlog::debug("Aileron set to model: {}", aileron_);
+        spdlog::trace("Aileron set to model: {}", aileron_);
     }
 
     // kg / m^3
     void setAirDensity(double density)
     {
         airDensity_ = density;
-        spdlog::debug("Air density set to model: {}", airDensity_);
+        spdlog::trace("Air density set to model: {}", airDensity_);
     }
 
     // tas in ms/sec
     void setTAS(double tas) 
     { 
         tas_ = tas; 
-        spdlog::debug("TAS set to model: {}", tas);
+        spdlog::trace("TAS set to model: {}", tas);
     }
 
     // thrust in pounds
     void setThrust(double thrust)
     { 
         thrust_ = thrust; 
-        spdlog::debug("Thrust set to model: {}", thrust_);
+        spdlog::trace("Thrust set to model: {}", thrust_);
     }
 
+
+    // incidence "alpha" in radians
+    void setAlpha(double alpha)
+    {
+        alphaAngleRad_ = alpha;
+        spdlog::trace("Alpha set to model: {}", alphaAngleRad_);
+    }
+
+
+    // [-1, 1]
     void setElevatorTrim(double clElevatorTrim) { 
         elevatorTrim_ = clElevatorTrim; 
-        spdlog::debug("Elevator trim set to model: {}", elevatorTrim_);
+        spdlog::trace("Elevator trim set to model: {}", elevatorTrim_);
     }
     
     // result
@@ -114,6 +125,7 @@ private:
     double airDensity_ = 0.0;
     double tas_ = 0.0;
     double thrust_ = 0.0;
+    double alphaAngleRad_ = 0.0;
     double elevatorTrim_ = 0.0;
 
     // outputs

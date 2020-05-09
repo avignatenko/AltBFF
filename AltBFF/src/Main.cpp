@@ -73,7 +73,7 @@ void initLogging(const LogSettings& settings)
         "multi_sink", 
         spdlog::sinks_init_list{console_sink, file_sink});
 
-    logger->set_level(spdlog::level::debug);
+    logger->set_level(spdlog::level::trace);
   
     spdlog::set_default_logger(logger);
 
@@ -123,6 +123,7 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
     modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");   
     modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
+    modelSettings.elevatorAlphaGain = settings.get<double>("Model.ElevatorAlphaGain");
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
     modelSettings.maxElevatorAngleRadians =
         settings.get<double>("Model.MaxElevatorAngleDegrees") * boost::math::double_constants::pi / 180.0;
@@ -191,6 +192,7 @@ int main(int argc, char** argv)
         model.setAirDensity(sim.readAmbientAirDensity());
         model.setTAS(sim.readTAS());
         model.setThrust(sim.readThrust());
+        model.setAlpha(sim.readAlpha());
         model.setElevatorTrim(sim.readCLElevatorTrim());
 
         // 3. update model and sim

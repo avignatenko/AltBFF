@@ -85,11 +85,15 @@ void Model::calculateElevatorForces()
     double clElevatorTrim = clCoeffElevator * elevatorTrimDeflectionAngleRad;
     double fElevatorTrim = clElevatorTrim * flElevatorDueToSpeed * settings_.elevatorTrimGain;
 
-    double fStickPusherElevator = 0.0; // todo
-    double fAlphaElevator = 0.0; // todo
+    // alpha works same as elevator, but using body alpha
+    double clElevatorAlpha = clCoeffElevator * alphaAngleRad_;
+    double fElevatorAlpha = -1.0 * clElevatorAlpha * flElevatorDueToSpeed * settings_.elevatorAlphaGain;
+
+    spdlog::debug("Alpha force: {}", fElevatorAlpha);
+
     double fElevatorWeight = 0.0; // todo
 
-    double flElevatorFixed = fStickPusherElevator + fAlphaElevator + fElevatorTrim + fElevatorWeight;
+    double flElevatorFixed = fElevatorAlpha + fElevatorTrim + fElevatorWeight;
 
     spdlog::debug("El Spring force: {}, El Fixed Force: {}", flElevatorSpring, flElevatorFixed);
     //  update elevator
