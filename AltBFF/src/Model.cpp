@@ -9,8 +9,8 @@ namespace
 {
 const double kBaseAirDensity = 1.2; // at msl, used with tas
 
-inline double clampMinZero(double val) { return val < 0.0 ? 0.0 : val;  
-}
+inline double clampMin(double val, double min) { return val < min ? min : val; }
+
 }
 
 int Model::getFrictionCoeff(Axis axis)
@@ -49,14 +49,14 @@ void Model::process()
 
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
 {
-    // test advanced prop wash calculation
+    // test advanced prop wash calculation (for single prop GA)
     // https://www.grc.nasa.gov/www/k-12/airplane/propth.html
-    double thrustN = clampMinZero(thrust_) * 4.45; // pounds to newton
+    double thrustN = clampMin(thrust_, 0.0) * 4.45; // pounds to newton
     const double propArea = 3.14 / 4 * std::pow(1.8, 2); // prop diameter roughly 1.8m
     double airSpeed2 = std::sqrt(thrustN / (.5 * airDensity_ * propArea) * std::pow(propWashCoeff, 2.0) + tas_ * tas_);
 
     // add prop wash airspeed to normal airspeed (simple model)
-    double propWashAirSpeed = std::pow(clampMinZero(thrust_) / 10.0, 0.8);
+    double propWashAirSpeed = std::pow(clampMin(thrust_, 0.0) / 10.0, 0.8);
     double airSpeed = tas_ + (propWashAirSpeed * propWashCoeff);
 
     spdlog::debug("Airspeeds tas: {}, propwash_old: {}, propwash_new: {}", tas_, airSpeed, airSpeed2);
@@ -86,10 +86,22 @@ void Model::calculateElevatorForces()
     double fElevatorTrim = clElevatorTrim * flElevatorDueToSpeed * settings_.elevatorTrimGain;
 
     // alpha works same as elevator, but using body alpha
-    double clElevatorAlpha = clCoeffElevator * alphaAngleRad_;
+
+    // fix alpha on ground (low speed)
+    auto ms2kn = [](double ms) { return ms * 1.944; };
+    const double scaleThesholdKn = 10;
+    double scaleCoeff = std::clamp(ms2kn(std::abs(gs_)), 0.0, scaleThesholdKn) / scaleThesholdKn;
+
+    const double prGain = 1.0; // settings?
+    double rTail = std::abs(settings_.hTailPosLon) - (cgPosFrac_ * settings_.wingRootChord);
+    double alphaDueToPitch = (pitchRate_ * rTail) / clampMin(tas_, 0.001) * prGain;
+
+    double alphaAngleRadScaled = (alphaAngleRad_  + alphaDueToPitch) * scaleCoeff;
+    
+    double clElevatorAlpha =  std::clamp(clCoeffElevator * alphaAngleRadScaled, -clElevatorMax, clElevatorMax);
     double fElevatorAlpha = -1.0 * clElevatorAlpha * flElevatorDueToSpeed * settings_.elevatorAlphaGain;
 
-    spdlog::debug("Alpha force: {}", fElevatorAlpha);
+    spdlog::debug("Alpha force: {} (alpha_pitch = {}, gs = {}, scale = {})", alphaDueToPitch, fElevatorAlpha, gs_, scaleCoeff);
 
     double fElevatorWeight = 0.0; // todo
 

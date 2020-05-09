@@ -74,6 +74,26 @@ double Sim::readAlpha()
     return simData_.alpha;
 }
 
+double Sim::readGS()
+{
+    return simData_.gs / 65536.0;
+}
+
+double Sim::readPitchRate()
+{
+    return simData_.pitchRate;
+}
+
+double Sim::readCGPosFrac()
+{
+    return simData_.cgPosFrac;
+}
+
+bool Sim::readOnGround()
+{
+    return (simData_.onGround == 1);
+}
+
 double Sim::readCLElevatorTrim()
 {
     return simData_.clElevatorTrim / 16383.0;
@@ -101,6 +121,10 @@ void Sim::process()
                   !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
                   !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
                   !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||
+                  !FSUIPC_Read(0x02B4, 4, &simData_.gs, &dwResult) ||
+                  !FSUIPC_Read(0x0366, 2, &simData_.onGround, &dwResult) ||
+                  !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||  
+                  !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
                   !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
 
     // process

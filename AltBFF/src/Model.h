@@ -16,6 +16,9 @@ public:
 
         double clExponent = 0.0;
 
+        double hTailPosLon = 0.0;
+        double wingRootChord = 0.0;
+
         double elevatorArea = 0.0;
         double propWashElevatorCoeff = 0.0;
         double elevatorAlphaGain = 0.0;
@@ -67,7 +70,20 @@ public:
     void setTAS(double tas) 
     { 
         tas_ = tas; 
-        spdlog::trace("TAS set to model: {}", tas);
+        spdlog::trace("TAS set to model: {}", tas_);
+    }
+
+    void setGS(double gs)
+    {
+        gs_ = gs;
+        spdlog::trace("GS set to model: {}", gs_);
+    }
+
+    // true if on ground
+    void setOnGround(bool onGround)
+    {
+        onGround_ = onGround;
+        spdlog::trace("onGround set to model: {}", onGround_);
     }
 
     // thrust in pounds
@@ -85,6 +101,18 @@ public:
         spdlog::trace("Alpha set to model: {}", alphaAngleRad_);
     }
 
+    // Pitch velocity in rads/sec relative to the body axes
+    void setPitchRate(double pitchRate)
+    {
+        pitchRate_ = pitchRate;
+        spdlog::trace("Pitch rate set to model: {}", pitchRate_);
+    }
+
+    void setCGPosFrac(double ccPosFrac)
+    {
+        cgPosFrac_ = ccPosFrac;
+        spdlog::trace("GC Pos Frac rate set to model: {}", cgPosFrac_);
+    }
 
     // [-1, 1]
     void setElevatorTrim(double clElevatorTrim) { 
@@ -124,9 +152,14 @@ private:
 
     double airDensity_ = 0.0;
     double tas_ = 0.0;
+    double gs_ = 0.0;
     double thrust_ = 0.0;
     double alphaAngleRad_ = 0.0;
     double elevatorTrim_ = 0.0;
+    double pitchRate_ = 0.0;
+    double cgPosFrac_ = 0.0;
+
+    bool onGround_ = false;
 
     // outputs
     float fixedForce_[AxisCount] = {0.0f};

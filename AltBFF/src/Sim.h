@@ -42,6 +42,17 @@ public:
     // incidence "alpha" in radians
     double readAlpha();
 
+    // true if on ground
+    bool readOnGround();
+
+    // m/sec
+    double readGS();
+
+    // rad/sec
+    double readPitchRate();
+
+    double readCGPosFrac();
+
     // range [-1, 1]
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
@@ -58,6 +69,10 @@ private:
         double thrust = 0.0;
         double airDensity = 0.0;
         double alpha = 0.0;
+        double pitchRate = 0.0;
+        double cgPosFrac = 0.0;
+        int32_t gs = 0;
+        int16_t onGround = 0;
         int16_t clElevatorTrim = 0;
     } simData_;
 
