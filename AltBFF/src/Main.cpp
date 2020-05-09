@@ -36,6 +36,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 
 using boost::property_tree::ptree;
 using std::filesystem::path;
+using std::filesystem::file_time_type;
 
 struct LogSettings
 {
@@ -83,10 +84,7 @@ void initLogging(const LogSettings& settings)
 ptree readSettings(const path& file)
 {
     ptree settings;
-
-    auto settingsFile = (file / "settings.ini").string();
-    boost::property_tree::read_ini(settingsFile, settings);
-
+    boost::property_tree::read_ini(file.string(), settings);
     return settings;
 }
 
@@ -127,6 +125,7 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");   
     modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
     modelSettings.elevatorAlphaGain = settings.get<double>("Model.ElevatorAlphaGain");
+    modelSettings.elevatorPRGain = settings.get<double>("Model.ElevatorPRGain");
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
     modelSettings.maxElevatorAngleRadians =
         settings.get<double>("Model.MaxElevatorAngleDegrees") * boost::math::double_constants::pi / 180.0;
@@ -148,8 +147,9 @@ int main(int argc, char** argv)
     QueueRunner runner;  // setup runner for this thread (will be started later)
 
     path exeName = argv[0];
-    path exePath = exeName.parent_path();
-    ptree settings = readSettings(exePath);
+    path settingsPath = exeName.parent_path() / "settings.ini";
+   
+    ptree settings = readSettings(settingsPath);
 
     bffcl::UDPClient::Settings clSettings = readCLSettings(settings);
     Sim::Settings simSettings = readSimSettings(settings);
@@ -235,9 +235,32 @@ int main(int argc, char** argv)
         return false;  // false means call again
     });
 
+    // settings refresh utility
+    file_time_type settingsWriteTime = last_write_time(settingsPath);
+    auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
+    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&model, settingsPath, &settingsWriteTime]
+    {
+        file_time_type newSettingsWriteTime = last_write_time(settingsPath);
+        if (newSettingsWriteTime > settingsWriteTime)
+        {
+            spdlog::info("Settings updated, reloading model settings...");
+            ptree settings = readSettings(settingsPath);
+            Model::Settings modelSettings = readModelSettings(settings);
+            model.setSettings(modelSettings);
+            spdlog::info("Model settings updated");
+
+            settingsWriteTime = newSettingsWriteTime;
+        }
+        return false; // call again
+    });
+
     spdlog::info("Starting sim/model loop");
     simModelLoop.start();
     spdlog::info("sim/model loop started");
+
+    spdlog::info("Starting settings refresh loop");
+    settingsUpdateLoop.start();
+    spdlog::info("settings refresh loop started");
 
     spdlog::info("Starting main loop");
     runner.run();

@@ -22,6 +22,7 @@ public:
         double elevatorArea = 0.0;
         double propWashElevatorCoeff = 0.0;
         double elevatorAlphaGain = 0.0;
+        double elevatorPRGain = 0.0;
         double maxElevatorLift = 0.0;
         double maxElevatorAngleRadians = 0.0;
         double elevatorTrimGain = 0.0;
@@ -35,6 +36,8 @@ public:
     };
 
     Model(const Settings& settings);
+
+    void setSettings(const Settings& settings);
 
     enum Axis
     {
