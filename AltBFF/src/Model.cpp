@@ -3,7 +3,6 @@
 #include <cmath>
 
 
-Model::Model(const Settings& settings) : settings_(settings) {}
 
 namespace
 {
@@ -13,6 +12,16 @@ inline double clampMin(double val, double min) { return val < min ? min : val; }
 
 }
 
+Model::Model(const Settings& settings) 
+{
+    setSettings(settings);
+}
+
+
+void Model::setSettings(const Settings& settings)
+{
+    settings_ = settings;
+}
 int Model::getFrictionCoeff(Axis axis)
 {
     switch (axis)
@@ -89,23 +98,26 @@ void Model::calculateElevatorForces()
 
     // fix alpha on ground (low speed)
     auto ms2kn = [](double ms) { return ms * 1.944; };
-    const double scaleThesholdKn = 10;
+    const double scaleThesholdKn = 20;
     double scaleCoeff = std::clamp(ms2kn(std::abs(gs_)), 0.0, scaleThesholdKn) / scaleThesholdKn;
 
-    const double prGain = 1.0; // settings?
     double rTail = std::abs(settings_.hTailPosLon) - (cgPosFrac_ * settings_.wingRootChord);
-    double alphaDueToPitch = (pitchRate_ * rTail) / clampMin(tas_, 0.001) * prGain;
+    double alphaDueToPitch = (pitchRate_ * rTail) / clampMin(tas_, 0.001) * settings_.elevatorPRGain;
+
+    spdlog::trace("rTail: {}, hTailPosLon: {}, cgPosFrac: {}, chord: {}", rTail, settings_.hTailPosLon, cgPosFrac_, settings_.wingRootChord);
 
     double alphaAngleRadScaled = (alphaAngleRad_  + alphaDueToPitch) * scaleCoeff;
     
     double clElevatorAlpha =  std::clamp(clCoeffElevator * alphaAngleRadScaled, -clElevatorMax, clElevatorMax);
     double fElevatorAlpha = -1.0 * clElevatorAlpha * flElevatorDueToSpeed * settings_.elevatorAlphaGain;
 
-    spdlog::debug("Alpha force: {} (alpha_pitch = {}, gs = {}, scale = {})", alphaDueToPitch, fElevatorAlpha, gs_, scaleCoeff);
+    spdlog::debug("Alpha force: {} (alpha_pitch = {}, gs = {}, scale = {})", fElevatorAlpha, alphaDueToPitch, gs_, scaleCoeff);
 
     double fElevatorWeight = 0.0; // todo
 
     double flElevatorFixed = fElevatorAlpha + fElevatorTrim + fElevatorWeight;
+
+    spdlog::debug("Trim force: {}", fElevatorTrim);
 
     spdlog::debug("El Spring force: {}, El Fixed Force: {}", flElevatorSpring, flElevatorFixed);
     //  update elevator
