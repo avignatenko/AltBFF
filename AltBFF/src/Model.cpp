@@ -1,8 +1,9 @@
 #include "Model.h"
 
+#define _USE_MATH_DEFINES
 #include <cmath>
-
-
+#include <optional>
+#include <chrono>
 
 namespace
 {
@@ -10,6 +11,7 @@ const double kBaseAirDensity = 1.2; // at msl, used with tas
 
 inline double clampMin(double val, double min) { return val < min ? min : val; }
 
+static double kPi = std::acos(-1);
 }
 
 Model::Model(const Settings& settings) 
@@ -54,6 +56,7 @@ void Model::process()
 {
     calculateElevatorForces();
     calculateAileronForces();
+    calculateEngineVibrations();
 }
 
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
@@ -137,7 +140,6 @@ void Model::calculateAileronForces()
     double clCoeffAileron = settings_.maxAileronLift / settings_.maxAileronAngleRadians;
 
     // Calculate lift force for aileron
-    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
     double flAileronDueToSpeed = calculateForceLiftDueToSpeed(settings_.aileronArea, settings_.propWashAileronCoeff);
 
     // spring force measures from max aileron force
@@ -155,4 +157,87 @@ void Model::calculateAileronForces()
     //  update elevator
     fixedForce_[Aileron] = flAileronFixed;
     springForce_[Aileron] = flAileronSpring;
+}
+
+/*
+class Vibrator
+{
+public:
+
+    // return amp, cps
+    std::tuple<double, double> calculate(int n, int cps, double Intens, double Rel_Angle)
+    {
+        if (!prevTime_) prevTime_ = std::chrono::high_resolution_clock::now();
+
+        auto now = std::chrono::high_resolution_clock::now();
+
+        auto Delta_T = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<double>(now - prevTime_.value())).count();
+   
+        double Speed_Factor = 1.0;
+        double Angle_Factor = std::clamp((std::abs(Rel_Angle) - 0.5) * 2, 0.0, 1.0);
+
+        double Period = 1.0 / cps;
+        Angle_1 += ((2.0 * kPi) / Period * Delta_T);
+        Angle_1 = std::fmod(Angle_1, 2 * kPi);
+        
+        double Amp1 = std::sin(Angle_1);
+
+        double Period2 = 1.0 / cps * 1.333;
+        Angle_2 += ((2.0 * kPi) / Period2 * Delta_T);
+        Angle_2 = std::fmod(Angle_2, 2 * kPi);
+
+        double Amp2 = std::sin(Angle_2);
+
+        double Period3 = 1.0 / cps * 1.666;
+        Angle_3 += ((2.0 * kPi) / Period3 * Delta_T);
+        Angle_3 = std::fmod(Angle_3, 2 * kPi);
+        double Amp3 = std::sin(Angle_3);
+
+        double Amp = Amp1;
+        if (n == 2) Amp += Amp2;
+        if (n == 3) Amp += Amp3;
+
+        Amp *= (Intens * Angle_Factor * Speed_Factor);
+  
+        double Amp_Eng = Intens * Angle_Factor * Speed_Factor;
+        double CPS_Eng = cps;
+
+        return { Amp_Eng, CPS_Eng };
+    }
+private:
+
+    double Angle_1 = 0;
+    double Angle_2 = 0;
+    double Angle_3 = 0;
+
+    std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> prevTime_ = std::nullopt;
+};
+*/
+void Model::calculateEngineVibrations()
+{
+    const int kEngineVibrationsChannel = 1;
+    const double engine1CPS = engine1RPM_ / 60.0;
+
+    // elevator
+    double elevatorVibIntensity =  (engine1Flow_ * settings_.elevatorEngineFlowGain) / 100.0;
+    double elevatorVibCPS = engine1CPS * settings_.elevatorEngineFreqGain;
+    
+    if (elevatorVibCPS < settings_.elevatorEngineFreqMin)
+        elevatorVibCPS = settings_.elevatorEngineFreqMin;
+    
+    // engine vibrations go to channel 1
+    vibrationsAmp[kEngineVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibIntensity);
+    vibrationsHz[kEngineVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibCPS);
+
+    // aileron
+
+    double aileronVibIntensity = (engine1Flow_ * settings_.aileronEngineFlowGain) / 100.0;
+    double aileronVibCPS = engine1CPS * settings_.aileronEngineFreqGain;
+
+    if (aileronVibCPS < settings_.aileronEngineFreqMin)
+        aileronVibCPS = settings_.aileronEngineFreqMin;
+
+    // engine vibrations go to channel 1
+    vibrationsAmp[kEngineVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibIntensity);
+    vibrationsHz[kEngineVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibCPS);
 }

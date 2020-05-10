@@ -32,12 +32,21 @@ public:
         double maxElevatorAngleRadians = 0.0;
         double elevatorTrimGain = 0.0;
 
+        double elevatorEngineFlowGain = 0.0;
+        double elevatorEngineFreqGain = 0.0;
+        double elevatorEngineFreqMin = 0.0;
+
+        double aileronEngineFlowGain = 0.0;
+        double aileronEngineFreqGain = 0.0;
+        double aileronEngineFreqMin = 0.0;
+
         double aileronArea = 0.0;
         double propWashAileronCoeff = 0.0;
         double maxAileronLift = 0.0;
         double maxAileronAngleRadians = 0.0;
         double aileronTrimGain = 0.0;
 
+       
     };
 
     Model(const Settings& settings);
@@ -129,6 +138,19 @@ public:
         spdlog::trace("Elevator trim set to model: {}", elevatorTrim_);
     }
     
+    // rot per minute
+    void setEngine1RPM(int rpm)
+    {
+        engine1RPM_ = rpm;
+        spdlog::trace("Engine1 rpm set to model: {}", engine1RPM_);
+    }
+
+    void setEngine1Flow(double flow)
+    {
+        engine1Flow_ = flow;
+        spdlog::trace("Engine1 flow set to model: {}", engine1Flow_);
+    }
+
     // result
 
     int getFrictionCoeff(Axis axis);
@@ -136,12 +158,12 @@ public:
 
     float getFixedForce(Axis axis) { return fixedForce_[axis]; }
     float getSpringForce(Axis axis) { return springForce_[axis]; }
-    uint16_t getVibrationCh1Hz(Axis axis) { return 0; }
-    uint16_t getVibrationCh1Amp(Axis axis) { return 0; }
-    uint16_t getVibrationCh2Hz(Axis axis) { return 0; }
-    uint16_t getVibrationCh2Amp(Axis axis) { return 0; }
-    uint16_t getVibrationCh3Hz(Axis axis) { return 0; }
-    uint16_t getVibrationCh3Amp(Axis axis) { return 0; }
+    uint16_t getVibrationCh1Hz(Axis axis) { return vibrationsHz[0][axis]; }
+    uint16_t getVibrationCh1Amp(Axis axis) { return vibrationsAmp[0][axis]; }
+    uint16_t getVibrationCh2Hz(Axis axis) { return vibrationsHz[1][axis]; }
+    uint16_t getVibrationCh2Amp(Axis axis) { return vibrationsAmp[1][axis]; }
+    uint16_t getVibrationCh3Hz(Axis axis) { return vibrationsHz[2][axis]; }
+    uint16_t getVibrationCh3Amp(Axis axis) { return vibrationsAmp[2][axis]; }
 
     // update internal calculations
     void process();
@@ -150,6 +172,7 @@ public:
 
         void calculateElevatorForces();
         void calculateAileronForces();
+        void calculateEngineVibrations();
 
         double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
@@ -173,6 +196,9 @@ private:
     double pitchRate_ = 0.0;
     double cgPosFrac_ = 0.0;
 
+    int engine1RPM_ = 0;
+    double engine1Flow_ = 0;
+
     bool onGround_ = false;
 
     // outputs
@@ -184,4 +210,7 @@ private:
 
     float fixedForce_[AxisCount] = {0.0f};
     float springForce_[AxisCount] = {0.0f};
+
+    uint16_t vibrationsHz[3][AxisCount] = { 0 };
+    uint16_t vibrationsAmp[3][AxisCount] = { 0 };
 };

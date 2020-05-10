@@ -89,6 +89,16 @@ double Sim::readCGPosFrac()
     return simData_.cgPosFrac;
 }
 
+int Sim::readEngine1RPM()
+{
+    return simData_.engine1RPM * 3000.0 / 16384;
+}
+
+double Sim::readEngine1Flow()
+{
+    return simData_.engine1Flow;
+}
+
 bool Sim::readOnGround()
 {
     return (simData_.onGround == 1);
@@ -125,6 +135,8 @@ void Sim::process()
                   !FSUIPC_Read(0x0366, 2, &simData_.onGround, &dwResult) ||
                   !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||  
                   !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
+                  !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
+                  !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
                   !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
 
     // process

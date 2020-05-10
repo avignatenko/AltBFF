@@ -53,6 +53,11 @@ public:
 
     double readCGPosFrac();
 
+    int readEngine1RPM();
+
+    // Pounds per Hour
+    double readEngine1Flow();
+
     // range [-1, 1]
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
@@ -66,6 +71,8 @@ private:
         int16_t elevatorTrim = 0;
         int16_t aileron = 0;
         int32_t tas = 0;
+        double engine1Flow = 0.0;
+        int16_t engine1RPM = 0;
         double thrust = 0.0;
         double airDensity = 0.0;
         double alpha = 0.0;

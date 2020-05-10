@@ -129,12 +129,21 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.maxElevatorAngleRadians =
         settings.get<double>("Model.MaxElevatorAngleDegrees") * boost::math::double_constants::pi / 180.0;
 
+    modelSettings.elevatorEngineFlowGain = settings.get<double>("Model.ElevatorEngineFlowGain");
+    modelSettings.elevatorEngineFreqGain = settings.get<double>("Model.ElevatorEngineFreqGain");
+    modelSettings.elevatorEngineFreqMin = settings.get<double>("Model.ElevatorEngineFreqMin");
+
     modelSettings.aileronArea = settings.get<double>("Model.AileronArea");
     modelSettings.aileronTrimGain = settings.get<double>("Model.AileronTrimGain");
     modelSettings.propWashAileronCoeff = settings.get<double>("Model.PropWashAileronCoeff");
     modelSettings.maxAileronLift = settings.get<double>("Model.MaxAileronLift");
     modelSettings.maxAileronAngleRadians =
         settings.get<double>("Model.MaxAileronAngleDegrees") * boost::math::double_constants::pi / 180.0;
+
+    modelSettings.aileronEngineFlowGain = settings.get<double>("Model.AileronEngineFlowGain");
+    modelSettings.aileronEngineFreqGain = settings.get<double>("Model.AileronEngineFreqGain");
+    modelSettings.aileronEngineFreqMin = settings.get<double>("Model.AileronEngineFreqMin");
+
 
     return modelSettings;
 }
@@ -201,6 +210,8 @@ int main(int argc, char** argv)
         model.setElevatorTrim(sim.readCLElevatorTrim());
         model.setPitchRate(sim.readPitchRate());
         model.setCGPosFrac(sim.readCGPosFrac());
+        model.setEngine1RPM(sim.readEngine1RPM());
+        model.setEngine1Flow(sim.readEngine1Flow());
 
         // 3. update model and sim
         model.process();
@@ -216,7 +227,7 @@ int main(int argc, char** argv)
         input.elevator.vibrationCh1Amp = model.getVibrationCh1Amp(Model::Elevator);
         input.elevator.vibrationCh2Hz = model.getVibrationCh2Hz(Model::Elevator);
         input.elevator.vibrationCh2Amp = model.getVibrationCh2Amp(Model::Elevator);
-        input.elevator.vibrationCh3Hz = model.getVibrationCh2Hz(Model::Elevator);
+        input.elevator.vibrationCh3Hz = model.getVibrationCh3Hz(Model::Elevator);
         input.elevator.vibrationCh3Amp = model.getVibrationCh3Amp(Model::Elevator);
 
         input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
@@ -226,7 +237,7 @@ int main(int argc, char** argv)
         input.aileron.vibrationCh1Amp = model.getVibrationCh1Amp(Model::Aileron);
         input.aileron.vibrationCh2Hz = model.getVibrationCh2Hz(Model::Aileron);
         input.aileron.vibrationCh2Amp = model.getVibrationCh2Amp(Model::Aileron);
-        input.aileron.vibrationCh3Hz = model.getVibrationCh2Hz(Model::Aileron);
+        input.aileron.vibrationCh3Hz = model.getVibrationCh3Hz(Model::Aileron);
         input.aileron.vibrationCh3Amp = model.getVibrationCh3Amp(Model::Aileron);
 
         cl.unlockInput();
