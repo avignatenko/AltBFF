@@ -133,6 +133,9 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorEngineFreqGain = settings.get<double>("Model.ElevatorEngineFreqGain");
     modelSettings.elevatorEngineFreqMin = settings.get<double>("Model.ElevatorEngineFreqMin");
 
+    modelSettings.elevatorVibStallGain = settings.get<double>("Model.ElevatorVibStallGain");
+    modelSettings.elevatorVibStalFreq = settings.get<double>("Model.ElevatorVibStalFreq");
+
     modelSettings.aileronArea = settings.get<double>("Model.AileronArea");
     modelSettings.aileronTrimGain = settings.get<double>("Model.AileronTrimGain");
     modelSettings.propWashAileronCoeff = settings.get<double>("Model.PropWashAileronCoeff");
@@ -144,6 +147,8 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.aileronEngineFreqGain = settings.get<double>("Model.AileronEngineFreqGain");
     modelSettings.aileronEngineFreqMin = settings.get<double>("Model.AileronEngineFreqMin");
 
+    modelSettings.aileronVibStallGain = settings.get<double>("Model.AileronVibStallGain");
+    modelSettings.aileronVibStalFreq = settings.get<double>("Model.AileronVibStalFreq");
 
     return modelSettings;
 }
@@ -212,6 +217,7 @@ int main(int argc, char** argv)
         model.setCGPosFrac(sim.readCGPosFrac());
         model.setEngine1RPM(sim.readEngine1RPM());
         model.setEngine1Flow(sim.readEngine1Flow());
+        model.setRelativeAoA(sim.readRelativeAoA());
 
         // 3. update model and sim
         model.process();

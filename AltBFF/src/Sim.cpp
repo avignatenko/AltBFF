@@ -99,6 +99,11 @@ double Sim::readEngine1Flow()
     return simData_.engine1Flow;
 }
 
+double Sim::readRelativeAoA()
+{
+    return 100 - (100.0 * simData_.relativeAoA / 32767);
+}
+
 bool Sim::readOnGround()
 {
     return (simData_.onGround == 1);
@@ -137,6 +142,7 @@ void Sim::process()
                   !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
                   !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
                   !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
+                  !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
                   !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
 
     // process

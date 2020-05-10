@@ -57,6 +57,7 @@ void Model::process()
     calculateElevatorForces();
     calculateAileronForces();
     calculateEngineVibrations();
+    calculateStallVibrations();
 }
 
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
@@ -159,63 +160,8 @@ void Model::calculateAileronForces()
     springForce_[Aileron] = flAileronSpring;
 }
 
-/*
-class Vibrator
-{
-public:
-
-    // return amp, cps
-    std::tuple<double, double> calculate(int n, int cps, double Intens, double Rel_Angle)
-    {
-        if (!prevTime_) prevTime_ = std::chrono::high_resolution_clock::now();
-
-        auto now = std::chrono::high_resolution_clock::now();
-
-        auto Delta_T = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::duration<double>(now - prevTime_.value())).count();
-   
-        double Speed_Factor = 1.0;
-        double Angle_Factor = std::clamp((std::abs(Rel_Angle) - 0.5) * 2, 0.0, 1.0);
-
-        double Period = 1.0 / cps;
-        Angle_1 += ((2.0 * kPi) / Period * Delta_T);
-        Angle_1 = std::fmod(Angle_1, 2 * kPi);
-        
-        double Amp1 = std::sin(Angle_1);
-
-        double Period2 = 1.0 / cps * 1.333;
-        Angle_2 += ((2.0 * kPi) / Period2 * Delta_T);
-        Angle_2 = std::fmod(Angle_2, 2 * kPi);
-
-        double Amp2 = std::sin(Angle_2);
-
-        double Period3 = 1.0 / cps * 1.666;
-        Angle_3 += ((2.0 * kPi) / Period3 * Delta_T);
-        Angle_3 = std::fmod(Angle_3, 2 * kPi);
-        double Amp3 = std::sin(Angle_3);
-
-        double Amp = Amp1;
-        if (n == 2) Amp += Amp2;
-        if (n == 3) Amp += Amp3;
-
-        Amp *= (Intens * Angle_Factor * Speed_Factor);
-  
-        double Amp_Eng = Intens * Angle_Factor * Speed_Factor;
-        double CPS_Eng = cps;
-
-        return { Amp_Eng, CPS_Eng };
-    }
-private:
-
-    double Angle_1 = 0;
-    double Angle_2 = 0;
-    double Angle_3 = 0;
-
-    std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>> prevTime_ = std::nullopt;
-};
-*/
 void Model::calculateEngineVibrations()
 {
-    const int kEngineVibrationsChannel = 1;
     const double engine1CPS = engine1RPM_ / 60.0;
 
     // elevator
@@ -237,7 +183,30 @@ void Model::calculateEngineVibrations()
     if (aileronVibCPS < settings_.aileronEngineFreqMin)
         aileronVibCPS = settings_.aileronEngineFreqMin;
 
-    // engine vibrations go to channel 1
     vibrationsAmp[kEngineVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibIntensity);
     vibrationsHz[kEngineVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibCPS);
+}
+
+void Model::calculateStallVibrations()
+{
+    // elevator
+    double elevatorAngleFactor = std::clamp((std::abs(relativeAoA_ / 100.0) - 0.5) * 2.0, 0.0, 1.0);
+    double elevatorSpeedFactor = std::abs(std::pow(tas_, 2)) / 10000.0;
+    
+    double elevatorVibIntensity = 100 * (settings_.elevatorVibStallGain / 10.0) * elevatorAngleFactor * elevatorSpeedFactor;
+    double elevatorVibCPS = settings_.elevatorVibStalFreq;
+
+    vibrationsAmp[kStallVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibIntensity);
+    vibrationsHz[kStallVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibCPS);
+
+    // aileron
+    double aileronAngleFactor = std::clamp((std::abs(relativeAoA_ / 100.0) - 0.5) * 2.0, 0.0, 1.0);
+    double aileronSpeedFactor = std::abs(std::pow(tas_, 2)) / 10000.0;
+
+    double aileronVibIntensity = 100 * (settings_.aileronVibStallGain / 10.0) * aileronAngleFactor * aileronSpeedFactor;
+    double aileronVibCPS = settings_.aileronVibStalFreq;
+
+    vibrationsAmp[kStallVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibIntensity);
+    vibrationsHz[kStallVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibCPS);
+
 }

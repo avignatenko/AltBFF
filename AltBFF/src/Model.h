@@ -36,6 +36,9 @@ public:
         double elevatorEngineFreqGain = 0.0;
         double elevatorEngineFreqMin = 0.0;
 
+        double elevatorVibStallGain = 0.0;
+        double elevatorVibStalFreq = 0.0;
+
         double aileronEngineFlowGain = 0.0;
         double aileronEngineFreqGain = 0.0;
         double aileronEngineFreqMin = 0.0;
@@ -46,6 +49,8 @@ public:
         double maxAileronAngleRadians = 0.0;
         double aileronTrimGain = 0.0;
 
+        double aileronVibStallGain = 0.0;
+        double aileronVibStalFreq = 0.0;
        
     };
 
@@ -151,13 +156,24 @@ public:
         spdlog::trace("Engine1 flow set to model: {}", engine1Flow_);
     }
 
+    void setRelativeAoA(double relativeAoA)
+    {
+        relativeAoA_ = relativeAoA;
+        spdlog::trace("relativeAoA set to model: {}", relativeAoA_);
+    }
+
     // result
 
     int getFrictionCoeff(Axis axis);
     int getDumpingCoeff(Axis axis);
-
+    
     float getFixedForce(Axis axis) { return fixedForce_[axis]; }
     float getSpringForce(Axis axis) { return springForce_[axis]; }
+    
+    const int kEngineVibrationsChannel = 0;
+    const int kRunwayVibrationChannel = 1;
+    const int kStallVibrationsChannel = 2;
+
     uint16_t getVibrationCh1Hz(Axis axis) { return vibrationsHz[0][axis]; }
     uint16_t getVibrationCh1Amp(Axis axis) { return vibrationsAmp[0][axis]; }
     uint16_t getVibrationCh2Hz(Axis axis) { return vibrationsHz[1][axis]; }
@@ -173,6 +189,7 @@ public:
         void calculateElevatorForces();
         void calculateAileronForces();
         void calculateEngineVibrations();
+        void calculateStallVibrations();
 
         double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
@@ -195,6 +212,7 @@ private:
     double elevatorTrim_ = 0.0;
     double pitchRate_ = 0.0;
     double cgPosFrac_ = 0.0;
+    double relativeAoA_ = 0.0; // [0, 100]
 
     int engine1RPM_ = 0;
     double engine1Flow_ = 0;
