@@ -124,6 +124,8 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");   
     modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
     modelSettings.elevatorAlphaGain = settings.get<double>("Model.ElevatorAlphaGain");
+    modelSettings.elevatorAlphaScaleSpeedKn = settings.get<double>("Model.ElevatorAlphaScaleSpeedKn");
+
     modelSettings.elevatorPRGain = settings.get<double>("Model.ElevatorPRGain");
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
     modelSettings.maxElevatorAngleRadians =
@@ -135,6 +137,9 @@ Model::Settings readModelSettings(const ptree& settings)
 
     modelSettings.elevatorVibStallGain = settings.get<double>("Model.ElevatorVibStallGain");
     modelSettings.elevatorVibStalFreq = settings.get<double>("Model.ElevatorVibStalFreq");
+
+    modelSettings.elevatorVibRunwayGain = settings.get<double>("Model.ElevatorVibRunwayGain");
+    modelSettings.elevatorVibRunwayFreq = settings.get<double>("Model.ElevatorVibRunwayFreq");
 
     modelSettings.aileronArea = settings.get<double>("Model.AileronArea");
     modelSettings.aileronTrimGain = settings.get<double>("Model.AileronTrimGain");
@@ -149,6 +154,9 @@ Model::Settings readModelSettings(const ptree& settings)
 
     modelSettings.aileronVibStallGain = settings.get<double>("Model.AileronVibStallGain");
     modelSettings.aileronVibStalFreq = settings.get<double>("Model.AileronVibStalFreq");
+
+    modelSettings.aileronVibRunwayGain = settings.get<double>("Model.AileronVibRunwayGain");
+    modelSettings.aileronVibRunwayFreq = settings.get<double>("Model.AileronVibRunwayFreq");
 
     return modelSettings;
 }
@@ -210,6 +218,7 @@ int main(int argc, char** argv)
         model.setTAS(sim.readTAS());
         model.setGS(sim.readGS());
         model.setOnGround(sim.readOnGround());
+        model.setGroundType(static_cast<Model::GroundType>(sim.readGroundType()));
         model.setThrust(sim.readThrust());
         model.setAlpha(sim.readAlpha());
         model.setElevatorTrim(sim.readCLElevatorTrim());

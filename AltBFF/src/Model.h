@@ -27,6 +27,7 @@ public:
         double elevatorArea = 0.0;
         double propWashElevatorCoeff = 0.0;
         double elevatorAlphaGain = 0.0;
+        double elevatorAlphaScaleSpeedKn = 0.0;
         double elevatorPRGain = 0.0;
         double maxElevatorLift = 0.0;
         double maxElevatorAngleRadians = 0.0;
@@ -38,6 +39,9 @@ public:
 
         double elevatorVibStallGain = 0.0;
         double elevatorVibStalFreq = 0.0;
+
+        double elevatorVibRunwayGain = 0.0;
+        double elevatorVibRunwayFreq = 0.0;
 
         double aileronEngineFlowGain = 0.0;
         double aileronEngineFreqGain = 0.0;
@@ -51,6 +55,11 @@ public:
 
         double aileronVibStallGain = 0.0;
         double aileronVibStalFreq = 0.0;
+
+        double aileronVibRunwayGain = 0.0;
+        double aileronVibRunwayFreq = 0.0;
+
+
        
     };
 
@@ -106,6 +115,20 @@ public:
     {
         onGround_ = onGround;
         spdlog::trace("onGround set to model: {}", onGround_);
+    }
+
+    enum class GroundType
+    {
+        NA,
+        Concrete,
+        Grass,
+        Noisy
+    };
+
+    void setGroundType(GroundType type)
+    {
+        groundType_ = type;
+        spdlog::trace("Ground type set to model: {}", static_cast<int>(groundType_));
     }
 
     // thrust in pounds
@@ -174,12 +197,12 @@ public:
     const int kRunwayVibrationChannel = 1;
     const int kStallVibrationsChannel = 2;
 
-    uint16_t getVibrationCh1Hz(Axis axis) { return vibrationsHz[0][axis]; }
-    uint16_t getVibrationCh1Amp(Axis axis) { return vibrationsAmp[0][axis]; }
-    uint16_t getVibrationCh2Hz(Axis axis) { return vibrationsHz[1][axis]; }
-    uint16_t getVibrationCh2Amp(Axis axis) { return vibrationsAmp[1][axis]; }
-    uint16_t getVibrationCh3Hz(Axis axis) { return vibrationsHz[2][axis]; }
-    uint16_t getVibrationCh3Amp(Axis axis) { return vibrationsAmp[2][axis]; }
+    uint16_t getVibrationCh1Hz(Axis axis) { return vibrationsHz_[0][axis]; }
+    uint16_t getVibrationCh1Amp(Axis axis) { return vibrationsAmp_[0][axis]; }
+    uint16_t getVibrationCh2Hz(Axis axis) { return vibrationsHz_[1][axis]; }
+    uint16_t getVibrationCh2Amp(Axis axis) { return vibrationsAmp_[1][axis]; }
+    uint16_t getVibrationCh3Hz(Axis axis) { return vibrationsHz_[2][axis]; }
+    uint16_t getVibrationCh3Amp(Axis axis) { return vibrationsAmp_[2][axis]; }
 
     // update internal calculations
     void process();
@@ -190,6 +213,7 @@ public:
         void calculateAileronForces();
         void calculateEngineVibrations();
         void calculateStallVibrations();
+        void calculateRunwayVibrations();
 
         double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
@@ -202,22 +226,21 @@ private:
     // inputs
     double elevator_ = 0.0;
     double aileron_ = 0.0;
-
     double airDensity_ = 0.0;
     double tas_ = 0.0;
     double gs_ = 0.0;
     double thrust_ = 0.0;
     double alphaAngleRad_ = 0.0;
-    Accumulator alphaAngleRadAccum_ = Accumulator(AccParams::window_size = 5);
     double elevatorTrim_ = 0.0;
     double pitchRate_ = 0.0;
     double cgPosFrac_ = 0.0;
     double relativeAoA_ = 0.0; // [0, 100]
-
     int engine1RPM_ = 0;
     double engine1Flow_ = 0;
-
     bool onGround_ = false;
+    GroundType groundType_ = GroundType::NA;
+
+    Accumulator alphaAngleRadAccum_ = Accumulator(AccParams::window_size = 5);
 
     // outputs
     Accumulator fixedForceAccum_[AxisCount] = 
@@ -229,6 +252,6 @@ private:
     float fixedForce_[AxisCount] = {0.0f};
     float springForce_[AxisCount] = {0.0f};
 
-    uint16_t vibrationsHz[3][AxisCount] = { 0 };
-    uint16_t vibrationsAmp[3][AxisCount] = { 0 };
+    uint16_t vibrationsHz_[3][AxisCount] = { 0 };
+    uint16_t vibrationsAmp_[3][AxisCount] = { 0 };
 };

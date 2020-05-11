@@ -5,6 +5,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <set>
+
 Sim::Sim(Settings& settings) : settings_(settings)
 {
     connect();
@@ -109,6 +111,27 @@ bool Sim::readOnGround()
     return (simData_.onGround == 1);
 }
 
+Sim::GroundType Sim::readGroundType()
+{
+    if (!readOnGround()) return Sim::GroundType::NA;
+
+    // see https://www.prepar3d.com/SDKv4/sdk/references/variables/simulation_variables.html
+    std::set<int> grass = {1, 5, 6, 8, 9};
+    std::set<int> noisy = {2, 3, 10, 11, 12, 13, 14, 18, 19, 21, 22};
+
+    if (simData_.surfaceType > 23 || simData_.surfaceType < 0) // unknown?
+        return Sim::GroundType::Grass;
+
+    if (grass.find(simData_.surfaceType) != grass.end())
+        return Sim::GroundType::Grass;
+
+    if (noisy.find(simData_.surfaceType) != noisy.end())
+        return Sim::GroundType::Noisy;
+
+    return Sim::GroundType::Concrete;
+}
+
+
 double Sim::readCLElevatorTrim()
 {
     return simData_.clElevatorTrim / 16383.0;
@@ -143,8 +166,9 @@ void Sim::process()
                   !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
                   !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
                   !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
+                  !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||      
                   !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
-
+    
     // process
     failed = failed || !FSUIPC_Process(&dwResult);
 

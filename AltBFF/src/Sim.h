@@ -45,6 +45,16 @@ public:
     // true if on ground
     bool readOnGround();
 
+    enum class GroundType
+    {
+        NA,
+        Concrete,
+        Grass,
+        Noisy
+    };
+
+    GroundType readGroundType();
+
     // m/sec
     double readGS();
 
@@ -84,6 +94,7 @@ private:
         double cgPosFrac = 0.0;
         int32_t gs = 0;
         int16_t onGround = 0;
+        int32_t surfaceType = 0;
         int16_t clElevatorTrim = 0;
     } simData_;
 
