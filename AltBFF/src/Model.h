@@ -193,16 +193,13 @@ public:
     float getFixedForce(Axis axis) { return fixedForce_[axis]; }
     float getSpringForce(Axis axis) { return springForce_[axis]; }
     
-    const int kEngineVibrationsChannel = 0;
-    const int kRunwayVibrationChannel = 1;
-    const int kStallVibrationsChannel = 2;
-
-    uint16_t getVibrationCh1Hz(Axis axis) { return vibrationsHz_[0][axis]; }
-    uint16_t getVibrationCh1Amp(Axis axis) { return vibrationsAmp_[0][axis]; }
-    uint16_t getVibrationCh2Hz(Axis axis) { return vibrationsHz_[1][axis]; }
-    uint16_t getVibrationCh2Amp(Axis axis) { return vibrationsAmp_[1][axis]; }
-    uint16_t getVibrationCh3Hz(Axis axis) { return vibrationsHz_[2][axis]; }
-    uint16_t getVibrationCh3Amp(Axis axis) { return vibrationsAmp_[2][axis]; }
+ 
+    uint16_t getVibrationEngineHz(Axis axis) { return vibrationsHz_[0][axis]; }
+    uint16_t getVibrationEngineAmp(Axis axis) { return vibrationsAmp_[0][axis]; }
+    uint16_t getVibrationRunwayHz(Axis axis) { return vibrationsHz_[1][axis]; }
+    uint16_t getVibrationRunwayAmp(Axis axis) { return vibrationsAmp_[1][axis]; }
+    uint16_t getVibrationStallHz(Axis axis) { return vibrationsHz_[2][axis]; }
+    uint16_t getVibrationStallAmp(Axis axis) { return vibrationsAmp_[2][axis]; }
 
     // update internal calculations
     void process();
@@ -221,6 +218,7 @@ private:
     using Accumulator = boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> >;
     using AccParams = boost::accumulators::tag::rolling_window;
    
+    
     Settings settings_;
 
     // inputs
@@ -251,6 +249,11 @@ private:
 
     float fixedForce_[AxisCount] = {0.0f};
     float springForce_[AxisCount] = {0.0f};
+
+    const int kEngineVibrationsChannel = 0;
+    const int kRunwayVibrationChannel = 1;
+    const int kStallVibrationsChannel = 2;
+
 
     uint16_t vibrationsHz_[3][AxisCount] = { 0 };
     uint16_t vibrationsAmp_[3][AxisCount] = { 0 };

@@ -238,22 +238,22 @@ int main(int argc, char** argv)
         input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
         input.elevator.springForce = model.getSpringForce(Model::Elevator);
       
-        input.elevator.vibrationCh1Hz = model.getVibrationCh1Hz(Model::Elevator);
-        input.elevator.vibrationCh1Amp = model.getVibrationCh1Amp(Model::Elevator);
-        input.elevator.vibrationCh2Hz = model.getVibrationCh2Hz(Model::Elevator);
-        input.elevator.vibrationCh2Amp = model.getVibrationCh2Amp(Model::Elevator);
-        input.elevator.vibrationCh3Hz = model.getVibrationCh3Hz(Model::Elevator);
-        input.elevator.vibrationCh3Amp = model.getVibrationCh3Amp(Model::Elevator);
+        input.elevator.vibrationCh1Hz = model.getVibrationEngineHz(Model::Elevator);
+        input.elevator.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Elevator);
+        input.elevator.vibrationCh2Hz = model.getVibrationRunwayHz(Model::Elevator);
+        input.elevator.vibrationCh2Amp = model.getVibrationRunwayAmp(Model::Elevator);
+        input.elevator.vibrationCh3Hz = model.getVibrationStallHz(Model::Elevator);
+        input.elevator.vibrationCh3Amp = model.getVibrationStallAmp(Model::Elevator);
 
         input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
         input.aileron.springForce = model.getSpringForce(Model::Aileron);
         
-        input.aileron.vibrationCh1Hz = model.getVibrationCh1Hz(Model::Aileron);
-        input.aileron.vibrationCh1Amp = model.getVibrationCh1Amp(Model::Aileron);
-        input.aileron.vibrationCh2Hz = model.getVibrationCh2Hz(Model::Aileron);
-        input.aileron.vibrationCh2Amp = model.getVibrationCh2Amp(Model::Aileron);
-        input.aileron.vibrationCh3Hz = model.getVibrationCh3Hz(Model::Aileron);
-        input.aileron.vibrationCh3Amp = model.getVibrationCh3Amp(Model::Aileron);
+        input.aileron.vibrationCh1Hz = model.getVibrationEngineHz(Model::Aileron);
+        input.aileron.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Aileron);
+        input.aileron.vibrationCh2Hz = model.getVibrationRunwayHz(Model::Aileron);
+        input.aileron.vibrationCh2Amp = model.getVibrationRunwayAmp(Model::Aileron);
+        input.aileron.vibrationCh3Hz = model.getVibrationStallHz(Model::Aileron);
+        input.aileron.vibrationCh3Amp = model.getVibrationStallAmp(Model::Aileron);
 
         cl.unlockInput();
 
