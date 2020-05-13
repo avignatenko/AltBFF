@@ -51,7 +51,7 @@ LogSettings readLogSettings(const ptree& settings)
     std::map<std::string, spdlog::level::level_enum> settingsStrToEnum = {
         {"trace", spdlog::level::trace}, {"debug", spdlog::level::debug}, {"info", spdlog::level::info},
         {"warn", spdlog::level::warn},   {"err", spdlog::level::err},     {"critical", spdlog::level::critical},
-        {"off", spdlog::level::off}};
+        {"off", spdlog::level::off} };
 
     if (auto levelFound = settingsStrToEnum.find(logLevelStr); levelFound != settingsStrToEnum.end())
         logSettings.logLevel = levelFound->second;
@@ -65,16 +65,16 @@ void initLogging(const LogSettings& settings)
 
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink->set_level(spdlog::level::info);
- 
+
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("altfs.log", true);
     file_sink->set_level(settings.logLevel);
 
     auto logger = std::make_shared<spdlog::logger>(
-        "multi_sink", 
-        spdlog::sinks_init_list{console_sink, file_sink});
+        "multi_sink",
+        spdlog::sinks_init_list{ console_sink, file_sink });
 
     logger->set_level(spdlog::level::trace);
-  
+
     spdlog::set_default_logger(logger);
 
     spdlog::info("AltBFF logging started");
@@ -92,8 +92,8 @@ bffcl::UDPClient::Settings readCLSettings(const ptree& settings)
     bffcl::UDPClient::Settings clSettings;
     clSettings.toAddress = settings.get<std::string>("Network.CLIPAddress");
     clSettings.toPort = settings.get<int>("Network.CLPort"),
-    clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
-    clSettings.fromPort = settings.get<int>("Network.ThisPort");
+        clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
+        clSettings.fromPort = settings.get<int>("Network.ThisPort");
 
     return clSettings;
 }
@@ -104,6 +104,8 @@ Sim::Settings readSimSettings(const ptree& settings)
     simSettings.invertFSElevator = settings.get<bool>("Sim.InvertElevator");
     simSettings.invertFSAileron = settings.get<bool>("Sim.InvertAileron");
     simSettings.clElevatorTrimOffset = std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
+    simSettings.apRollEngagedOffset = std::stoul(settings.get<std::string>("Sim.APRollEngagedOffset"), nullptr, 16);
+    simSettings.apPitchEngagedOffset = std::stoul(settings.get<std::string>("Sim.APPitchEngagedOffset"), nullptr, 16);
     return simSettings;
 }
 
@@ -112,16 +114,23 @@ Model::Settings readModelSettings(const ptree& settings)
     Model::Settings modelSettings;
     modelSettings.aileronFrictionCoeff = settings.get<int>("Model.AileronFrictionCoeff");
     modelSettings.aileronDumpingCoeff = settings.get<int>("Model.AileronDumpingCoeff");
+    modelSettings.aileronPositionFollowingP = settings.get<int>("Model.AileronPositionFollowingP");
+    modelSettings.aileronPositionFollowingI = settings.get<int>("Model.AileronPositionFollowingI");
+    modelSettings.aileronPositionFollowingD = settings.get<int>("Model.AileronPositionFollowingD");
+
     modelSettings.elevatorFrictionCoeff = settings.get<int>("Model.ElevatorFrictionCoeff");
     modelSettings.elevatorDumpingCoeff = settings.get<int>("Model.ElevatorDumpingCoeff");
+    modelSettings.elevatorPositionFollowingP = settings.get<int>("Model.ElevatorPositionFollowingP");
+    modelSettings.elevatorPositionFollowingI = settings.get<int>("Model.ElevatorPositionFollowingI");
+    modelSettings.elevatorPositionFollowingD = settings.get<int>("Model.ElevatorPositionFollowingD");
 
     modelSettings.clExponent = settings.get<double>("Model.CLExponent");
-  
+
     modelSettings.hTailPosLon = settings.get<double>("Model.HTailPosLon");
     modelSettings.wingRootChord = settings.get<double>("Model.WingRootChord");
 
     modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
-    modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");   
+    modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");
     modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
     modelSettings.elevatorAlphaGain = settings.get<double>("Model.ElevatorAlphaGain");
     modelSettings.elevatorAlphaScaleSpeedKn = settings.get<double>("Model.ElevatorAlphaScaleSpeedKn");
@@ -161,6 +170,26 @@ Model::Settings readModelSettings(const ptree& settings)
     return modelSettings;
 }
 
+void updateCLDefaultsFromModel(bffcl::UDPClient& cl, Model& model)
+{
+    auto& input = cl.lockInput();
+    input.aileron.frictionCoeff = model.getFrictionCoeff(Model::Aileron);
+    input.aileron.dumpingCoeff = model.getDumpingCoeff(Model::Aileron);
+
+    input.aileron.positionFollowingP = model.getPositionFollowingP(Model::Aileron);
+    input.aileron.positionFollowingI = model.getPositionFollowingI(Model::Aileron);
+    input.aileron.positionFollowingD = model.getPositionFollowingD(Model::Aileron);
+
+    input.elevator.frictionCoeff = model.getFrictionCoeff(Model::Elevator);
+    input.elevator.dumpingCoeff = model.getDumpingCoeff(Model::Elevator);
+
+    input.elevator.positionFollowingP = model.getPositionFollowingP(Model::Elevator);
+    input.elevator.positionFollowingI = model.getPositionFollowingI(Model::Elevator);
+    input.elevator.positionFollowingD = model.getPositionFollowingD(Model::Elevator);
+
+    cl.unlockInput();
+}
+
 int main(int argc, char** argv)
 {
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
@@ -169,7 +198,7 @@ int main(int argc, char** argv)
 
     path exeName = argv[0];
     path settingsPath = exeName.parent_path() / "settings.ini";
-   
+
     ptree settings = readSettings(settingsPath);
 
     bffcl::UDPClient::Settings clSettings = readCLSettings(settings);
@@ -188,27 +217,17 @@ int main(int argc, char** argv)
 
     spdlog::info("Main components created successfully");
 
-    // update CL defaults from model
-    auto& input = cl.lockInput();
-    input.aileron.frictionCoeff = model.getFrictionCoeff(Model::Aileron);
-    input.aileron.dumpingCoeff = model.getDumpingCoeff(Model::Aileron);
-    input.elevator.frictionCoeff = model.getFrictionCoeff(Model::Elevator);
-    input.elevator.dumpingCoeff = model.getDumpingCoeff(Model::Elevator);
-    cl.unlockInput();
+    updateCLDefaultsFromModel(cl, model);
 
     auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model] { 
+    Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model]
+    {
 
         // 1. read CL data
         const bffcl::CLReturn& output = cl.lockOutput();
         float elevator = output.axisElevatorPosition;
         float aileron = output.axisAileronPosition;
         cl.unlockOutput();
-
-        // 2. pass values to sim 
-        sim.writeElevator(elevator);
-        sim.writeAileron(aileron);
-        sim.writeElevatorTrim(0.0); // set default sim trim to zero (fixme: do once)
 
         // 2. read values from CL and Sim => send to model
         model.setAileron(aileron);
@@ -228,16 +247,16 @@ int main(int argc, char** argv)
         model.setEngine1Flow(sim.readEngine1Flow());
         model.setRelativeAoA(sim.readRelativeAoA());
 
-        // 3. update model and sim
+        // 3. update model
         model.process();
-        sim.process();
-  
+
         // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
         input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
         input.elevator.springForce = model.getSpringForce(Model::Elevator);
-      
+        input.positionFollowingEngage &= ~(1u << 0); // clear pos following
+
         input.elevator.vibrationCh1Hz = model.getVibrationEngineHz(Model::Elevator);
         input.elevator.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Elevator);
         input.elevator.vibrationCh2Hz = model.getVibrationRunwayHz(Model::Elevator);
@@ -245,9 +264,28 @@ int main(int argc, char** argv)
         input.elevator.vibrationCh3Hz = model.getVibrationStallHz(Model::Elevator);
         input.elevator.vibrationCh3Amp = model.getVibrationStallAmp(Model::Elevator);
 
-        input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
-        input.aileron.springForce = model.getSpringForce(Model::Aileron);
-        
+        if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
+        {
+            input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
+            input.aileron.springForce = model.getSpringForce(Model::Aileron);
+            input.positionFollowingEngage &= ~(1u << 1); // clear pos following
+        }
+        else
+        {
+            input.aileron.fixedForce = 0;
+            input.aileron.springForce = 0;
+            input.positionFollowingEngage |= (1u << 1); // set pos following
+
+            // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
+            const float bffMin = -100.0;
+            const float bffMax = -0.2;
+            float bffFixPos = std::clamp(((float)sim.readAileron() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
+
+            input.aileron.positionFollowingSetPoint = bffFixPos;
+
+            spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
+        }
+
         input.aileron.vibrationCh1Hz = model.getVibrationEngineHz(Model::Aileron);
         input.aileron.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Aileron);
         input.aileron.vibrationCh2Hz = model.getVibrationRunwayHz(Model::Aileron);
@@ -257,13 +295,23 @@ int main(int argc, char** argv)
 
         cl.unlockInput();
 
+        // 7. pass values to sim 
+        sim.writeElevator(elevator);
+
+        if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
+          sim.writeAileron(aileron);
+        
+        sim.writeElevatorTrim(0.0); // set default sim trim to zero (fixme: do once)
+
+        sim.process();
+
         return false;  // false means call again
     });
 
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
     auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
-    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&model, settingsPath, &settingsWriteTime]
+    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&cl, &model, settingsPath, &settingsWriteTime]
     {
         file_time_type newSettingsWriteTime = last_write_time(settingsPath);
         if (newSettingsWriteTime > settingsWriteTime)
@@ -272,6 +320,9 @@ int main(int argc, char** argv)
             ptree settings = readSettings(settingsPath);
             Model::Settings modelSettings = readModelSettings(settings);
             model.setSettings(modelSettings);
+
+            updateCLDefaultsFromModel(cl, model);
+
             spdlog::info("Model settings updated");
 
             settingsWriteTime = newSettingsWriteTime;

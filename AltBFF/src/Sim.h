@@ -9,6 +9,8 @@ public:
         bool invertFSElevator = false;
         bool invertFSAileron = false;
         int clElevatorTrimOffset = 0;
+        int apRollEngagedOffset = 0;
+        int apPitchEngagedOffset = 0;
     };
 
     Sim(Settings& settings);
@@ -29,6 +31,12 @@ public:
     void writeElevatorTrim(double trim);
 
     // read
+
+     // +/- 100%, mid = 0
+    double readElevator();
+
+    // +/- 100%, mid = 0
+    double readAileron();
 
     // kg / m^3 
     double readAmbientAirDensity();
@@ -75,6 +83,23 @@ public:
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
 
+    // ap
+
+    enum Axis
+    {
+        Elevator = 0,
+        Aileron,
+        AxisCount,
+    };
+
+    enum class AxisControl
+    {
+        Manual,
+        Auto
+    };
+
+    AxisControl readAxisControlState(Axis axis);
+
     void process();
 
 private:
@@ -96,6 +121,8 @@ private:
         int16_t onGround = 0;
         int32_t surfaceType = 0;
         int16_t clElevatorTrim = 0;
+        int8_t apRollEngaged = 0;
+        int8_t apPitchEnaged = 0;
     } simData_;
 
     struct

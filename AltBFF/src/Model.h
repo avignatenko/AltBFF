@@ -16,8 +16,15 @@ public:
     {
         int aileronFrictionCoeff = 0;
         int aileronDumpingCoeff = 0;
+        int aileronPositionFollowingP = 0;
+        int aileronPositionFollowingI = 0;
+        int aileronPositionFollowingD = 0;
+
         int elevatorFrictionCoeff = 0;
         int elevatorDumpingCoeff = 0;
+        int elevatorPositionFollowingP = 0;
+        int elevatorPositionFollowingI = 0;
+        int elevatorPositionFollowingD = 0;
 
         double clExponent = 0.0;
 
@@ -190,10 +197,13 @@ public:
     int getFrictionCoeff(Axis axis);
     int getDumpingCoeff(Axis axis);
     
+    int getPositionFollowingP(Axis axis);
+    int getPositionFollowingI(Axis axis);
+    int getPositionFollowingD(Axis axis);
+
     float getFixedForce(Axis axis) { return fixedForce_[axis]; }
     float getSpringForce(Axis axis) { return springForce_[axis]; }
     
- 
     uint16_t getVibrationEngineHz(Axis axis) { return vibrationsHz_[0][axis]; }
     uint16_t getVibrationEngineAmp(Axis axis) { return vibrationsAmp_[0][axis]; }
     uint16_t getVibrationRunwayHz(Axis axis) { return vibrationsHz_[1][axis]; }

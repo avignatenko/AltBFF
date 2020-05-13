@@ -48,6 +48,16 @@ void Sim::writeAileron(double aileron)
     simDataWriteFlags_.aileron = true;
 }
 
+double Sim::readElevator()
+{
+    return simData_.elevator * 100.0 / 16383 * (settings_.invertFSElevator ? -1 : 1);
+}
+
+double Sim::readAileron()
+{
+    return simData_.aileron * 100.0 / 16383 * (settings_.invertFSAileron ? -1 : 1);
+}
+
 void Sim::writeElevatorTrim(double trim)
 {
     simData_.elevatorTrim = static_cast<int16_t>(trim * 16383);
@@ -137,6 +147,17 @@ double Sim::readCLElevatorTrim()
     return simData_.clElevatorTrim / 16383.0;
 }
 
+Sim::AxisControl Sim::readAxisControlState(Axis axis)
+{
+    switch (axis)
+    {
+    case Aileron: return simData_.apRollEngaged > 0 ? AxisControl::Auto : AxisControl::Manual;
+    case Elevator: return simData_.apPitchEnaged > 0 ? AxisControl::Auto : AxisControl::Manual;
+    }
+
+    return AxisControl::Manual; // just in case
+}
+
 namespace
 {
 BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void *pSrce, bool write, DWORD *pdwResult)
@@ -155,6 +176,8 @@ void Sim::process()
                   !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
                   !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
 
+                  !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
+                  !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
                   !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
                   !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
                   !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
@@ -167,7 +190,9 @@ void Sim::process()
                   !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
                   !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
                   !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||      
-                  !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult);
+                  !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
+                  !FSUIPC_Read(settings_.apRollEngagedOffset, 2, &simData_.apRollEngaged, &dwResult) ||
+                  !FSUIPC_Read(settings_.apPitchEngagedOffset, 2, &simData_.apPitchEnaged, &dwResult);
     
     // process
     failed = failed || !FSUIPC_Process(&dwResult);

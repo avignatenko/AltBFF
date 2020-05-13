@@ -50,6 +50,44 @@ int Model::getDumpingCoeff(Axis axis)
     }
 }
 
+int Model::getPositionFollowingP(Axis axis)
+{
+    switch (axis)
+    {
+    case Elevator:
+        return settings_.elevatorPositionFollowingP;
+    case Aileron:
+        return settings_.aileronPositionFollowingP;
+    default:
+        return 0;
+    }
+}
+
+int Model::getPositionFollowingI(Axis axis)
+{
+    switch (axis)
+    {
+    case Elevator:
+        return settings_.elevatorPositionFollowingI;
+    case Aileron:
+        return settings_.aileronPositionFollowingI;
+    default:
+        return 0;
+    }
+}
+
+int Model::getPositionFollowingD(Axis axis)
+{
+    switch (axis)
+    {
+    case Elevator:
+        return settings_.elevatorPositionFollowingD;
+    case Aileron:
+        return settings_.aileronPositionFollowingD;
+    default:
+        return 0;
+    }
+}
 // update internal calculations
 
 void Model::process()
