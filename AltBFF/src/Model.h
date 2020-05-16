@@ -14,17 +14,22 @@ class Model
 public:
     struct Settings
     {
-        int aileronFrictionCoeff = 0;
-        int aileronDumpingCoeff = 0;
-        int aileronPositionFollowingP = 0;
-        int aileronPositionFollowingI = 0;
-        int aileronPositionFollowingD = 0;
+        struct Hardware
+        {
+            int aileronFrictionCoeff = 0;
+            int aileronDumpingCoeff = 0;
+            int aileronPositionFollowingP = 0;
+            int aileronPositionFollowingI = 0;
+            int aileronPositionFollowingD = 0;
 
-        int elevatorFrictionCoeff = 0;
-        int elevatorDumpingCoeff = 0;
-        int elevatorPositionFollowingP = 0;
-        int elevatorPositionFollowingI = 0;
-        int elevatorPositionFollowingD = 0;
+            int elevatorFrictionCoeff = 0;
+            int elevatorDumpingCoeff = 0;
+            int elevatorPositionFollowingP = 0;
+            int elevatorPositionFollowingI = 0;
+            int elevatorPositionFollowingD = 0;
+        };
+
+        Hardware hardware;
 
         double clExponent = 0.0;
 
@@ -217,6 +222,7 @@ public:
  private:
 
         void calculateElevatorForces();
+        void calculateElevatorForces2();
         void calculateAileronForces();
         void calculateEngineVibrations();
         void calculateStallVibrations();

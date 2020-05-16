@@ -17,6 +17,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/math/constants/constants.hpp>
 
+#define CATCH_CONFIG_RUNNER
+#include <catch2/catch.hpp>
+
 #include <windows.h>
 
 #include <filesystem>
@@ -95,7 +98,7 @@ bffcl::UDPClient::Settings readCLSettings(const ptree& settings)
         clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
         clSettings.fromPort = settings.get<int>("Network.ThisPort");
 
-    return clSettings;
+return clSettings;
 }
 
 Sim::Settings readSimSettings(const ptree& settings)
@@ -112,17 +115,17 @@ Sim::Settings readSimSettings(const ptree& settings)
 Model::Settings readModelSettings(const ptree& settings)
 {
     Model::Settings modelSettings;
-    modelSettings.aileronFrictionCoeff = settings.get<int>("Model.AileronFrictionCoeff");
-    modelSettings.aileronDumpingCoeff = settings.get<int>("Model.AileronDumpingCoeff");
-    modelSettings.aileronPositionFollowingP = settings.get<int>("Model.AileronPositionFollowingP");
-    modelSettings.aileronPositionFollowingI = settings.get<int>("Model.AileronPositionFollowingI");
-    modelSettings.aileronPositionFollowingD = settings.get<int>("Model.AileronPositionFollowingD");
+    modelSettings.hardware.aileronFrictionCoeff = settings.get<int>("Model.AileronFrictionCoeff");
+    modelSettings.hardware.aileronDumpingCoeff = settings.get<int>("Model.AileronDumpingCoeff");
+    modelSettings.hardware.aileronPositionFollowingP = settings.get<int>("Model.AileronPositionFollowingP");
+    modelSettings.hardware.aileronPositionFollowingI = settings.get<int>("Model.AileronPositionFollowingI");
+    modelSettings.hardware.aileronPositionFollowingD = settings.get<int>("Model.AileronPositionFollowingD");
 
-    modelSettings.elevatorFrictionCoeff = settings.get<int>("Model.ElevatorFrictionCoeff");
-    modelSettings.elevatorDumpingCoeff = settings.get<int>("Model.ElevatorDumpingCoeff");
-    modelSettings.elevatorPositionFollowingP = settings.get<int>("Model.ElevatorPositionFollowingP");
-    modelSettings.elevatorPositionFollowingI = settings.get<int>("Model.ElevatorPositionFollowingI");
-    modelSettings.elevatorPositionFollowingD = settings.get<int>("Model.ElevatorPositionFollowingD");
+    modelSettings.hardware.elevatorFrictionCoeff = settings.get<int>("Model.ElevatorFrictionCoeff");
+    modelSettings.hardware.elevatorDumpingCoeff = settings.get<int>("Model.ElevatorDumpingCoeff");
+    modelSettings.hardware.elevatorPositionFollowingP = settings.get<int>("Model.ElevatorPositionFollowingP");
+    modelSettings.hardware.elevatorPositionFollowingI = settings.get<int>("Model.ElevatorPositionFollowingI");
+    modelSettings.hardware.elevatorPositionFollowingD = settings.get<int>("Model.ElevatorPositionFollowingD");
 
     modelSettings.clExponent = settings.get<double>("Model.CLExponent");
 
@@ -190,11 +193,25 @@ void updateCLDefaultsFromModel(bffcl::UDPClient& cl, Model& model)
     cl.unlockInput();
 }
 
+int runTests(int argc, char** argv)
+{
+    // remove "test" from command line
+    int argc2 = argc - 1;
+    std::vector<char*> argv2;
+    for (int i = 0; i < argc; ++i)
+        if (i != 1) argv2.push_back(argv[i]);
+
+    int result = Catch::Session().run(argc2, &argv2[0]);
+    return result;
+}
+
 int main(int argc, char** argv)
 {
+    // check for tests session
+    if (argc > 1 && strcmp(argv[1], "test") == 0)
+        return runTests(argc, argv);
+      
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
-
-    QueueRunner runner;  // setup runner for this thread (will be started later)
 
     path exeName = argv[0];
     path settingsPath = exeName.parent_path() / "settings.ini";
@@ -218,6 +235,8 @@ int main(int argc, char** argv)
     spdlog::info("Main components created successfully");
 
     updateCLDefaultsFromModel(cl, model);
+
+    QueueRunner runner;  // setup runner for this thread 
 
     auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
     Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model]

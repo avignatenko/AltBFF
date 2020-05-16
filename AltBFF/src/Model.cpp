@@ -1,6 +1,5 @@
 #include "Model.h"
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <optional>
 #include <chrono>
@@ -29,9 +28,9 @@ int Model::getFrictionCoeff(Axis axis)
     switch (axis)
     {
     case Elevator:
-        return settings_.elevatorFrictionCoeff;
+        return settings_.hardware.elevatorFrictionCoeff;
     case Aileron:
-        return settings_.aileronFrictionCoeff;
+        return settings_.hardware.aileronFrictionCoeff;
     default:
         return 0;
     }
@@ -42,9 +41,9 @@ int Model::getDumpingCoeff(Axis axis)
     switch (axis)
     {
     case Elevator:
-        return settings_.elevatorDumpingCoeff;
+        return settings_.hardware.elevatorDumpingCoeff;
     case Aileron:
-        return settings_.aileronDumpingCoeff;
+        return settings_.hardware.aileronDumpingCoeff;
     default:
         return 0;
     }
@@ -55,9 +54,9 @@ int Model::getPositionFollowingP(Axis axis)
     switch (axis)
     {
     case Elevator:
-        return settings_.elevatorPositionFollowingP;
+        return settings_.hardware.elevatorPositionFollowingP;
     case Aileron:
-        return settings_.aileronPositionFollowingP;
+        return settings_.hardware.aileronPositionFollowingP;
     default:
         return 0;
     }
@@ -68,9 +67,9 @@ int Model::getPositionFollowingI(Axis axis)
     switch (axis)
     {
     case Elevator:
-        return settings_.elevatorPositionFollowingI;
+        return settings_.hardware.elevatorPositionFollowingI;
     case Aileron:
-        return settings_.aileronPositionFollowingI;
+        return settings_.hardware.aileronPositionFollowingI;
     default:
         return 0;
     }
@@ -81,9 +80,9 @@ int Model::getPositionFollowingD(Axis axis)
     switch (axis)
     {
     case Elevator:
-        return settings_.elevatorPositionFollowingD;
+        return settings_.hardware.elevatorPositionFollowingD;
     case Aileron:
-        return settings_.aileronPositionFollowingD;
+        return settings_.hardware.aileronPositionFollowingD;
     default:
         return 0;
     }
@@ -112,10 +111,30 @@ double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCo
     // Calculate lift force for elevator
    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
     // note: I sue kBaseAirDensity because it's already accounted in TAS
-    double flElevatorDueToSpeed =
+    double flElevatorDueToSpeed = 
         surfaceArea / 100.0 * kBaseAirDensity / 2.0 * std::pow(std::abs(airSpeed2), settings_.clExponent);
 
     return flElevatorDueToSpeed;
+}
+
+void Model::calculateElevatorForces2()
+{
+    auto forceFromAngle = [this] ()
+    {
+        double clCoeffElevator = 2.0 * kPi;
+        double force = clCoeffElevator * calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff);
+        return force;
+    };
+
+    double force = elevator_ * settings_.maxElevatorAngleRadians * forceFromAngle() + alphaAngleRad_ * forceFromAngle();
+
+    // k = 1 -> 100% at elevator_ = 1.0;
+    // k = settings_.maxElevatorAngleRadians * forceFromAngle() / 100; 
+    double elevatorAoA = elevator_ * settings_.maxElevatorAngleRadians + alphaAngleRad_;
+    double clCoeffElevator = 2.0 * kPi * elevatorAoA;
+    double force2 = clCoeffElevator * calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff);
+
+
 }
 
 void Model::calculateElevatorForces()

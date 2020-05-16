@@ -1,5 +1,6 @@
 [requires]
  boost/1.71.0@conan/stable
  spdlog/1.4.2@bincrafters/stable
+ catch2/2.12.1
 [generators]
  cmake	

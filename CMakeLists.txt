@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 3.15)
 project ("AlfBFF")
 
 # global configuration
+enable_testing()
 
 # conan
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
