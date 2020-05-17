@@ -112,27 +112,29 @@ double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCo
    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
     // note: I sue kBaseAirDensity because it's already accounted in TAS
     double flElevatorDueToSpeed = 
-        surfaceArea / 100.0 * kBaseAirDensity / 2.0 * std::pow(std::abs(airSpeed2), settings_.clExponent);
+        surfaceArea * kBaseAirDensity / 2.0 * std::pow(std::abs(airSpeed2), settings_.clExponent);
 
     return flElevatorDueToSpeed;
 }
 
 void Model::calculateElevatorForces2()
 {
-    auto forceFromAngle = [this] ()
+    auto forceFromSpeed = [this] ()
     {
-        double clCoeffElevator = 2.0 * kPi;
-        double force = clCoeffElevator * calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff);
-        return force;
+        double clCoeffElevator = settings_.maxElevatorLift / settings_.maxElevatorAngleRadians; // 2.0 * kPi;
+        double force = clCoeffElevator * calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff) / 100.0;
+        return force; 
     };
 
-    double force = elevator_ * settings_.maxElevatorAngleRadians * forceFromAngle() + alphaAngleRad_ * forceFromAngle();
+    double forceElevator = elevator_ * settings_.maxElevatorAngleRadians * forceFromSpeed();
+    double forceElevatorTrim = elevatorTrim_ * settings_.maxElevatorAngleRadians * forceFromSpeed() * settings_.elevatorTrimGain;
+    double forceAlpha = alphaAngleRad_ * forceFromSpeed();;
+    double force = (-1.0) * forceElevator +  forceAlpha + forceElevatorTrim;
 
-    // k = 1 -> 100% at elevator_ = 1.0;
-    // k = settings_.maxElevatorAngleRadians * forceFromAngle() / 100; 
-    double elevatorAoA = elevator_ * settings_.maxElevatorAngleRadians + alphaAngleRad_;
-    double clCoeffElevator = 2.0 * kPi * elevatorAoA;
-    double force2 = clCoeffElevator * calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff);
+    // cl forces
+
+    fixedForce_[Elevator] = forceAlpha + forceElevatorTrim;
+    springForce_[Elevator] = settings_.maxElevatorAngleRadians * forceFromSpeed() / 100.0;
 
 
 }
@@ -141,11 +143,11 @@ void Model::calculateElevatorForces()
 {
     double clCoeffElevator = settings_.maxElevatorLift / settings_.maxElevatorAngleRadians;
 
-    double flElevatorDueToSpeed = calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff);
+    double flElevatorDueToSpeed = calculateForceLiftDueToSpeed(settings_.elevatorArea, settings_.propWashElevatorCoeff) / 100.0;
 
     // spring force measures from max elevator force
     double clElevatorMax = clCoeffElevator * settings_.maxElevatorAngleRadians;
-    double flElevatorSpring = clElevatorMax * flElevatorDueToSpeed / 255;
+    double flElevatorSpring = clElevatorMax * flElevatorDueToSpeed / 100.0;
 
     // trim works same as elevator, but with gain (effectiveness)
     double elevatorTrimDeflectionAngleRad = elevatorTrim_ * settings_.maxElevatorAngleRadians;
@@ -202,11 +204,11 @@ void Model::calculateAileronForces()
     double clCoeffAileron = settings_.maxAileronLift / settings_.maxAileronAngleRadians;
 
     // Calculate lift force for aileron
-    double flAileronDueToSpeed = calculateForceLiftDueToSpeed(settings_.aileronArea, settings_.propWashAileronCoeff);
+    double flAileronDueToSpeed = calculateForceLiftDueToSpeed(settings_.aileronArea, settings_.propWashAileronCoeff) / 100.0;
 
     // spring force measures from max aileron force
     double clAileronMax = clCoeffAileron * settings_.maxAileronAngleRadians;
-    double flAileronSpring = clAileronMax * flAileronDueToSpeed / 255;
+    double flAileronSpring = clAileronMax * flAileronDueToSpeed / 100.0;
 
     double fAlphaAileron = 0.0; // todo
     double fAileronTrim = 0.0; // todo
