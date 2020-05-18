@@ -139,6 +139,22 @@ void Model::calculateElevatorForces2()
 
 }
 
+double fixAlphaWrap(double alpha)
+{
+    if (alpha > kPi / 2) alpha = -kPi + alpha;
+    if (alpha < -kPi / 2) alpha = kPi + alpha;
+    return std::clamp(alpha, -kPi / 2.0, kPi / 2); // limit just in case..
+}
+
+double scaleAlpha(double alpha, double scaleThesholdKn, double gs)
+{
+    auto ms2kn = [](double ms) { return ms * 1.944; };
+    double scaleCoeff = 1.0;
+    if (scaleThesholdKn > 0) scaleCoeff = std::clamp(ms2kn(std::abs(gs)), 0.0, scaleThesholdKn) / scaleThesholdKn;
+
+    return alpha * scaleCoeff;
+}
+
 void Model::calculateElevatorForces()
 {
     double clCoeffElevator = settings_.maxElevatorLift / settings_.maxElevatorAngleRadians;
@@ -157,28 +173,19 @@ void Model::calculateElevatorForces()
     // alpha works same as elevator, but using body alpha
 
     // fix alpha > pi/2
-    double alphaMod = alphaAngleRad_;
-    if (alphaMod > kPi / 2) alphaMod = -kPi + alphaMod;
-    if (alphaMod < -kPi / 2) alphaMod = kPi + alphaMod;
-    alphaMod = std::clamp(alphaMod, -kPi / 2.0, kPi / 2); // limit just in case..
-
+    double alphaMod = fixAlphaWrap(alphaAngleRad_);
+  
     // fix alpha on ground slow speed)
-    auto ms2kn = [](double ms) { return ms * 1.944; };
-    const double scaleThesholdKn = settings_.elevatorAlphaScaleSpeedKn;
-    double scaleCoeff = 1.0;
-    if (scaleThesholdKn > 0) scaleCoeff = std::clamp(ms2kn(std::abs(gs_)), 0.0, scaleThesholdKn) / scaleThesholdKn;
+    alphaMod = scaleAlpha(alphaMod, settings_.elevatorAlphaScaleSpeedKn, gs_);
 
-    double rTail = std::abs(settings_.hTailPosLon) - (cgPosFrac_ * settings_.wingRootChord);
-    double alphaDueToPitch = (pitchRate_ * rTail) / clampMin(tas_, 0.001) * settings_.elevatorPRGain;
+    //double rTail = std::abs(settings_.hTailPosLon) - (cgPosFrac_ * settings_.wingRootChord);
+    //double alphaDueToPitch = (pitchRate_ * rTail) / clampMin(tas_, 0.001) * settings_.elevatorPRGain;
+    //spdlog::trace("rTail: {}, hTailPosLon: {}, cgPosFrac: {}, chord: {}", rTail, settings_.hTailPosLon, cgPosFrac_, settings_.wingRootChord);
 
-    spdlog::trace("rTail: {}, hTailPosLon: {}, cgPosFrac: {}, chord: {}", rTail, settings_.hTailPosLon, cgPosFrac_, settings_.wingRootChord);
-
-    double alphaAngleRadScaled = (alphaMod + alphaDueToPitch) * scaleCoeff;
-
-    double clElevatorAlpha = std::clamp(clCoeffElevator * alphaAngleRadScaled, -clElevatorMax, clElevatorMax);
+    double clElevatorAlpha = std::clamp(clCoeffElevator * alphaMod, -clElevatorMax, clElevatorMax);
     double fElevatorAlpha = -1.0 * clElevatorAlpha * flElevatorDueToSpeed * settings_.elevatorAlphaGain;
 
-    spdlog::debug("Alpha force: {} (alpha_pitch = {}, gs = {}, scale = {})", fElevatorAlpha, alphaDueToPitch, gs_, scaleCoeff);
+    spdlog::debug("Alpha force: {} (gs = {})", fElevatorAlpha, gs_);
     spdlog::debug("Trim force: {}", fElevatorTrim);
 
     double fElevatorWeight = 0.0; // todo
