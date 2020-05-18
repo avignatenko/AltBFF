@@ -43,7 +43,7 @@ TEST_CASE_METHOD(StandardSettingsTestFixture, "test elevator forces balance")
 
     double springForce = model.getSpringForce(Model::Elevator);
     double fixedForce = model.getFixedForce(Model::Elevator);
-    REQUIRE(springForce == 0.21308235824108124);
+    REQUIRE(springForce == 0.54335999488830566);
     REQUIRE(fixedForce == 54.335998535156250);
 
 }

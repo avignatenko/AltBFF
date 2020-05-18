@@ -98,6 +98,23 @@ void Model::process()
     calculateRunwayVibrations();
 }
 
+
+double fixAlphaWrap(double alpha)
+{
+    if (alpha > kPi / 2) alpha = -kPi + alpha;
+    if (alpha < -kPi / 2) alpha = kPi + alpha;
+    return std::clamp(alpha, -kPi / 2.0, kPi / 2); // limit just in case..
+}
+
+double scaleAlpha(double alpha, double scaleThesholdKn, double gs)
+{
+    auto ms2kn = [](double ms) { return ms * 1.944; };
+    double scaleCoeff = 1.0;
+    if (scaleThesholdKn > 0) scaleCoeff = std::clamp(ms2kn(std::abs(gs)), 0.0, scaleThesholdKn) / scaleThesholdKn;
+
+    return alpha * scaleCoeff;
+}
+
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
 {
     // test advanced prop wash calculation (for single prop GA)
@@ -126,9 +143,10 @@ void Model::calculateElevatorForces2()
         return force; 
     };
 
-    double forceElevator = elevator_ * settings_.maxElevatorAngleRadians * forceFromSpeed();
+    double alpha = fixAlphaWrap(alphaAngleRad_);
+    double forceElevator = elevator_ / 100.0 * settings_.maxElevatorAngleRadians * forceFromSpeed();
     double forceElevatorTrim = elevatorTrim_ * settings_.maxElevatorAngleRadians * forceFromSpeed() * settings_.elevatorTrimGain;
-    double forceAlpha = alphaAngleRad_ * forceFromSpeed();;
+    double forceAlpha = alpha * forceFromSpeed();
     double force = (-1.0) * forceElevator +  forceAlpha + forceElevatorTrim;
 
     // cl forces
@@ -136,24 +154,11 @@ void Model::calculateElevatorForces2()
     fixedForce_[Elevator] = forceAlpha + forceElevatorTrim;
     springForce_[Elevator] = settings_.maxElevatorAngleRadians * forceFromSpeed() / 100.0;
 
+    // zero force point [-100, 100]
+    //elevator = 100.0 * (alpha / settings_.maxElevatorAngleRadians + elevatorTrim_  * settings_.elevatorTrimGain);
 
 }
 
-double fixAlphaWrap(double alpha)
-{
-    if (alpha > kPi / 2) alpha = -kPi + alpha;
-    if (alpha < -kPi / 2) alpha = kPi + alpha;
-    return std::clamp(alpha, -kPi / 2.0, kPi / 2); // limit just in case..
-}
-
-double scaleAlpha(double alpha, double scaleThesholdKn, double gs)
-{
-    auto ms2kn = [](double ms) { return ms * 1.944; };
-    double scaleCoeff = 1.0;
-    if (scaleThesholdKn > 0) scaleCoeff = std::clamp(ms2kn(std::abs(gs)), 0.0, scaleThesholdKn) / scaleThesholdKn;
-
-    return alpha * scaleCoeff;
-}
 
 void Model::calculateElevatorForces()
 {

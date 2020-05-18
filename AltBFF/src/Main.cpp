@@ -1,6 +1,7 @@
 ﻿
 #include "Model.h"
 #include "Sim.h"
+#include "A2ASTec30AP.h"
 
 #include <BFFCLAPI/UDPClient.h>
 
@@ -231,6 +232,7 @@ int main(int argc, char** argv)
     bffcl::UDPClient cl(clSettings);
     Sim sim(simSettings);
     Model model(modelSettings);
+    A2AStec30AP autopilot(sim, model);
 
     spdlog::info("Main components created successfully");
 
@@ -239,7 +241,7 @@ int main(int argc, char** argv)
     QueueRunner runner;  // setup runner for this thread 
 
     auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model]
+    Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model, &autopilot]
     {
 
         // 1. read CL data
@@ -272,9 +274,7 @@ int main(int argc, char** argv)
         // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
-        input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
-        input.elevator.springForce = model.getSpringForce(Model::Elevator);
-        input.positionFollowingEngage &= ~(1u << 0); // clear pos following
+        autopilot.process(input);
 
         input.elevator.vibrationCh1Hz = model.getVibrationEngineHz(Model::Elevator);
         input.elevator.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Elevator);
@@ -282,28 +282,6 @@ int main(int argc, char** argv)
         input.elevator.vibrationCh2Amp = model.getVibrationRunwayAmp(Model::Elevator);
         input.elevator.vibrationCh3Hz = model.getVibrationStallHz(Model::Elevator);
         input.elevator.vibrationCh3Amp = model.getVibrationStallAmp(Model::Elevator);
-
-        if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
-        {
-            input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
-            input.aileron.springForce = model.getSpringForce(Model::Aileron);
-            input.positionFollowingEngage &= ~(1u << 1); // clear pos following
-        }
-        else
-        {
-            input.aileron.fixedForce = 0;
-            input.aileron.springForce = 0;
-            input.positionFollowingEngage |= (1u << 1); // set pos following
-
-            // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
-            const float bffMin = -100.0;
-            const float bffMax = -0.2;
-            float bffFixPos = std::clamp(((float)sim.readAileron() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
-
-            input.aileron.positionFollowingSetPoint = bffFixPos;
-
-            spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
-        }
 
         input.aileron.vibrationCh1Hz = model.getVibrationEngineHz(Model::Aileron);
         input.aileron.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Aileron);
