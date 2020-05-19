@@ -50,11 +50,13 @@ void Sim::writeAileron(double aileron)
 
 double Sim::readElevator()
 {
+    spdlog::trace("Sim Elevator: {}", simData_.elevator);
     return simData_.elevator * 100.0 / 16383 * (settings_.invertFSElevator ? -1 : 1);
 }
 
 double Sim::readAileron()
 {
+    spdlog::trace("Sim Aileron: {}", simData_.aileron);
     return simData_.aileron * 100.0 / 16383 * (settings_.invertFSAileron ? -1 : 1);
 }
 
@@ -70,6 +72,12 @@ double Sim::readAmbientAirDensity()
     return densityslugs2kg(simData_.airDensity);
 }
 
+double Sim::readAmbienAirPressure()
+{
+    auto pressurePfs2pa = [](double pressure) { return pressure * 47.8803; };
+    return pressurePfs2pa(simData_.airPressure);
+
+}
 double Sim::readTAS()
 {
     auto kn2mps = [](double kn) { return kn * 0.515; };
@@ -179,6 +187,7 @@ void Sim::process()
                   !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
                   !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
                   !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
+                  !FSUIPC_Read(0x28C8, 8, &simData_.airPressure, &dwResult) ||
                   !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
                   !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
                   !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||

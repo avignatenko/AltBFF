@@ -41,6 +41,9 @@ public:
     // kg / m^3 
     double readAmbientAirDensity();
     
+    // Pa
+    double readAmbienAirPressure();
+
     // m/s
     double readTAS();
 
@@ -114,6 +117,7 @@ private:
         int16_t engine1RPM = 0;
         double thrust = 0.0;
         double airDensity = 0.0;
+        double airPressure = 0.0;
         double alpha = 0.0;
         double pitchRate = 0.0;
         double cgPosFrac = 0.0;

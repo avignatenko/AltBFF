@@ -5,34 +5,41 @@
 
 #include <BFFCLAPI/CLStructures.h>
 
-void A2AStec30AP::process(bffcl::CLInput& input)
+
+void A2AStec30AP::process()
 {
-    // pitch
 
-    input.elevator.fixedForce = model_.getFixedForce(Model::Elevator);
-    input.elevator.springForce = model_.getSpringForce(Model::Elevator);
-    input.positionFollowingEngage &= ~(1u << 0); // clear pos following
-
-    // roll
-    if (sim_.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
+    // aileron
+    if (rollEnabled_)
     {
-        input.aileron.fixedForce = model_.getFixedForce(Model::Aileron);
-        input.aileron.springForce = model_.getSpringForce(Model::Aileron);
-        input.positionFollowingEngage &= ~(1u << 1); // clear pos following
+        aileronOut_ = simAileron_;
+        spdlog::trace("AP aileron calculated: {}", aileronOut_);
     }
-    else
+
+    // elevator
+    if (pitchEnabled_)
     {
-        input.aileron.fixedForce = 0;
-        input.aileron.springForce = 0;
-        input.positionFollowingEngage |= (1u << 1); // set pos following
-
-        // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
-        const float bffMin = -100.0;
-        const float bffMax = -0.2;
-        float bffFixPos = std::clamp(((float)sim_.readAileron() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
-
-        input.aileron.positionFollowingSetPoint = bffFixPos;
-
-        spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
+        elevatorOut_ = targetPressure_; // just for test
+        spdlog::trace("AP elevator calculated: {}", elevatorOut_);    
     }
+}
+
+std::optional<double> A2AStec30AP::getCLAileron()
+{
+    return rollEnabled_ ? aileronOut_ : std::optional<double>();
+}
+
+std::optional<double> A2AStec30AP::getCLElevator()
+{
+    return pitchEnabled_ ? elevatorOut_ : std::optional<double>();
+}
+
+std::optional<double> A2AStec30AP::getSimAileron()
+{
+    return std::optional<double>(); // we follow and not write ailerons
+}
+
+std::optional<double> A2AStec30AP::getSimElevator()
+{
+    return getCLElevator();
 }

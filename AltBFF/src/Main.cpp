@@ -99,7 +99,7 @@ bffcl::UDPClient::Settings readCLSettings(const ptree& settings)
         clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
         clSettings.fromPort = settings.get<int>("Network.ThisPort");
 
-return clSettings;
+    return clSettings;
 }
 
 Sim::Settings readSimSettings(const ptree& settings)
@@ -211,7 +211,7 @@ int main(int argc, char** argv)
     // check for tests session
     if (argc > 1 && strcmp(argv[1], "test") == 0)
         return runTests(argc, argv);
-      
+
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     path exeName = argv[0];
@@ -232,7 +232,7 @@ int main(int argc, char** argv)
     bffcl::UDPClient cl(clSettings);
     Sim sim(simSettings);
     Model model(modelSettings);
-    A2AStec30AP autopilot(sim, model);
+    A2AStec30AP autopilot;
 
     spdlog::info("Main components created successfully");
 
@@ -271,10 +271,39 @@ int main(int argc, char** argv)
         // 3. update model
         model.process();
 
+        // 3.1 update autopilot
+        autopilot.enablePitchAxis(sim.readAxisControlState(Sim::Elevator) != Sim::AxisControl::Manual);
+        autopilot.enableRollAxis(sim.readAxisControlState(Sim::Aileron) != Sim::AxisControl::Manual);
+        autopilot.setSimAileron(sim.readAileron());
+        autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
+        autopilot.setAirPressure(sim.readAmbienAirPressure());
+
+        autopilot.process();
+
         // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
-        autopilot.process(input);
+        if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
+        {
+            input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
+            input.elevator.springForce = model.getSpringForce(Model::Elevator);
+            input.positionFollowingEngage &= ~(1u << 0); // clear pos following
+        }
+        else
+        {
+            input.elevator.fixedForce = 0;
+            input.elevator.springForce = 0;
+            input.positionFollowingEngage |= (1u << 0); // set pos following
+
+            // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
+            const float bffMin = -100.0;
+            const float bffMax = -0.2;
+            float bffFixPos = std::clamp(((float)autopilot.getCLElevator().value() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
+
+            input.elevator.positionFollowingSetPoint = bffFixPos;
+
+            spdlog::trace("Elevator in follow mode: {}", input.elevator.positionFollowingSetPoint);
+        }
 
         input.elevator.vibrationCh1Hz = model.getVibrationEngineHz(Model::Elevator);
         input.elevator.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Elevator);
@@ -282,6 +311,29 @@ int main(int argc, char** argv)
         input.elevator.vibrationCh2Amp = model.getVibrationRunwayAmp(Model::Elevator);
         input.elevator.vibrationCh3Hz = model.getVibrationStallHz(Model::Elevator);
         input.elevator.vibrationCh3Amp = model.getVibrationStallAmp(Model::Elevator);
+
+        if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
+        {
+            input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
+            input.aileron.springForce = model.getSpringForce(Model::Aileron);
+            input.positionFollowingEngage &= ~(1u << 1); // clear pos following
+        }
+        else
+        {
+
+            input.aileron.fixedForce = 0;
+            input.aileron.springForce = 0;
+            input.positionFollowingEngage |= (1u << 1); // set pos following
+
+            // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
+            const float bffMin = -100.0;
+            const float bffMax = -0.2;
+            float bffFixPos = std::clamp(((float)autopilot.getCLAileron().value() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
+
+            input.aileron.positionFollowingSetPoint = bffFixPos;
+
+            spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
+        }
 
         input.aileron.vibrationCh1Hz = model.getVibrationEngineHz(Model::Aileron);
         input.aileron.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Aileron);
@@ -293,11 +345,16 @@ int main(int argc, char** argv)
         cl.unlockInput();
 
         // 7. pass values to sim 
-        sim.writeElevator(elevator);
+        if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
+            sim.writeElevator(elevator);
+        else if (auto axisValue = autopilot.getSimElevator())
+            sim.writeElevator(axisValue.value());
 
         if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
-          sim.writeAileron(aileron);
-        
+            sim.writeAileron(aileron);
+        else if (auto axisValue = autopilot.getSimAileron())
+            sim.writeAileron(axisValue.value());
+
         sim.writeElevatorTrim(0.0); // set default sim trim to zero (fixme: do once)
 
         sim.process();

@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 #include "Model.h"
+#include "A2ASTec30AP.h"
 
 namespace
 {
@@ -46,4 +47,65 @@ TEST_CASE_METHOD(StandardSettingsTestFixture, "test elevator forces balance")
     REQUIRE(springForce == 0.54335999488830566);
     REQUIRE(fixedForce == 54.335998535156250);
 
+}
+
+TEST_CASE("AP Default")
+{
+    A2AStec30AP ap;
+
+    REQUIRE(!ap.getCLAileron());
+    REQUIRE(!ap.getCLElevator());
+
+    REQUIRE(!ap.getSimAileron());
+    REQUIRE(!ap.getSimElevator());
+
+    ap.process();
+
+    REQUIRE(!ap.getCLAileron());
+    REQUIRE(!ap.getCLElevator());
+
+    REQUIRE(!ap.getSimAileron());
+    REQUIRE(!ap.getSimElevator());
+}
+
+TEST_CASE("AP roll")
+{
+    A2AStec30AP ap;
+
+    ap.enableRollAxis(true);
+    ap.setSimAileron(-50);
+    ap.process();
+
+    REQUIRE(ap.getCLAileron().value() == -50);
+    REQUIRE(!ap.getCLElevator());
+
+    REQUIRE(!ap.getSimAileron());
+    REQUIRE(!ap.getSimElevator());
+
+    ap.enableRollAxis(false);
+    ap.process();
+
+    REQUIRE(!ap.getSimAileron());
+    REQUIRE(!ap.getSimElevator());
+}
+
+TEST_CASE("AP pitch")
+{
+    A2AStec30AP ap;
+
+    ap.enablePitchAxis(true);
+    ap.setSimElevator(-50);
+    ap.process();
+
+    REQUIRE(ap.getCLElevator().value() == -50 + 0.05);
+    REQUIRE(!ap.getCLAileron());
+
+    REQUIRE(!ap.getSimAileron());
+    REQUIRE(ap.getSimElevator() == -50 + 0.05);
+
+    ap.enablePitchAxis(false);
+    ap.process();
+
+    REQUIRE(!ap.getSimAileron());
+    REQUIRE(!ap.getSimElevator());
 }
