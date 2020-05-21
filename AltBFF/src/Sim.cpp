@@ -7,6 +7,11 @@
 
 #include <set>
 
+namespace
+{
+static double kPi = std::acos(-1);
+}
+
 Sim::Sim(Settings& settings) : settings_(settings)
 {
     connect();
@@ -106,6 +111,11 @@ double Sim::readPitchRate()
     return simData_.pitchRate;
 }
 
+double Sim::readPitch()
+{
+    return simData_.pitch * 2.0 * kPi / 65536 / 65536;
+}
+
 double Sim::readCGPosFrac()
 {
     return simData_.cgPosFrac;
@@ -136,8 +146,8 @@ Sim::GroundType Sim::readGroundType()
     if (!readOnGround()) return Sim::GroundType::NA;
 
     // see https://www.prepar3d.com/SDKv4/sdk/references/variables/simulation_variables.html
-    std::set<int> grass = {1, 5, 6, 8, 9};
-    std::set<int> noisy = {2, 3, 10, 11, 12, 13, 14, 18, 19, 21, 22};
+    std::set<int> grass = { 1, 5, 6, 8, 9 };
+    std::set<int> noisy = { 2, 3, 10, 11, 12, 13, 14, 18, 19, 21, 22 };
 
     if (simData_.surfaceType > 23 || simData_.surfaceType < 0) // unknown?
         return Sim::GroundType::Grass;
@@ -170,7 +180,7 @@ Sim::AxisControl Sim::readAxisControlState(Axis axis)
 
 namespace
 {
-BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void *pSrce, bool write, DWORD *pdwResult)
+BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void* pSrce, bool write, DWORD* pdwResult)
 {
     if (!write) return TRUE;
 
@@ -183,28 +193,29 @@ void Sim::process()
     DWORD dwResult = FSUIPC_ERR_OK;
 
     BOOL failed = !FSUIPC_Write_IF(0x0BB2, 2, &simData_.elevator, simDataWriteFlags_.elevator, &dwResult) ||
-                  !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
-                  !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
+        !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
+        !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
 
-                  !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
-                  !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
-                  !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
-                  !FSUIPC_Read(0x28C8, 8, &simData_.airPressure, &dwResult) ||
-                  !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
-                  !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
-                  !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||
-                  !FSUIPC_Read(0x02B4, 4, &simData_.gs, &dwResult) ||
-                  !FSUIPC_Read(0x0366, 2, &simData_.onGround, &dwResult) ||
-                  !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||  
-                  !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
-                  !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
-                  !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
-                  !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
-                  !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||      
-                  !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
-                  !FSUIPC_Read(settings_.apRollEngagedOffset, 2, &simData_.apRollEngaged, &dwResult) ||
-                  !FSUIPC_Read(settings_.apPitchEngagedOffset, 2, &simData_.apPitchEnaged, &dwResult);
-    
+        !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
+        !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
+        !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
+        !FSUIPC_Read(0x28C8, 8, &simData_.airPressure, &dwResult) ||
+        !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
+        !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
+        !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||
+        !FSUIPC_Read(0x02B4, 4, &simData_.gs, &dwResult) ||
+        !FSUIPC_Read(0x0366, 2, &simData_.onGround, &dwResult) ||
+        !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||
+        !FSUIPC_Read(0x0578, 4, &simData_.pitch, &dwResult) ||
+        !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
+        !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
+        !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
+        !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
+        !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||
+        !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
+        !FSUIPC_Read(settings_.apRollEngagedOffset, 2, &simData_.apRollEngaged, &dwResult) ||
+        !FSUIPC_Read(settings_.apPitchEngagedOffset, 2, &simData_.apPitchEnaged, &dwResult);
+
     // process
     failed = failed || !FSUIPC_Process(&dwResult);
 

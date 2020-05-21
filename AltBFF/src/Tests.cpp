@@ -120,7 +120,7 @@ TEST_CASE("AP pitch")
 TEST_CASE("AP pitch 2")
 {
     A2AStec30AP::Settings s;
-    s.pitchPID_ = { 50, 0, 50 };
+    s.pitchPID = { 50, 0, 50 };
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -131,13 +131,12 @@ TEST_CASE("AP pitch 2")
     ap.setAirPressure(84149.64); // at 5050 feet
     ap.process();
     //std::cout << ap.getCLElevator();
-   
+
 }
 
 TEST_CASE("PID")
 {
-    PIDController p(0.3, 5, 1, 1000 / 30);
-    p.SetOutputLimits(-100, 100);
+    PIDController p(0.3, 5, 1, -100, 100, 1000 / 30);
 
     p.setSetPoint(10000);
     p.setInput(10100);
@@ -146,4 +145,44 @@ TEST_CASE("PID")
 
     double output = p.getOutput();
     REQUIRE(output == -46.5);
+}
+
+TEST_CASE("AP pitch pitch 1")
+{
+    A2AStec30AP::Settings s;
+    s.pitchPID = { 50, 10, 0 };
+    A2AStec30AP ap(s);
+
+    ap.setSimElevator(-50);
+    ap.setSimPitch(0);
+    ap.enablePitchAxis(true);
+    ap.process();
+
+    ap.setSimPitch(-10.0 / 180.0 * 3.14); // pitch up
+    ap.process();
+    REQUIRE(ap.getSimElevator() == -41.220211111111112);
+    ap.process();
+    REQUIRE(ap.getSimElevator() == -32.382855555555558);
+    ap.process();
+    REQUIRE(ap.getSimElevator() == -23.487933333333338);
+}
+
+TEST_CASE("AP pitch pitch 2")
+{
+    A2AStec30AP::Settings s;
+    s.pitchPID = { 50, 400, 0 };
+    A2AStec30AP ap(s);
+
+    ap.setSimElevator(-50);
+    ap.setSimPitch(0);
+    ap.enablePitchAxis(true);
+    ap.process();
+
+    ap.setSimPitch(-40.0 / 180.0 * 3.14); // pitch up
+    ap.process();
+    REQUIRE(ap.getSimElevator() == -5.9004444444444459);
+    ap.process();
+    REQUIRE(ap.getSimElevator() == 47.409777777777776);
+    ap.process();
+    REQUIRE(ap.getSimElevator() == 100.0);
 }

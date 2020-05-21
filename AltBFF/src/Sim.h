@@ -72,6 +72,9 @@ public:
     // rad/sec
     double readPitchRate();
 
+    // rad
+    double readPitch();
+
     double readCGPosFrac();
 
     int readEngine1RPM();
@@ -120,6 +123,7 @@ private:
         double airPressure = 0.0;
         double alpha = 0.0;
         double pitchRate = 0.0;
+        int32_t pitch = 0;
         double cgPosFrac = 0.0;
         int32_t gs = 0;
         int16_t onGround = 0;

@@ -19,22 +19,17 @@ void A2AStec30AP::process()
     // elevator
     if (pitchEnabled_)
     {
-        double error = targetPressure_ - simPressure_;
-        double errorDiff = 0.0; 
-        if (prevElevatorError_) errorDiff = error - prevElevatorError_.value();
-
-        prevElevatorError_ = error;
-
-        double elevatorOffsetDueToPositionalError = settings_.pitchPID_.p * error;
-        double elevatorOffsetDueToErrorDerivative = settings_.pitchPID_.d * errorDiff;
-        double elevatorOffset =  (elevatorOffsetDueToPositionalError + elevatorOffsetDueToErrorDerivative);
-
+        PIDController& pitchController = pitchController_.value();
+        pitchController.setInput(simPitch_);
+        pitchController.setOutputLimits(-elevatorOut_ - 100.0, 100.0 - elevatorOut_);
+        pitchController.compute();
 
         // note: we're using sim/cl elevator here (fixme)
-        elevatorOut_ = std::clamp(elevatorOut_ + elevatorOffset, -100.0, 100.0); // fixme: clamping makes wrong results with I != 0
+        elevatorOut_ = std::clamp(elevatorOut_ + pitchController.getOutput(), -100.0, 100.0); // fixme: clamping makes wrong results with I != 0
 
-        spdlog::trace("error: {}, errorDiff: {}, offsetP: {}, offsetD: {}", error, errorDiff, elevatorOffsetDueToPositionalError, elevatorOffsetDueToErrorDerivative);
-        spdlog::trace("total offset elevator: {}", elevatorOffset);
+        auto internals = pitchController.dumpInternals();
+        spdlog::trace("termP: {}, termI: {}, termD: {}", std::get<0>(internals), std::get<1>(internals), std::get<2>(internals) );
+        spdlog::trace("total offset elevator: {}", pitchController.getOutput());
         spdlog::debug("AP elevator calculated: {}", elevatorOut_);    
     }
 }

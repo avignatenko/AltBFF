@@ -117,9 +117,9 @@ Sim::Settings readSimSettings(const ptree& settings)
 A2AStec30AP::Settings readAPSettings(const ptree& settings)
 {
     A2AStec30AP::Settings apSettings;
-    apSettings.pitchPID_.p = settings.get<double>("AP.ElevatorP");
-    apSettings.pitchPID_.i = settings.get<double>("AP.ElevatorI");
-    apSettings.pitchPID_.d = settings.get<double>("AP.ElevatorD");
+    apSettings.pitchPID.p = settings.get<double>("AP.ElevatorP");
+    apSettings.pitchPID.i = settings.get<double>("AP.ElevatorI");
+    apSettings.pitchPID.d = settings.get<double>("AP.ElevatorD");
     return apSettings;
 }
 
@@ -288,6 +288,7 @@ int main(int argc, char** argv)
         autopilot.setSimAileron(sim.readAileron());
         autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
         autopilot.setAirPressure(sim.readAmbienAirPressure());
+        autopilot.setSimPitch(sim.readPitch());
         autopilot.setTotalAxisCLForceAileron(model.getTotalForce(Model::Aileron));
         autopilot.setTotalAxisCLForceElevator(model.getTotalForce(Model::Elevator));
 

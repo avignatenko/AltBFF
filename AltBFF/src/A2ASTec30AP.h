@@ -1,6 +1,8 @@
+#pragma once
+
+#include "PID.h"
 
 #include <spdlog/spdlog.h>
-
 #include <optional>
 
 class A2AStec30AP
@@ -16,8 +18,8 @@ public:
 			double d;
 		};
 
-		PID rollPID_ = { 0.0, 0.0, 0.0 };
-		PID pitchPID_ = { 0.0, 0.0, 0.0 };
+		PID rollPID = { 0.0, 0.0, 0.0 };
+		PID pitchPID = { 0.0, 0.0, 0.0 };
 
 	};
 
@@ -34,10 +36,11 @@ public:
 	{
 		if (!pitchEnabled_ && enable)
 		{
-			targetPressure_ = simPressure_;
-			prevElevatorError_ = std::nullopt;
+			pitchController_ = PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d, -100, 100, 1000 / 30);
+			pitchController_.value().setSetPoint(simPitch_);
+
 			elevatorOut_ = simElevator_;
-			spdlog::trace("AP pitch enabled with target: {}", targetPressure_);
+			spdlog::trace("AP pitch enabled with target: {}", simPitch_);
 		}
 
 		pitchEnabled_ = enable;
@@ -55,6 +58,9 @@ public:
 		simElevator_ = elevator;
 		spdlog::trace("Elevator set to AP: {}", simElevator_);
 	}
+
+	// rad
+	void setSimPitch(double pitch) { simPitch_ = pitch; }
 
 	// Pa
 	void setAirPressure(double pressure)
@@ -86,11 +92,13 @@ private:
 	bool rollEnabled_ = false;
 	bool pitchEnabled_ = false;
 
-	double targetPressure_ = 0.0;
+	std::optional<PIDController>  pitchController_;
+	
 
 	double simAileron_ = 0.0;
 	double simElevator_ = 0.0;
 	double simPressure_ = 0.0;
+	double simPitch_ = 0.0;
 
 	double clForceElevator_ = 0.0;
 	double clForceAileron_ = 0.0;
@@ -98,8 +106,7 @@ private:
 	double aileronOut_ = 0.0;
 	double elevatorOut_ = 0.0;
 
-	std::optional<double> prevElevatorError_ = 0.0;
-
+	
 
 	Settings settings_;
 
