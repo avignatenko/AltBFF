@@ -16,6 +16,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"src/Main.cpp"
 	"src/Model.cpp"
 	"src/Model.h"
+	"src/PID.h"
 	"src/Sim.cpp"
 	"src/Sim.h"
 	"src/Tests.cpp" 

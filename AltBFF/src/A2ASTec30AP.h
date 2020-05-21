@@ -7,23 +7,36 @@ class A2AStec30AP
 {
 public:
 
-	A2AStec30AP()
+	struct Settings
+	{
+		struct PID
+		{
+			double p;
+			double i;
+			double d;
+		};
+
+		PID rollPID_ = { 0.0, 0.0, 0.0 };
+		PID pitchPID_ = { 0.0, 0.0, 0.0 };
+
+	};
+
+	A2AStec30AP(const Settings& settings): settings_(settings)
 	{
 
 	}
 
 	// own state
+	void setSettings(const Settings& settings) { settings_ = settings; }
 
 	void enableRollAxis(bool enable) { rollEnabled_ = enable; }
 	void enablePitchAxis(bool enable)
 	{
 		if (!pitchEnabled_ && enable)
 		{
-			//targetPressure_ = simPressure_;
-			//////////// !!!!!!!!!!!!!!!!!!!!!!!!!!!1
-			targetPressure_ = simElevator_; // for test
-			//////////// !!!!!!!!!!!!!!!!!!!!!!!!!!!1
-
+			targetPressure_ = simPressure_;
+			prevElevatorError_ = std::nullopt;
+			elevatorOut_ = simElevator_;
 			spdlog::trace("AP pitch enabled with target: {}", targetPressure_);
 		}
 
@@ -46,10 +59,16 @@ public:
 	// Pa
 	void setAirPressure(double pressure)
 	{
-		simPressure_ = pressure;
+		simPressure_ = pressure * 1e-5; // convert to bar
 		spdlog::trace("Air pressture set to AP: {}", simPressure_);
 	}
 
+	// model vars
+	
+	//[-100, 100]
+	void setTotalAxisCLForceElevator(double force) { clForceElevator_ = force; }
+	void setTotalAxisCLForceAileron(double force) { clForceAileron_ = force; }
+	
 	void process();
 
 	// [-100, 100]
@@ -73,8 +92,16 @@ private:
 	double simElevator_ = 0.0;
 	double simPressure_ = 0.0;
 
+	double clForceElevator_ = 0.0;
+	double clForceAileron_ = 0.0;
+
 	double aileronOut_ = 0.0;
 	double elevatorOut_ = 0.0;
+
+	std::optional<double> prevElevatorError_ = 0.0;
+
+
+	Settings settings_;
 
 
 };

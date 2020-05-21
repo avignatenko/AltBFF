@@ -113,6 +113,16 @@ Sim::Settings readSimSettings(const ptree& settings)
     return simSettings;
 }
 
+
+A2AStec30AP::Settings readAPSettings(const ptree& settings)
+{
+    A2AStec30AP::Settings apSettings;
+    apSettings.pitchPID_.p = settings.get<double>("AP.ElevatorP");
+    apSettings.pitchPID_.i = settings.get<double>("AP.ElevatorI");
+    apSettings.pitchPID_.d = settings.get<double>("AP.ElevatorD");
+    return apSettings;
+}
+
 Model::Settings readModelSettings(const ptree& settings)
 {
     Model::Settings modelSettings;
@@ -223,6 +233,7 @@ int main(int argc, char** argv)
     Sim::Settings simSettings = readSimSettings(settings);
     Model::Settings modelSettings = readModelSettings(settings);
     LogSettings logSettings = readLogSettings(settings);
+    A2AStec30AP::Settings apSettings = readAPSettings(settings);
 
     initLogging(logSettings);
 
@@ -232,7 +243,7 @@ int main(int argc, char** argv)
     bffcl::UDPClient cl(clSettings);
     Sim sim(simSettings);
     Model model(modelSettings);
-    A2AStec30AP autopilot;
+    A2AStec30AP autopilot(apSettings);
 
     spdlog::info("Main components created successfully");
 
@@ -277,6 +288,8 @@ int main(int argc, char** argv)
         autopilot.setSimAileron(sim.readAileron());
         autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
         autopilot.setAirPressure(sim.readAmbienAirPressure());
+        autopilot.setTotalAxisCLForceAileron(model.getTotalForce(Model::Aileron));
+        autopilot.setTotalAxisCLForceElevator(model.getTotalForce(Model::Elevator));
 
         autopilot.process();
 
@@ -365,7 +378,7 @@ int main(int argc, char** argv)
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
     auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
-    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&cl, &model, settingsPath, &settingsWriteTime]
+    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
     {
         file_time_type newSettingsWriteTime = last_write_time(settingsPath);
         if (newSettingsWriteTime > settingsWriteTime)
@@ -378,6 +391,10 @@ int main(int argc, char** argv)
             updateCLDefaultsFromModel(cl, model);
 
             spdlog::info("Model settings updated");
+
+            A2AStec30AP::Settings apSettings = readAPSettings(settings);
+            autopilot.setSettings(apSettings);
+            spdlog::info("AP settings updated");
 
             settingsWriteTime = newSettingsWriteTime;
         }

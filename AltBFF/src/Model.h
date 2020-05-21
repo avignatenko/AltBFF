@@ -209,6 +209,8 @@ public:
     float getFixedForce(Axis axis) { return fixedForce_[axis]; }
     float getSpringForce(Axis axis) { return springForce_[axis]; }
     
+    double getTotalForce(Axis axis);
+
     uint16_t getVibrationEngineHz(Axis axis) { return vibrationsHz_[0][axis]; }
     uint16_t getVibrationEngineAmp(Axis axis) { return vibrationsAmp_[0][axis]; }
     uint16_t getVibrationRunwayHz(Axis axis) { return vibrationsHz_[1][axis]; }
@@ -219,6 +221,7 @@ public:
     // update internal calculations
     void process();
 
+    Settings settings_;
  private:
 
         void calculateElevatorForces();
@@ -235,7 +238,7 @@ private:
     using AccParams = boost::accumulators::tag::rolling_window;
    
     
-    Settings settings_;
+ 
 
     // inputs
     double elevator_ = 0.0;

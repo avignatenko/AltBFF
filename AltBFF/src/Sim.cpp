@@ -41,6 +41,8 @@ void Sim::writeElevator(double elevator)
 {
     simData_.elevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
     simDataWriteFlags_.elevator = true;
+
+    spdlog::trace("Sim Elevator Write: {}", simData_.elevator);
 }
 void Sim::writeAileron(double aileron)
 {

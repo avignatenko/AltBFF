@@ -19,8 +19,23 @@ void A2AStec30AP::process()
     // elevator
     if (pitchEnabled_)
     {
-        elevatorOut_ = targetPressure_; // just for test
-        spdlog::trace("AP elevator calculated: {}", elevatorOut_);    
+        double error = targetPressure_ - simPressure_;
+        double errorDiff = 0.0; 
+        if (prevElevatorError_) errorDiff = error - prevElevatorError_.value();
+
+        prevElevatorError_ = error;
+
+        double elevatorOffsetDueToPositionalError = settings_.pitchPID_.p * error;
+        double elevatorOffsetDueToErrorDerivative = settings_.pitchPID_.d * errorDiff;
+        double elevatorOffset =  (elevatorOffsetDueToPositionalError + elevatorOffsetDueToErrorDerivative);
+
+
+        // note: we're using sim/cl elevator here (fixme)
+        elevatorOut_ = std::clamp(elevatorOut_ + elevatorOffset, -100.0, 100.0); // fixme: clamping makes wrong results with I != 0
+
+        spdlog::trace("error: {}, errorDiff: {}, offsetP: {}, offsetD: {}", error, errorDiff, elevatorOffsetDueToPositionalError, elevatorOffsetDueToErrorDerivative);
+        spdlog::trace("total offset elevator: {}", elevatorOffset);
+        spdlog::debug("AP elevator calculated: {}", elevatorOut_);    
     }
 }
 

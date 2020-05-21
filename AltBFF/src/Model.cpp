@@ -144,15 +144,18 @@ void Model::calculateElevatorForces2()
     };
 
     double alpha = fixAlphaWrap(alphaAngleRad_);
-    double forceElevator = elevator_ / 100.0 * settings_.maxElevatorAngleRadians * forceFromSpeed();
-    double forceElevatorTrim = elevatorTrim_ * settings_.maxElevatorAngleRadians * forceFromSpeed() * settings_.elevatorTrimGain;
+    double forceElevatorProportional = settings_.maxElevatorAngleRadians * forceFromSpeed();
+    double forceElevator = (elevator_  / 100.0) * forceElevatorProportional;
+    double forceElevatorTrim = elevatorTrim_ * forceElevatorProportional * settings_.elevatorTrimGain;
     double forceAlpha = alpha * forceFromSpeed();
     double force = (-1.0) * forceElevator +  forceAlpha + forceElevatorTrim;
 
     // cl forces
 
     fixedForce_[Elevator] = forceAlpha + forceElevatorTrim;
-    springForce_[Elevator] = settings_.maxElevatorAngleRadians * forceFromSpeed() / 100.0;
+    springForce_[Elevator] = forceElevatorProportional / 100.0;;
+
+    //double totalForce = -springForce_[Elevator] * elevator_ + fixedForce_[Elevator];
 
     // zero force point [-100, 100]
     //elevator = 100.0 * (alpha / settings_.maxElevatorAngleRadians + elevatorTrim_  * settings_.elevatorTrimGain);
@@ -209,6 +212,11 @@ void Model::calculateElevatorForces()
         fixedForce_[Elevator],
         flElevatorFixed);
 
+}
+
+double Model::getTotalForce(Axis axis)
+{
+    return -springForce_[axis] * elevator_ + fixedForce_[axis];
 }
 
 void Model::calculateAileronForces()
