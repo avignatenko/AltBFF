@@ -29,13 +29,13 @@ public:
         /*Compute all the working error variables*/
         double error = setPoint_ - input_;
         iTerm_ += (ki_ * error);
-        iTerm_ = std::clamp(iTerm_, outMin_, outMax_);
+        iTerm_ = std::clamp(iTerm_, outMin_ - outputBase_, outMax_ - outputBase_);
 
         double dInput = (input_ - lastInput.value());
         dInputAccum_(dInput);
  
         /*Compute PID output*/
-        output_ = kp_ * error + iTerm_ - kd_ * boost::accumulators::rolling_mean(dInputAccum_);
+        output_ = outputBase_ + kp_ * error + iTerm_ - kd_ * boost::accumulators::rolling_mean(dInputAccum_);
         output_ = std::clamp(output_, outMin_, outMax_);
 
         /*Remember some variables for next time*/
@@ -59,12 +59,19 @@ public:
         output_ = std::clamp(output_, outMin_, outMax_);
         iTerm_ = std::clamp(iTerm_, outMin_, outMax_);
     }
+    
+    // 
+    void setOutputBase(double base)
+    {
+        outputBase_ = base;
+    }
 
     double getOutput() { return output_; }
 
 private:
 
     double input_ = 0.0;
+    double outputBase_ = 0.0;
     double output_ = 0.0;
     double setPoint_ = 0.0;
     double iTerm_ = 0.0;

@@ -17,7 +17,9 @@ void A2AStec30AP::enableRollAxis(bool enable)
 
 void A2AStec30AP::enablePitchAxis(bool enable)
 {
-    if (!pitchEnabled_ && enable)
+    if (pitchEnabled_ == enable) return;
+
+    if (enable)
     {
         const double kLoopTimeMs = 1000.0 / 30;
         pitchController_ = PitchController
@@ -58,11 +60,12 @@ void A2AStec30AP::enablePitchAxis(bool enable)
         elevatorOut_ = simElevator_;
       
     }
+    else
+        spdlog::info("AP pitch disabled");
 
     pitchEnabled_ = enable;
 
-    if (!pitchEnabled_)
-        spdlog::info("AP pitch disabled");
+  
 }
 
 void A2AStec30AP::process()
@@ -79,45 +82,58 @@ void A2AStec30AP::process()
     if (pitchEnabled_)
     {
         // mode Alt = 2
+        // pressure -> fpm (absolute!)
+        // error = ? set fmp = 0
         if (settings_.pitchmode == 2)
         {
             PIDController& fpmController = pitchController_.value().fpmController;
             fpmController.setInput(simPressure_);
             fpmController.compute();
+
+            auto internals = fpmController.dumpInternals();
+            spdlog::trace("fpm pid: {};{};{};{};{};{}",
+                std::get<0>(internals), std::get<1>(internals),
+                std::get<2>(internals), std::get<3>(internals),
+                std::get<4>(internals), std::get<5>(internals));
+            spdlog::trace("total output fpm: {}", fpmController.getOutput());
         }
 
         // model FPM = 1
+        // pitch controller: fpm -> pitch offset
+        // error = 0 ? keep pitch as is
         if (settings_.pitchmode >= 1)
         {
+            
             PIDController& pitchController = pitchController_.value().pitchController;
             if (settings_.pitchmode > 1)
               pitchController.setSetPoint(pitchController_.value().fpmController.getOutput());
             pitchController.setInput(simFpm_);
+            pitchController.setOutputBase(simPitch_);
             pitchController.compute();
         }
 
         // mode Pitch = 0
+        // pitch rate controller: pitch -> pitch rate (absolute!)
+        // todo: check with pitch rate offset
+        // error = 0 ? set pitch rate to 0
         PIDController& pitchRateController = pitchController_.value().pitchRateController;
         if (settings_.pitchmode > 0)
           pitchRateController.setSetPoint(pitchController_.value().pitchController.getOutput());
         pitchRateController.setInput(simPitch_);
         pitchRateController.compute();
-
+        
+        // elevator controller: pitch rate -> elevator offset
+        // error = 0 ? keep elevator as is
         PIDController& elevatorController = pitchController_.value().elevatorController;
         elevatorController.setSetPoint(pitchRateController.getOutput());
         elevatorController.setInput(simPitchRate_);
-        elevatorController.setOutputLimits(-elevatorOut_ - 100.0, 100.0 - elevatorOut_);
+        elevatorController.setOutputBase(elevatorOut_);
         elevatorController.compute();
 
-        // note: we're using sim/cl elevator here (fixme)
-        elevatorOut_ = std::clamp(elevatorOut_ + elevatorController.getOutput(), -100.0, 100.0); // fixme: clamping makes wrong results with I != 0
+        // finally send back
+        elevatorOut_ = elevatorController.getOutput();
 
-        auto internals = pitchRateController.dumpInternals();
-        spdlog::trace("pid: {};{};{};{};{};{}", 
-            std::get<0>(internals), std::get<1>(internals), 
-            std::get<2>(internals), std::get<3>(internals), 
-            std::get<4>(internals), std::get<5>(internals) );
-        spdlog::trace("total offset elevator: {}", pitchRateController.getOutput());
+    
         spdlog::debug("AP elevator calculated: {}", elevatorOut_);    
     }
 }
