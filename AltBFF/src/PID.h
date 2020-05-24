@@ -1,22 +1,28 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <optional>
 #include <algorithm>
 #include <tuple>
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
 
 // after http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
 class PIDController
 {
 public:
 
-    PIDController(double kp, double ki, double kd, double min, double max, long sampleTimeMs)
+    PIDController(double kp, double ki, double kd, double min, double max, double sampleTimeMs)
     {
-        double sampleTimeInSec = sampleTimeMs / 1000.0;
         kp_ = kp;
-        ki_ = ki * sampleTimeInSec;
-        kd_ = kd / sampleTimeInSec;
+        ki_ = ki * sampleTimeMs;
+        kd_ = kd / sampleTimeMs;
         setOutputLimits(min, max);
     }
+
 
     void compute()
     {
@@ -26,18 +32,19 @@ public:
         iTerm_ = std::clamp(iTerm_, outMin_, outMax_);
 
         double dInput = (input_ - lastInput.value());
-
+        dInputAccum_(dInput);
+ 
         /*Compute PID output*/
-        output_ = kp_ * error + iTerm_ - kd_ * dInput;
+        output_ = kp_ * error + iTerm_ - kd_ * boost::accumulators::rolling_mean(dInputAccum_);
         output_ = std::clamp(output_, outMin_, outMax_);
 
         /*Remember some variables for next time*/
         lastInput = input_;
     }
 
-    std::tuple<double, double, double> dumpInternals()
+    std::tuple<double, double, double, double, double, double> dumpInternals()
     {
-        return { kp_ * (setPoint_ - input_), iTerm_, - kd_ * (input_ - lastInput.value()) };
+        return { setPoint_,  input_, output_, kp_ * (setPoint_ - input_), iTerm_, - kd_ * boost::accumulators::rolling_mean(dInputAccum_) };
     }
 
     void setInput(double input) { input_ = input; if (!lastInput) lastInput = input; }
@@ -67,4 +74,9 @@ private:
     double kd_ = 0.0;
     double outMin_ = 0.0;
     double outMax_ = 0.0;
+
+    using Accumulator = boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> >;
+    using AccParams = boost::accumulators::tag::rolling_window;
+
+    Accumulator dInputAccum_ = Accumulator(AccParams::window_size = 30);
 };

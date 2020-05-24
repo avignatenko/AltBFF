@@ -33,6 +33,7 @@ using namespace std;
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
     // todo: add closing
+    spdlog::shutdown();
 
     return FALSE;  // let others work on this
 }
@@ -117,9 +118,28 @@ Sim::Settings readSimSettings(const ptree& settings)
 A2AStec30AP::Settings readAPSettings(const ptree& settings)
 {
     A2AStec30AP::Settings apSettings;
-    apSettings.pitchPID.p = settings.get<double>("AP.ElevatorP");
-    apSettings.pitchPID.i = settings.get<double>("AP.ElevatorI");
-    apSettings.pitchPID.d = settings.get<double>("AP.ElevatorD");
+
+    apSettings.pitchmode = settings.get<int>("AP.PitchMode");
+
+    apSettings.elevatorPID.p = settings.get<double>("AP.ElevatorP");
+    apSettings.elevatorPID.i = settings.get<double>("AP.ElevatorI");
+    apSettings.elevatorPID.d = settings.get<double>("AP.ElevatorD");
+   
+    apSettings.pitchRatePID.p = settings.get<double>("AP.PitchRateP");
+    apSettings.pitchRatePID.i = settings.get<double>("AP.PitchRateI");
+    apSettings.pitchRatePID.d = settings.get<double>("AP.PitchRateD");
+    apSettings.pitchRateMaxDegpS = settings.get<double>("AP.PitchRateMaxDegpS");
+
+    apSettings.pitchPID.p = settings.get<double>("AP.PitchP");
+    apSettings.pitchPID.i = settings.get<double>("AP.PitchI");
+    apSettings.pitchPID.d = settings.get<double>("AP.PitchD");
+    apSettings.pitchMaxDeg = settings.get<double>("AP.PitchMaxDeg");
+
+    apSettings.fpmPID.p = settings.get<double>("AP.FpmP");
+    apSettings.fpmPID.i = settings.get<double>("AP.FpmI");
+    apSettings.fpmPID.d = settings.get<double>("AP.FpmD");
+    apSettings.fpmMax = settings.get<double>("AP.FpmMax");
+
     return apSettings;
 }
 
@@ -289,6 +309,8 @@ int main(int argc, char** argv)
         autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
         autopilot.setAirPressure(sim.readAmbienAirPressure());
         autopilot.setSimPitch(sim.readPitch());
+        autopilot.setSimPitchRate(sim.readPitchRate());
+        autopilot.setSimFpm(sim.readFpm());
         autopilot.setTotalAxisCLForceAileron(model.getTotalForce(Model::Aileron));
         autopilot.setTotalAxisCLForceElevator(model.getTotalForce(Model::Elevator));
 

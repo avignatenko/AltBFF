@@ -7,10 +7,10 @@
 namespace
 {
 const double kBaseAirDensity = 1.2; // at msl, used with tas
+const double kPi = std::acos(-1);
 
 inline double clampMin(double val, double min) { return val < min ? min : val; }
 
-static double kPi = std::acos(-1);
 }
 
 Model::Model(const Settings& settings)

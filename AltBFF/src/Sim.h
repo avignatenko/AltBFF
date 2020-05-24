@@ -75,6 +75,9 @@ public:
     // rad
     double readPitch();
 
+    // fpm, +ve up, -ve down
+    double readFpm();
+
     double readCGPosFrac();
 
     int readEngine1RPM();
@@ -124,6 +127,7 @@ private:
         double alpha = 0.0;
         double pitchRate = 0.0;
         int32_t pitch = 0;
+        int32_t fpm = 0;
         double cgPosFrac = 0.0;
         int32_t gs = 0;
         int16_t onGround = 0;

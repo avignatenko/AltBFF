@@ -19,11 +19,23 @@ public:
 		};
 
 		PID rollPID = { 0.0, 0.0, 0.0 };
+
+		int pitchmode = 0;
+		
+		PID elevatorPID = { 0.0, 0.0, 0.0 };
+
+		PID pitchRatePID = { 0.0, 0.0, 0.0 };
+		double pitchRateMaxDegpS = 0;
+
 		PID pitchPID = { 0.0, 0.0, 0.0 };
+		double pitchMaxDeg = 0;
+
+		PID fpmPID = { 0.0, 0.0, 0.0 };
+		double fpmMax = 0;
 
 	};
 
-	A2AStec30AP(const Settings& settings): settings_(settings)
+	A2AStec30AP(const Settings& settings) : settings_(settings)
 	{
 
 	}
@@ -31,20 +43,8 @@ public:
 	// own state
 	void setSettings(const Settings& settings) { settings_ = settings; }
 
-	void enableRollAxis(bool enable) { rollEnabled_ = enable; }
-	void enablePitchAxis(bool enable)
-	{
-		if (!pitchEnabled_ && enable)
-		{
-			pitchController_ = PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d, -100, 100, 1000 / 30);
-			pitchController_.value().setSetPoint(simPitch_);
-
-			elevatorOut_ = simElevator_;
-			spdlog::trace("AP pitch enabled with target: {}", simPitch_);
-		}
-
-		pitchEnabled_ = enable;
-	}
+	void enableRollAxis(bool enable);
+	void enablePitchAxis(bool enable);
 
 	// sim vars
 	void setSimAileron(double aileron)
@@ -60,7 +60,23 @@ public:
 	}
 
 	// rad
-	void setSimPitch(double pitch) { simPitch_ = pitch; }
+	void setSimPitch(double pitch)
+	{
+		simPitch_ = pitch;
+		spdlog::trace("Pitch set to AP: {}", simPitch_);
+	}
+
+	void setSimPitchRate(double pitchRate)
+	{
+		simPitchRate_ = pitchRate;
+		spdlog::trace("Pitch rate set to AP: {}", simPitchRate_);
+	}
+
+	void setSimFpm(double fpm)
+	{
+		simFpm_ = fpm;
+		spdlog::trace("FPM set to AP: {}", simFpm_);
+	}
 
 	// Pa
 	void setAirPressure(double pressure)
@@ -92,13 +108,30 @@ private:
 	bool rollEnabled_ = false;
 	bool pitchEnabled_ = false;
 
-	std::optional<PIDController>  pitchController_;
+	struct PitchController
+	{
+		enum class Mode
+		{
+			Pitch = 0,
+			FPM,
+			Alt
+		};
+		Mode mode = Mode::Alt;
+		PIDController fpmController;
+		PIDController pitchController;
+		PIDController pitchRateController;
+		PIDController elevatorController;
+	};
+
+	std::optional<PitchController>  pitchController_;
 	
 
 	double simAileron_ = 0.0;
 	double simElevator_ = 0.0;
 	double simPressure_ = 0.0;
 	double simPitch_ = 0.0;
+	double simPitchRate_ = 0.0;
+	double simFpm_ = 0.0;
 
 	double clForceElevator_ = 0.0;
 	double clForceAileron_ = 0.0;

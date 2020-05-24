@@ -116,6 +116,10 @@ double Sim::readPitch()
     return simData_.pitch * 2.0 * kPi / 65536 / 65536;
 }
 
+double Sim::readFpm()
+{
+    return simData_.fpm * 60.0 * 3.28084 / 256.0;
+}
 double Sim::readCGPosFrac()
 {
     return simData_.cgPosFrac;
@@ -208,6 +212,7 @@ void Sim::process()
         !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||
         !FSUIPC_Read(0x0578, 4, &simData_.pitch, &dwResult) ||
         !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
+        !FSUIPC_Read(0x02C8, 4, &simData_.fpm, &dwResult) ||
         !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
         !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
         !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||

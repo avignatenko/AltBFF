@@ -120,7 +120,7 @@ TEST_CASE("AP pitch")
 TEST_CASE("AP pitch 2")
 {
     A2AStec30AP::Settings s;
-    s.pitchPID = { 50, 0, 50 };
+    s.elevatorPID = { 50, 0, 50 };
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -136,7 +136,7 @@ TEST_CASE("AP pitch 2")
 
 TEST_CASE("PID")
 {
-    PIDController p(0.3, 5, 1, -100, 100, 1000 / 30);
+    PIDController p(0.3, 5, 1, -100, 100, 1000.0 / 30);
 
     p.setSetPoint(10000);
     p.setInput(10100);
@@ -150,7 +150,7 @@ TEST_CASE("PID")
 TEST_CASE("AP pitch pitch 1")
 {
     A2AStec30AP::Settings s;
-    s.pitchPID = { 50, 10, 0 };
+    s.elevatorPID = { 50, 10, 0 };
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -170,7 +170,27 @@ TEST_CASE("AP pitch pitch 1")
 TEST_CASE("AP pitch pitch 2")
 {
     A2AStec30AP::Settings s;
-    s.pitchPID = { 50, 400, 0 };
+    s.elevatorPID = { 50, 400, 0 };
+    A2AStec30AP ap(s);
+
+    ap.setSimElevator(-50);
+    ap.setSimPitch(0);
+    ap.enablePitchAxis(true);
+    ap.process();
+
+    ap.setSimPitch(-40.0 / 180.0 * 3.14); // pitch up
+    ap.process();
+    REQUIRE(ap.getSimElevator() == -5.9004444444444459);
+    ap.process();
+    REQUIRE(ap.getSimElevator() == 47.409777777777776);
+    ap.process();
+    REQUIRE(ap.getSimElevator() == 100.0);
+}
+
+TEST_CASE("AP pitch pitch 2")
+{
+    A2AStec30AP::Settings s;
+    s.elevatorPID = { 50, 400, 0 };
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
