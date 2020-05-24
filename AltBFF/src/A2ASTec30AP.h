@@ -88,8 +88,17 @@ public:
 	// model vars
 	
 	//[-100, 100]
-	void setTotalAxisCLForceElevator(double force) { clForceElevator_ = force; }
-	void setTotalAxisCLForceAileron(double force) { clForceAileron_ = force; }
+	void setTotalAxisCLForceElevator(double force)
+	{
+		clForceElevator_ = force;
+		spdlog::trace("CL Force elevator set to AP: {}", clForceElevator_);
+	}
+
+	void setTotalAxisCLForceAileron(double force)
+	{ 
+		clForceAileron_ = force;
+		spdlog::trace("CL Force aileron set to AP: {}", clForceAileron_);
+	}
 	
 	void process();
 
