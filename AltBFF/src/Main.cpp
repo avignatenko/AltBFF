@@ -47,6 +47,12 @@ struct LogSettings
     spdlog::level::level_enum logLevel = spdlog::level::info;
 };
 
+namespace
+{
+const double kPi = std::acos(-1);
+double degToRad(double deg) { return deg * kPi / 180.0; }
+}
+
 LogSettings readLogSettings(const ptree& settings)
 {
     LogSettings logSettings;
@@ -128,12 +134,12 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.pitchRatePID.p = settings.get<double>("AP.PitchRateP");
     apSettings.pitchRatePID.i = settings.get<double>("AP.PitchRateI");
     apSettings.pitchRatePID.d = settings.get<double>("AP.PitchRateD");
-    apSettings.pitchRateMaxDegpS = settings.get<double>("AP.PitchRateMaxDegpS");
+    apSettings.pitchRate = degToRad(settings.get<double>("AP.PitchRateMaxDegpS"));
 
     apSettings.pitchPID.p = settings.get<double>("AP.PitchP");
     apSettings.pitchPID.i = settings.get<double>("AP.PitchI");
     apSettings.pitchPID.d = settings.get<double>("AP.PitchD");
-    apSettings.pitchMaxDeg = settings.get<double>("AP.PitchMaxDeg");
+    apSettings.pitchMax = degToRad(settings.get<double>("AP.PitchMaxDeg"));
 
     apSettings.fpmPID.p = settings.get<double>("AP.FpmP");
     apSettings.fpmPID.i = settings.get<double>("AP.FpmI");
@@ -175,8 +181,7 @@ Model::Settings readModelSettings(const ptree& settings)
 
     modelSettings.elevatorPRGain = settings.get<double>("Model.ElevatorPRGain");
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
-    modelSettings.maxElevatorAngleRadians =
-        settings.get<double>("Model.MaxElevatorAngleDegrees") * boost::math::double_constants::pi / 180.0;
+    modelSettings.maxElevatorAngleRadians = degToRad(settings.get<double>("Model.MaxElevatorAngleDegrees"));
 
     modelSettings.elevatorEngineFlowGain = settings.get<double>("Model.ElevatorEngineFlowGain");
     modelSettings.elevatorEngineFreqGain = settings.get<double>("Model.ElevatorEngineFreqGain");
@@ -192,8 +197,7 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.aileronTrimGain = settings.get<double>("Model.AileronTrimGain");
     modelSettings.propWashAileronCoeff = settings.get<double>("Model.PropWashAileronCoeff");
     modelSettings.maxAileronLift = settings.get<double>("Model.MaxAileronLift");
-    modelSettings.maxAileronAngleRadians =
-        settings.get<double>("Model.MaxAileronAngleDegrees") * boost::math::double_constants::pi / 180.0;
+    modelSettings.maxAileronAngleRadians = degToRad(settings.get<double>("Model.MaxAileronAngleDegrees"));
 
     modelSettings.aileronEngineFlowGain = settings.get<double>("Model.AileronEngineFlowGain");
     modelSettings.aileronEngineFreqGain = settings.get<double>("Model.AileronEngineFreqGain");
@@ -321,10 +325,11 @@ int main(int argc, char** argv)
         autopilot.process();
 
         // get autopilot messages, etc.
-        auto apWarning = autopilot.getTrimNeededWarning();
-        if (apWarning.warningLevel > 0)
+        if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Auto)
         {
-            spdlog::info("AP warning: Pitch {}! dforce: {}", apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down ? "down" : "up", apWarning.forceDelta);
+            auto apWarning = autopilot.getTrimNeededWarning();
+            if (apWarning.warningLevel > 0)
+                spdlog::info("AP warning: Pitch {}! dforce: {}", apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down ? "down" : "up", apWarning.forceDelta);
         }
 
         // 4. write model calculation results to CL

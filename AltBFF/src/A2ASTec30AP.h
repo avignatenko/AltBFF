@@ -26,10 +26,10 @@ public:
 		PID elevatorPID = { 0.0, 0.0, 0.0 };
 
 		PID pitchRatePID = { 0.0, 0.0, 0.0 };
-		double pitchRateMaxDegpS = 0;
+		double pitchRate = 0;
 
 		PID pitchPID = { 0.0, 0.0, 0.0 };
-		double pitchMaxDeg = 0;
+		double pitchMax = 0;
 
 		PID fpmPID = { 0.0, 0.0, 0.0 };
 		double fpmMax = 0;

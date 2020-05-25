@@ -6,7 +6,7 @@
 
 #include <optional>
 #include <algorithm>
-#include <tuple>
+#include <array>
 
 
 // after http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
@@ -27,23 +27,23 @@ public:
     {
         /*Compute all the working error variables*/
         const double error = setPoint_ - input_;
-        iTerm_ += (ki_ * error);
+        iTerm_ += tiInv_ * error;
         iTerm_ = std::clamp(iTerm_, outMin_ - outputBase_, outMax_ - outputBase_);
 
         const double dInput = (input_ - lastInput.value());
         dInputAverage_.addSample(dInput);
  
         /*Compute PID output*/
-        output_ = outputBase_ + kp_ * error + iTerm_ - kd_ * dInputAverage_.get();
+        output_ = outputBase_ + kp_ * ( error + iTerm_ - td_ * dInputAverage_.get());
         output_ = std::clamp(output_, outMin_, outMax_);
 
         /*Remember some variables for next time*/
         lastInput = input_;
     }
 
-    std::tuple<double, double, double, double, double, double> dumpInternals()
+    std::array<double, 9> dumpInternals()
     {
-        return { setPoint_,  input_, output_, kp_ * (setPoint_ - input_), iTerm_, -kd_ * dInputAverage_.get() };
+        return {kp_, tiInv_, td_, setPoint_,  input_, output_, setPoint_ - input_, iTerm_, -td_ * dInputAverage_.get() };
     }
 
     void setInput(double input) { input_ = input; if (!lastInput) lastInput = input; }
@@ -61,9 +61,10 @@ public:
     
     void setTunings(double kp, double ki, double kd)
     {
+        double sampleTimeSec = sampleTimeMs_ / 1000.0;
         kp_ = kp;
-        ki_ = ki * sampleTimeMs_;
-        kd_ = kd / sampleTimeMs_;
+        tiInv_ = sampleTimeSec / ki;
+        td_ = kd / sampleTimeSec;
     }
 
     // 
@@ -85,8 +86,8 @@ private:
     double iTerm_ = 0.0;
     std::optional<double> lastInput;
     double kp_ = 0.0;
-    double ki_ = 0.0;
-    double kd_ = 0.0;
+    double tiInv_ = 0.0;
+    double td_ = 0.0;
     double outMin_ = 0.0;
     double outMax_ = 0.0;
 

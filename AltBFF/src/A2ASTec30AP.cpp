@@ -4,10 +4,11 @@
 #include "Model.h"
 #include <BFFCLAPI/CLStructures.h>
 
+#include <fmt/ranges.h>
+
 namespace 
 {
 const double kPi = std::acos(-1);
-double degToRad(double deg) { return deg *kPi / 180.0;  }
 }
 
 void A2AStec30AP::enableRollAxis(bool enable) 
@@ -30,10 +31,10 @@ void A2AStec30AP::enablePitchAxis(bool enable)
                          -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs),
             // pitch controller
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d, 
-                          degToRad(-settings_.pitchMaxDeg), degToRad(settings_.pitchMaxDeg), kLoopTimeMs),
+                          -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs),
             // pitch rate controller
             PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d, 
-                          degToRad(-settings_.pitchRateMaxDegpS), degToRad(settings_.pitchRateMaxDegpS), kLoopTimeMs),
+                          -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d, 
                           -100, 100 , kLoopTimeMs)
@@ -90,11 +91,7 @@ void A2AStec30AP::process()
             fpmController.setInput(simPressure_);
             fpmController.compute();
 
-            auto internals = fpmController.dumpInternals();
-            spdlog::trace("fpm pid: {};{};{};{};{};{}",
-                std::get<0>(internals), std::get<1>(internals),
-                std::get<2>(internals), std::get<3>(internals),
-                std::get<4>(internals), std::get<5>(internals));
+            spdlog::trace("fpm pid: {}", fpmController.dumpInternals());
             spdlog::trace("total output fpm: {}", fpmController.getOutput());
         }
 
@@ -110,6 +107,9 @@ void A2AStec30AP::process()
             pitchController.setInput(simFpm_);
             pitchController.setOutputBase(simPitch_);
             pitchController.compute();
+
+            spdlog::trace("pitch pid: {}", pitchController.dumpInternals());
+            spdlog::trace("total output pitch: {}", pitchController.getOutput());
         }
 
         // mode Pitch = 0
@@ -138,7 +138,7 @@ void A2AStec30AP::process()
         if (forceError > 0)
         {
             forceShift = settings_.pitchMaxCLForce * std::copysign(forceError, clForceElevator_);
-            spdlog::trace("AP force coeff: {}, AP Force Shift", forceError, forceShift);
+            spdlog::trace("AP force coeff: {}, AP Force Shift: {}", forceError, forceShift);
         }
        
         // finally send back
