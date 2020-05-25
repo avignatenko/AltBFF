@@ -343,8 +343,8 @@ int main(int argc, char** argv)
             input.positionFollowingEngage |= (1u << 0); // set pos following
 
             // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
-            const float bffMin = -100.0;
-            const float bffMax = -0.2;
+            const float bffMin = 0;
+            const float bffMax = 100;
             float bffFixPos = std::clamp(((float)autopilot.getCLElevator().value() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
 
             input.elevator.positionFollowingSetPoint = bffFixPos;
@@ -373,8 +373,8 @@ int main(int argc, char** argv)
             input.positionFollowingEngage |= (1u << 1); // set pos following
 
             // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
-            const float bffMin = -100.0;
-            const float bffMax = -0.2;
+            const float bffMin = 0;
+            const float bffMax = 100;
             float bffFixPos = std::clamp(((float)autopilot.getCLAileron().value() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
 
             input.aileron.positionFollowingSetPoint = bffFixPos;
