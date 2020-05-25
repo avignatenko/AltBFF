@@ -20,6 +20,7 @@ public:
 
 		PID rollPID = { 0.0, 0.0, 0.0 };
 
+		// pitch
 		int pitchmode = 0;
 		
 		PID elevatorPID = { 0.0, 0.0, 0.0 };
@@ -33,6 +34,12 @@ public:
 		PID fpmPID = { 0.0, 0.0, 0.0 };
 		double fpmMax = 0;
 
+		// 0..100%
+		double pitchWarningCLForce = 80;
+		// 0..100%
+		double pitchStartDegradeCLForce = 90.0;
+		// 0..100%
+		double pitchMaxCLForce = 100.0;
 	};
 
 	A2AStec30AP(const Settings& settings) : settings_(settings)
@@ -82,7 +89,7 @@ public:
 	void setAirPressure(double pressure)
 	{
 		simPressure_ = pressure * 1e-5; // convert to bar
-		spdlog::trace("Air pressture set to AP: {}", simPressure_);
+		spdlog::trace("Air pressure set to AP: {}", simPressure_);
 	}
 
 	// model vars
@@ -111,6 +118,22 @@ public:
 
 	std::optional<double> getSimAileron();
 	std::optional<double> getSimElevator();
+
+	struct TrimNeededWarning
+	{
+		enum PitchDirection
+		{
+			NA,
+			Up,
+			Down
+		};
+
+		double forceDelta = 0.0;
+		PitchDirection pitchDirection = NA;
+		int warningLevel = 0; // 0 - no warning, 1 - warning, 2 - level 2 warning
+	};
+
+	TrimNeededWarning getTrimNeededWarning();
 
 private:
 

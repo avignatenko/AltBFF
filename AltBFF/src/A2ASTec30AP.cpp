@@ -124,14 +124,25 @@ void A2AStec30AP::process()
         
         // elevator controller: pitch rate -> elevator offset
         // error = 0 ? keep elevator as is
-        PIDController& elevatorController = pitchController_.value().elevatorController;
+        PIDController& elevatorController = pitchController_.value().elevatorController;   
         elevatorController.setSetPoint(pitchRateController.getOutput());
         elevatorController.setInput(simPitchRate_);
         elevatorController.setOutputBase(elevatorOut_);
         elevatorController.compute();
 
+        // check for excessive forces
+
+        double forceError = std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce;
+
+        double forceShift = 0.0; 
+        if (forceError > 0)
+        {
+            forceShift = settings_.pitchMaxCLForce * std::copysign(forceError, clForceElevator_);
+            spdlog::trace("AP force coeff: {}, AP Force Shift", forceError, forceShift);
+        }
+       
         // finally send back
-        elevatorOut_ = elevatorController.getOutput();
+        elevatorOut_ = elevatorController.getOutput() + forceShift;
 
     
         spdlog::debug("AP elevator calculated: {}", elevatorOut_);    
@@ -156,4 +167,20 @@ std::optional<double> A2AStec30AP::getSimAileron()
 std::optional<double> A2AStec30AP::getSimElevator()
 {
     return getCLElevator();
+}
+
+A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
+{
+    TrimNeededWarning warning;
+    if (std::abs(clForceElevator_) < settings_.pitchWarningCLForce)
+    {
+        warning.pitchDirection = TrimNeededWarning::NA;
+        warning.warningLevel = 0;
+        return warning;
+    }
+
+    warning.pitchDirection = clForceElevator_ > 0 ? TrimNeededWarning::Up : TrimNeededWarning::Down;
+    warning.warningLevel = 1; // for now (todo)
+    warning.forceDelta = std::abs(clForceElevator_) - settings_.pitchWarningCLForce;
+    return warning;
 }

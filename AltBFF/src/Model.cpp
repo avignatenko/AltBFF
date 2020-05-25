@@ -203,8 +203,8 @@ void Model::calculateElevatorForces()
     //  update elevator
 
     // note: average fixed force to avoid possible oscillations
-    fixedForceAccum_[Elevator](flElevatorFixed);
-    fixedForce_[Elevator] = boost::accumulators::rolling_mean(fixedForceAccum_[Elevator]);
+    fixedForceAccum_[Elevator].addSample(flElevatorFixed);
+    fixedForce_[Elevator] = fixedForceAccum_[Elevator].get();
     springForce_[Elevator] = flElevatorSpring;
 
     spdlog::debug("El Spring force: {}, El Fixed Force average: {}, Src Fixed Force: {}",
@@ -216,7 +216,14 @@ void Model::calculateElevatorForces()
 
 double Model::getTotalForce(Axis axis)
 {
-    return -springForce_[axis] * elevator_ + fixedForce_[axis];
+    double axisPos = 0.0;
+    switch (axis)
+    {
+    case Elevator: axisPos = elevator_; break;
+    case Aileron: axisPos = aileron_; break;
+    }
+
+    return -springForce_[axis] * axisPos + fixedForce_[axis];
 }
 
 void Model::calculateAileronForces()
@@ -241,8 +248,8 @@ void Model::calculateAileronForces()
     //  update aileron forces
 
     // note: average fixed force to avoid possible oscillations
-    fixedForceAccum_[Aileron](flAileronFixed);
-    fixedForce_[Aileron] = boost::accumulators::rolling_mean(fixedForceAccum_[Aileron]);
+    fixedForceAccum_[Aileron].addSample(flAileronFixed);
+    fixedForce_[Aileron] = fixedForceAccum_[Aileron].get();
     springForce_[Aileron] = flAileronSpring;
 }
 

@@ -21,4 +21,5 @@ target_sources(${PROJECT_NAME}
 		"src/IRunner.cpp"
 		"include/Utils/DispatchQueue.h"
 		"include/Utils/IRunner.h"
-		"include/Utils/Timer.h")
+		"include/Utils/Timer.h"
+		"include/Utils/Accumulators.h")

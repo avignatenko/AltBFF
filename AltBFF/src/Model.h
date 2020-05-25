@@ -1,11 +1,8 @@
 #pragma once
 
+#include <Utils/Accumulators.h>
+
 #include <spdlog/spdlog.h>
-
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
-
 #include <cstdint>
 
 // Model assumes it's running at certain rate, e.g. 30hz
@@ -154,8 +151,8 @@ public:
     // incidence "alpha" in radians
     void setAlpha(double alpha)
     {
-        alphaAngleRadAccum_(alpha);
-        alphaAngleRad_ = boost::accumulators::rolling_mean(alphaAngleRadAccum_);
+        alphaAngleRadAccum_.addSample(alpha);
+        alphaAngleRad_ = alphaAngleRadAccum_.get();
         spdlog::trace("Alpha set to model: {}, average: {}", alpha, alphaAngleRad_);
     }
 
@@ -234,12 +231,6 @@ public:
         double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
 
-    using Accumulator = boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> >;
-    using AccParams = boost::accumulators::tag::rolling_window;
-   
-    
- 
-
     // inputs
     double elevator_ = 0.0;
     double aileron_ = 0.0;
@@ -257,14 +248,10 @@ private:
     bool onGround_ = false;
     GroundType groundType_ = GroundType::NA;
 
-    Accumulator alphaAngleRadAccum_ = Accumulator(AccParams::window_size = 5);
+    MovingAverage<5> alphaAngleRadAccum_;
 
     // outputs
-    Accumulator fixedForceAccum_[AxisCount] = 
-    { 
-        Accumulator(AccParams::window_size = 5), 
-        Accumulator(AccParams::window_size = 5) 
-    };
+    MovingAverage<5> fixedForceAccum_[AxisCount];
 
     float fixedForce_[AxisCount] = {0.0f};
     float springForce_[AxisCount] = {0.0f};

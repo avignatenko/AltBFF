@@ -1,14 +1,13 @@
 #pragma once
 
+#include <Utils/Accumulators.h>
+
 #include <spdlog/spdlog.h>
 
 #include <optional>
 #include <algorithm>
 #include <tuple>
 
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/rolling_mean.hpp>
 
 // after http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
 class PIDController
@@ -17,9 +16,9 @@ public:
 
     PIDController(double kp, double ki, double kd, double min, double max, double sampleTimeMs)
     {
-        kp_ = kp;
-        ki_ = ki * sampleTimeMs;
-        kd_ = kd / sampleTimeMs;
+        sampleTimeMs_ = sampleTimeMs;
+
+        setTunings(kp, ki, kd);
         setOutputLimits(min, max);
     }
 
@@ -27,15 +26,15 @@ public:
     void compute()
     {
         /*Compute all the working error variables*/
-        double error = setPoint_ - input_;
+        const double error = setPoint_ - input_;
         iTerm_ += (ki_ * error);
         iTerm_ = std::clamp(iTerm_, outMin_ - outputBase_, outMax_ - outputBase_);
 
-        double dInput = (input_ - lastInput.value());
-        dInputAccum_(dInput);
+        const double dInput = (input_ - lastInput.value());
+        dInputAverage_.addSample(dInput);
  
         /*Compute PID output*/
-        output_ = outputBase_ + kp_ * error + iTerm_ - kd_ * boost::accumulators::rolling_mean(dInputAccum_);
+        output_ = outputBase_ + kp_ * error + iTerm_ - kd_ * dInputAverage_.get();
         output_ = std::clamp(output_, outMin_, outMax_);
 
         /*Remember some variables for next time*/
@@ -44,7 +43,7 @@ public:
 
     std::tuple<double, double, double, double, double, double> dumpInternals()
     {
-        return { setPoint_,  input_, output_, kp_ * (setPoint_ - input_), iTerm_, - kd_ * boost::accumulators::rolling_mean(dInputAccum_) };
+        return { setPoint_,  input_, output_, kp_ * (setPoint_ - input_), iTerm_, -kd_ * dInputAverage_.get() };
     }
 
     void setInput(double input) { input_ = input; if (!lastInput) lastInput = input; }
@@ -57,9 +56,16 @@ public:
         outMax_ = max;
 
         output_ = std::clamp(output_, outMin_, outMax_);
-        iTerm_ = std::clamp(iTerm_, outMin_, outMax_);
+        iTerm_ = std::clamp(iTerm_, outMin_ - outputBase_, outMax_ - outputBase_);
     }
     
+    void setTunings(double kp, double ki, double kd)
+    {
+        kp_ = kp;
+        ki_ = ki * sampleTimeMs_;
+        kd_ = kd / sampleTimeMs_;
+    }
+
     // 
     void setOutputBase(double base)
     {
@@ -69,6 +75,8 @@ public:
     double getOutput() { return output_; }
 
 private:
+
+    double sampleTimeMs_ = 0.0;
 
     double input_ = 0.0;
     double outputBase_ = 0.0;
@@ -82,8 +90,5 @@ private:
     double outMin_ = 0.0;
     double outMax_ = 0.0;
 
-    using Accumulator = boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> >;
-    using AccParams = boost::accumulators::tag::rolling_window;
-
-    Accumulator dInputAccum_ = Accumulator(AccParams::window_size = 30);
+    MovingAverage<30> dInputAverage_;
 };

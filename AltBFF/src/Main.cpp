@@ -140,6 +140,10 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.fpmPID.d = settings.get<double>("AP.FpmD");
     apSettings.fpmMax = settings.get<double>("AP.FpmMax");
 
+    apSettings.pitchWarningCLForce = settings.get<double>("AP.PitchWarningCLForce");
+    apSettings.pitchMaxCLForce = settings.get<double>("AP.PitchMaxCLForce");
+    apSettings.pitchStartDegradeCLForce = settings.get<double>("AP.PitchStartDegradeCLForce");
+    
     return apSettings;
 }
 
@@ -316,6 +320,13 @@ int main(int argc, char** argv)
 
         autopilot.process();
 
+        // get autopilot messages, etc.
+        auto apWarning = autopilot.getTrimNeededWarning();
+        if (apWarning.warningLevel > 0)
+        {
+            spdlog::info("AP warning: Pitch {}! dforce: {}", apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down ? "down" : "up", apWarning.forceDelta);
+        }
+
         // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
@@ -327,8 +338,8 @@ int main(int argc, char** argv)
         }
         else
         {
-            input.elevator.fixedForce = 0;
-            input.elevator.springForce = 0;
+            input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
+            input.elevator.springForce = model.getSpringForce(Model::Elevator);
             input.positionFollowingEngage |= (1u << 0); // set pos following
 
             // fix for BFF CL acception [-100, -eps] instead of [-100, 100]

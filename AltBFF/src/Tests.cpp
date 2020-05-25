@@ -1,6 +1,8 @@
 #include "Model.h"
 #include "A2ASTec30AP.h"
 #include "PID.h"
+
+#include <Utils/Accumulators.h>
 #include <catch2/catch.hpp>
 #include <iostream>
 
@@ -187,7 +189,7 @@ TEST_CASE("AP pitch pitch 2")
     REQUIRE(ap.getSimElevator() == 100.0);
 }
 
-TEST_CASE("AP pitch pitch 2")
+TEST_CASE("AP pitch pitch 3")
 {
     A2AStec30AP::Settings s;
     s.elevatorPID = { 50, 400, 0 };
@@ -205,4 +207,42 @@ TEST_CASE("AP pitch pitch 2")
     REQUIRE(ap.getSimElevator() == 47.409777777777776);
     ap.process();
     REQUIRE(ap.getSimElevator() == 100.0);
+}
+
+TEST_CASE("Moving average")
+{
+    MovingAverage<5> ma;
+
+    REQUIRE(ma.get() == 0.0);
+
+    ma.addSample(1.5);
+
+    REQUIRE(ma.get() == 1.5);
+
+    ma.addSample(3);
+
+    REQUIRE(ma.get() == 2.25);
+
+    ma.addSample(3);
+    ma.addSample(3);
+    ma.addSample(3);
+
+    REQUIRE(ma.get() == 2.7);
+
+    ma.addSample(3);
+
+    REQUIRE(ma.get() == 3);
+
+    ma.addSample(0);
+
+    REQUIRE(ma.get() == 2.4);
+
+    for (int i = 0; i < 5; ++i)
+        ma.addSample(1);
+
+    REQUIRE(ma.get() == 1.0);
+
+    // test for cached
+    REQUIRE(ma.get() == 1.0);
+
 }
