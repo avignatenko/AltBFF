@@ -22,7 +22,7 @@ public:
 
 		// pitch
 		int pitchmode = 0;
-		
+
 		PID elevatorPID = { 0.0, 0.0, 0.0 };
 
 		PID pitchRatePID = { 0.0, 0.0, 0.0 };
@@ -34,6 +34,9 @@ public:
 		PID fpmPID = { 0.0, 0.0, 0.0 };
 		double fpmMax = 0;
 
+		bool doStepResponse = false;
+		std::string stepResponseInputFile;
+
 		// 0..100%
 		double pitchWarningCLForce = 80;
 		// 0..100%
@@ -42,13 +45,18 @@ public:
 		double pitchMaxCLForce = 100.0;
 	};
 
-	A2AStec30AP(const Settings& settings) : settings_(settings)
+	A2AStec30AP(const Settings& settings) 
 	{
-
+		setSettings(settings);
 	}
 
 	// own state
-	void setSettings(const Settings& settings) { settings_ = settings; }
+	void setSettings(const Settings& settings)
+	{
+		settings_ = settings; 
+		if (settings_.doStepResponse)
+			readStepResponseInput();
+	}
 
 	void enableRollAxis(bool enable);
 	void enablePitchAxis(bool enable);
@@ -93,7 +101,7 @@ public:
 	}
 
 	// model vars
-	
+
 	//[-100, 100]
 	void setTotalAxisCLForceElevator(double force)
 	{
@@ -102,11 +110,11 @@ public:
 	}
 
 	void setTotalAxisCLForceAileron(double force)
-	{ 
+	{
 		clForceAileron_ = force;
 		spdlog::trace("CL Force aileron set to AP: {}", clForceAileron_);
 	}
-	
+
 	void process();
 
 	// [-100, 100]
@@ -134,6 +142,17 @@ public:
 	};
 
 	TrimNeededWarning getTrimNeededWarning();
+
+private:
+
+	bool enabled()
+	{
+		return rollEnabled_ || pitchEnabled_;
+	}
+
+	void computeStepResponseInput(PIDController& controller);
+	void readStepResponseInput();
+	void writeStepResponse();
 
 private:
 
@@ -171,6 +190,12 @@ private:
 	double aileronOut_ = 0.0;
 	double elevatorOut_ = 0.0;
 
+	// for pid tuning
+	bool stepResponseInProgress = false;
+	unsigned long currentInputSample_ = 0;
+	std::vector<std::pair<long, double>> stepResponseInput_;
+	std::vector<std::array<double, 3>> stepResponseOutput_;
+	unsigned long timeSamplesPitch_ = 0;
 	
 
 	Settings settings_;

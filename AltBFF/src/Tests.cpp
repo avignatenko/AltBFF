@@ -246,3 +246,20 @@ TEST_CASE("Moving average")
     REQUIRE(ma.get() == 1.0);
 
 }
+
+TEST_CASE("AP Impulse Response")
+{
+    A2AStec30AP::Settings s;
+    s.pitchmode = -1;
+    s.doStepResponse = true;
+    s.stepResponseInputFile = "elev_sr.csv";
+    A2AStec30AP ap(s);
+
+    ap.enablePitchAxis(true);
+
+    for (int i = 0; i < 30 * 20; ++i)
+    {
+        ap.setSimPitchRate(i);
+        ap.process();
+    }
+}

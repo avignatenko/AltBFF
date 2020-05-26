@@ -3,17 +3,19 @@
 #include "Sim.h"
 #include "Model.h"
 #include <BFFCLAPI/CLStructures.h>
-
+#include <CSV/CSV.hpp>
 #include <fmt/ranges.h>
 
-namespace 
+namespace
 {
 const double kPi = std::acos(-1);
+const double kLoopTimeMs = 1000.0 / 30;
 }
 
-void A2AStec30AP::enableRollAxis(bool enable) 
-{ 
-    rollEnabled_ = enable; 
+void A2AStec30AP::enableRollAxis(bool enable)
+{
+    if (rollEnabled_ == enable) return;
+    rollEnabled_ = enable;
 }
 
 void A2AStec30AP::enablePitchAxis(bool enable)
@@ -22,55 +24,71 @@ void A2AStec30AP::enablePitchAxis(bool enable)
 
     if (enable)
     {
-        const double kLoopTimeMs = 1000.0 / 30;
+      
         pitchController_ = PitchController
         {
             static_cast<PitchController::Mode>(settings_.pitchmode),
             // fpm controller
             PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                         -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs),
+                          -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs),
             // pitch controller
-            PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d, 
-                          -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs),
+            PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
+                         -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs),
             // pitch rate controller
-            PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d, 
-                          -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs),
+            PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d,
+                         -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs),
             // elevator controller
-            PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d, 
-                          -100, 100 , kLoopTimeMs)
+            PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
+                        -100, 100 , kLoopTimeMs)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
 
         switch (pitchController_.value().mode)
         {
-        case PitchController::Mode::Pitch: 
-            pitchController_.value().pitchRateController.setSetPoint(simPitch_);    
-            spdlog::info("AP pitch enabled with target pitch: {}", simPitch_); 
+        case PitchController::Mode::Pitch:
+            pitchController_.value().pitchRateController.setSetPoint(simPitch_);
+            spdlog::info("AP pitch enabled with target pitch: {}", simPitch_);
             break;
-        case PitchController::Mode::FPM:   
+        case PitchController::Mode::FPM:
             pitchController_.value().pitchController.setSetPoint(simFpm_);
             spdlog::info("AP pitch enabled with target fpm: {}", simFpm_);
             break;
-        case PitchController::Mode::Alt:   
+        case PitchController::Mode::Alt:
             pitchController_.value().fpmController.setSetPoint(simPressure_);
             spdlog::info("AP pitch enabled with target pressure: {}", simPressure_);
             break;
         }
-     
+
+        // fixme: ????
+        pitchController_.value().elevatorController.setOutputBase(simElevator_);
+        pitchController_.value().pitchController.setOutputBase(simPitch_);
+
         elevatorOut_ = simElevator_;
-      
+
+        if (settings_.doStepResponse)
+        {
+            stepResponseInProgress = true;
+           
+            spdlog::info("Started impulse response test");
+        }
     }
     else
+    {
+        stepResponseInProgress = false;
         spdlog::info("AP pitch disabled");
+    }
 
     pitchEnabled_ = enable;
-
-  
+    
+    timeSamplesPitch_ = 0;
+    currentInputSample_ = 0;
+    stepResponseOutput_.clear();
 }
 
 void A2AStec30AP::process()
 {
+    if (!enabled()) return;
 
     // aileron
     if (rollEnabled_)
@@ -100,12 +118,11 @@ void A2AStec30AP::process()
         // error = 0 ? keep pitch as is
         if (settings_.pitchmode >= 1)
         {
-            
+
             PIDController& pitchController = pitchController_.value().pitchController;
             if (settings_.pitchmode > 1)
-              pitchController.setSetPoint(pitchController_.value().fpmController.getOutput());
+                pitchController.setSetPoint(pitchController_.value().fpmController.getOutput());
             pitchController.setInput(simFpm_);
-            pitchController.setOutputBase(simPitch_);
             pitchController.compute();
 
             spdlog::trace("pitch pid: {}", pitchController.dumpInternals());
@@ -116,37 +133,50 @@ void A2AStec30AP::process()
         // pitch rate controller: pitch -> pitch rate (absolute!)
         // todo: check with pitch rate offset
         // error = 0 ? set pitch rate to 0
-        PIDController& pitchRateController = pitchController_.value().pitchRateController;
-        if (settings_.pitchmode > 0)
-          pitchRateController.setSetPoint(pitchController_.value().pitchController.getOutput());
-        pitchRateController.setInput(simPitch_);
-        pitchRateController.compute();
-        
+        if (settings_.pitchmode >= 0)
+        {
+            PIDController& pitchRateController = pitchController_.value().pitchRateController;
+            if (settings_.pitchmode > 0)
+                pitchRateController.setSetPoint(pitchController_.value().pitchController.getOutput());
+            pitchRateController.setInput(simPitch_);
+
+            if (stepResponseInProgress && settings_.pitchmode == 0)
+                computeStepResponseInput(pitchRateController);
+            else
+                pitchRateController.compute();
+        }
+
         // elevator controller: pitch rate -> elevator offset
         // error = 0 ? keep elevator as is
-        PIDController& elevatorController = pitchController_.value().elevatorController;   
-        elevatorController.setSetPoint(pitchRateController.getOutput());
+        PIDController& elevatorController = pitchController_.value().elevatorController;
+        if (settings_.pitchmode >= 0)
+            elevatorController.setSetPoint(pitchController_.value().pitchRateController.getOutput());
         elevatorController.setInput(simPitchRate_);
-        elevatorController.setOutputBase(elevatorOut_);
-        elevatorController.compute();
+  
+        if (stepResponseInProgress && settings_.pitchmode < 0)
+            computeStepResponseInput(elevatorController);
+        else
+            elevatorController.compute();
 
         // check for excessive forces
 
         double forceError = std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce;
 
-        double forceShift = 0.0; 
+        double forceShift = 0.0;
         if (forceError > 0)
         {
             forceShift = settings_.pitchMaxCLForce * std::copysign(forceError, clForceElevator_);
             spdlog::trace("AP force coeff: {}, AP Force Shift: {}", forceError, forceShift);
         }
-       
-        // finally send back
-        elevatorOut_ = elevatorController.getOutput() + forceShift;
 
-    
-        spdlog::debug("AP elevator calculated: {}", elevatorOut_);    
+        // finally send back
+        elevatorOut_ = pitchController_.value().elevatorController.getOutput() + forceShift;
+
+        timeSamplesPitch_++;
+
+        spdlog::debug("AP elevator calculated: {}", elevatorOut_);
     }
+
 }
 
 std::optional<double> A2AStec30AP::getCLAileron()
@@ -183,4 +213,46 @@ A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
     warning.warningLevel = 1; // for now (todo)
     warning.forceDelta = std::abs(clForceElevator_) - settings_.pitchWarningCLForce;
     return warning;
+}
+
+void A2AStec30AP::computeStepResponseInput(PIDController& controller)
+{
+    long curTimeMs = timeSamplesPitch_ * kLoopTimeMs;
+    for (; currentInputSample_ < stepResponseInput_.size(); ++currentInputSample_)
+    {
+        if (stepResponseInput_[currentInputSample_].first >= curTimeMs)
+            break;
+    }
+
+    if (currentInputSample_ == stepResponseInput_.size())
+    {
+        writeStepResponse();
+        spdlog::info("Finished step responce generation");
+        stepResponseInProgress = false;
+    }
+    else
+    {
+        controller.setSimulatedOutput(stepResponseInput_[currentInputSample_].second);
+        stepResponseOutput_.push_back({
+            timeSamplesPitch_ * kLoopTimeMs / 1000.0, 
+            stepResponseInput_[currentInputSample_].second, 
+            controller.getInput() });
+    }
+}
+void A2AStec30AP::readStepResponseInput()
+{
+    jay::util::CSVread csv(settings_.stepResponseInputFile);
+    if (csv.error) { throw std::runtime_error(fmt::format("Cannot read step response input: {}", csv.error_msg)); }
+    while (csv.ReadRecord())
+        stepResponseInput_.push_back(std::make_pair(std::stoi(csv.fields[0]), std::stod(csv.fields[1])));
+}
+
+void A2AStec30AP::writeStepResponse()
+{
+    jay::util::CSVwrite csv(std::string("o-") + settings_.stepResponseInputFile);
+    for (const auto& line : stepResponseOutput_)
+        csv.WriteRecord({
+            std::to_string(line[0]), 
+            std::to_string(line[1]),
+            std::to_string(line[2])});
 }

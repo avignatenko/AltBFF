@@ -41,12 +41,20 @@ public:
         lastInput = input_;
     }
 
+    void setSimulatedOutput(double output)
+    {
+        output_ = outputBase_ + output;
+        output_ = std::clamp(output_, outMin_, outMax_);
+    }
+
     std::array<double, 9> dumpInternals()
     {
         return {kp_, tiInv_, td_, setPoint_,  input_, output_, setPoint_ - input_, iTerm_, -td_ * dInputAverage_.get() };
     }
 
     void setInput(double input) { input_ = input; if (!lastInput) lastInput = input; }
+    double getInput() const { return input_; }
+
     void setSetPoint(double setPoint) { setPoint_ = setPoint; }
 
     void setOutputLimits(double min, double max)

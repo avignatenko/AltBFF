@@ -150,6 +150,8 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.pitchMaxCLForce = settings.get<double>("AP.PitchMaxCLForce");
     apSettings.pitchStartDegradeCLForce = settings.get<double>("AP.PitchStartDegradeCLForce");
     
+    apSettings.doStepResponse = settings.get<bool>("AP.DoStepResponse");
+    apSettings.stepResponseInputFile = settings.get<std::string>("AP.StepResponseInputFile");
     return apSettings;
 }
 
@@ -244,14 +246,8 @@ int runTests(int argc, char** argv)
     return result;
 }
 
-int main(int argc, char** argv)
+int checkedMain(int argc, char** argv)
 {
-    // check for tests session
-    if (argc > 1 && strcmp(argv[1], "test") == 0)
-        return runTests(argc, argv);
-
-    SetConsoleCtrlHandler(CtrlHandler, TRUE);
-
     path exeName = argv[0];
     path settingsPath = exeName.parent_path() / "settings.ini";
 
@@ -453,4 +449,30 @@ int main(int argc, char** argv)
     spdlog::info("Main loop finished");
 
     return 0;
+}
+
+int main(int argc, char** argv)
+{
+    // check for tests session
+    if (argc > 1 && strcmp(argv[1], "test") == 0)
+        return runTests(argc, argv);
+
+    SetConsoleCtrlHandler(CtrlHandler, TRUE);
+
+    try
+    {
+       return   checkedMain(argc, argv);
+    }
+    catch (std::exception& e)
+    {
+        spdlog::critical("Exception: {}", e.what());
+        spdlog::shutdown();
+        throw;
+    }
+    catch (...)
+    {
+        spdlog::critical("Unknown exception");
+        spdlog::shutdown();
+        throw;
+    }
 }
