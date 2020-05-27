@@ -24,15 +24,19 @@ public:
 		int pitchmode = 0;
 
 		PID elevatorPID = { 0.0, 0.0, 0.0 };
+		double elevatorDuMax = 0.0;
 
 		PID pitchRatePID = { 0.0, 0.0, 0.0 };
+		double pitchRateDuMax = 0.0;
 		double pitchRate = 0;
 
 		PID pitchPID = { 0.0, 0.0, 0.0 };
-		double pitchMax = 0;
+		double pitchDuMax = 0.0;
+		double pitchMax = 0.0;
 
 		PID fpmPID = { 0.0, 0.0, 0.0 };
-		double fpmMax = 0;
+		double fpmDuMax = 0.0;
+		double fpmMax = 0.0;
 
 		bool doStepResponse = false;
 		std::string stepResponseInputFile;

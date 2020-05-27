@@ -130,21 +130,25 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.elevatorPID.p = settings.get<double>("AP.ElevatorP");
     apSettings.elevatorPID.i = settings.get<double>("AP.ElevatorI");
     apSettings.elevatorPID.d = settings.get<double>("AP.ElevatorD");
+    apSettings.elevatorDuMax = settings.get<double>("AP.ElevatorDuMax");
    
     apSettings.pitchRatePID.p = settings.get<double>("AP.PitchRateP");
     apSettings.pitchRatePID.i = settings.get<double>("AP.PitchRateI");
     apSettings.pitchRatePID.d = settings.get<double>("AP.PitchRateD");
     apSettings.pitchRate = degToRad(settings.get<double>("AP.PitchRateMaxDegpS"));
+    apSettings.pitchRateDuMax = settings.get<double>("AP.PitchRateDuMax");
 
     apSettings.pitchPID.p = settings.get<double>("AP.PitchP");
     apSettings.pitchPID.i = settings.get<double>("AP.PitchI");
     apSettings.pitchPID.d = settings.get<double>("AP.PitchD");
     apSettings.pitchMax = degToRad(settings.get<double>("AP.PitchMaxDeg"));
+    apSettings.pitchDuMax = settings.get<double>("AP.PitchDuMax");
 
     apSettings.fpmPID.p = settings.get<double>("AP.FpmP");
     apSettings.fpmPID.i = settings.get<double>("AP.FpmI");
     apSettings.fpmPID.d = settings.get<double>("AP.FpmD");
     apSettings.fpmMax = settings.get<double>("AP.FpmMax");
+    apSettings.fpmDuMax = settings.get<double>("AP.FpmDuMax");
 
     apSettings.pitchWarningCLForce = settings.get<double>("AP.PitchWarningCLForce");
     apSettings.pitchMaxCLForce = settings.get<double>("AP.PitchMaxCLForce");
