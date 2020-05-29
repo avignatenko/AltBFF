@@ -138,21 +138,32 @@ TEST_CASE("AP pitch 2")
 
 TEST_CASE("PID")
 {
-    PIDController p(0.3, 5, 1, 30.0 / (1.0/30), -100, 100, 1000.0 / 30);
+    PIDController p(-1.0/10, 10, 0, 200.0 / (1.0 / 30), -100, 100, 1000.0 / 30, 10100, -100);
+
+    auto syst = [](double output) { return 10000 - (output + 30); };
 
     p.setSetPoint(10000);
-    p.setInput(10100);
+    p.setInput(syst(-30));
 
-    p.compute();
 
-    double output = p.getOutput();
-    REQUIRE(output == -30.199999999999999);
+    double output = 0;
+    for (int i = 0; i < 10000; ++i)
+    {
+        p.compute();
+        output = p.getOutput();
+        p.setInput(syst(output));
+    }
+
+
+ 
+     output = p.getOutput();
+//    REQUIRE(output == -30.0);
 
     p.setInput(10050);
     p.compute();
 
     output = p.getOutput();
-    REQUIRE(output == -0.19999999999999929);
+  //  REQUIRE(output == -15.299999999999999);
 
 }
 

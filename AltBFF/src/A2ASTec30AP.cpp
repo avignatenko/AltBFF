@@ -30,16 +30,16 @@ void A2AStec30AP::enablePitchAxis(bool enable)
             static_cast<PitchController::Mode>(settings_.pitchmode),
             // fpm controller
             PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                          settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs),
+                          settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs, simPressure_, simFpm_),
             // pitch controller
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
-                          settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs),
+                          settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
             // pitch rate controller
             PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d,
-                         settings_.pitchRateDuMax, -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs),
+                         settings_.pitchRateDuMax, -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs, simPitch_, simPitchRate_),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        settings_.elevatorDuMax, -100, 100 , kLoopTimeMs)
+                        settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitchRate_, simElevator_)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
@@ -124,8 +124,7 @@ void A2AStec30AP::process()
             if (settings_.pitchmode > 1)
                 pitchController.setSetPoint(pitchController_.value().fpmController.getOutput());
             pitchController.setInput(simFpm_);
-            pitchController_.value().pitchController.setOutputBase(simPitch_);
-
+  
             if (stepResponseInProgress && settings_.pitchmode == 1)
                 computeStepResponseInput(pitchController);
             else
@@ -149,6 +148,9 @@ void A2AStec30AP::process()
                 computeStepResponseInput(pitchRateController);
             else
                 pitchRateController.compute();
+
+            spdlog::trace("pitch rate pid: {}", pitchRateController.dumpInternals());
+            spdlog::trace("total output pitch rate: {}", pitchRateController.getOutput());
         }
 
         // elevator controller: pitch rate -> elevator offset
@@ -157,8 +159,7 @@ void A2AStec30AP::process()
         if (settings_.pitchmode >= 0)
             elevatorController.setSetPoint(pitchController_.value().pitchRateController.getOutput());
         elevatorController.setInput(simPitchRate_);
-        pitchController_.value().elevatorController.setOutputBase(elevatorOut_);
-
+  
         if (stepResponseInProgress && settings_.pitchmode < 0)
             computeStepResponseInput(elevatorController);
         else
@@ -225,26 +226,34 @@ A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
 void A2AStec30AP::computeStepResponseInput(PIDController& controller)
 {
     long curTimeMs = timeSamplesPitch_ * kLoopTimeMs;
-    for (; currentInputSample_ < stepResponseInput_.size(); ++currentInputSample_)
+    int i = currentInputSample_;
+    for ( ; i < stepResponseInput_.size(); ++i)
     {
-        if (stepResponseInput_[currentInputSample_].first >= curTimeMs)
+        if (stepResponseInput_[i].first > curTimeMs)
             break;
     }
+    currentInputSample_ = std::max(0, i - 1);
 
-    if (currentInputSample_ == stepResponseInput_.size())
+
+    // 7 -- iterm
+    controller.setSimulatedOutput(
+        controller.dumpInternals()[0] * controller.dumpInternals()[7] +
+        stepResponseInput_[currentInputSample_].second);
+
+    stepResponseOutput_.push_back(
+        {
+        timeSamplesPitch_ * kLoopTimeMs / 1000.0,
+        stepResponseInput_[currentInputSample_].second,
+        controller.getInput() 
+        });
+
+    if (currentInputSample_ == stepResponseInput_.size() - 1)
     {
         writeStepResponse();
         spdlog::info("Finished step responce generation");
         stepResponseInProgress = false;
     }
-    else
-    {
-        controller.setSimulatedOutput(stepResponseInput_[currentInputSample_].second);
-        stepResponseOutput_.push_back({
-            timeSamplesPitch_ * kLoopTimeMs / 1000.0, 
-            stepResponseInput_[currentInputSample_].second, 
-            controller.getInput() });
-    }
+    
 }
 void A2AStec30AP::readStepResponseInput()
 {
