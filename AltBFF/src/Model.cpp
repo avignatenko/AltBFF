@@ -322,7 +322,7 @@ void Model::calculateRunwayVibrations()
         double AmpRunway = std::clamp(runwayAmp * scFact, 0.0, runwayAmp);
 
         if (groundType_ == GroundType::Concrete) AmpRunway /= 4.0;
-        if (groundType_ == GroundType::Grass) AmpRunway /= 2.0;
+        if (groundType_ == GroundType::Grass) AmpRunway /= 1.5;
 
         double scFactCPS = std::clamp(0.5 + std::abs(0.5 * gs_ / takeoffSpeedMps), 0.0, 1.0);
         double CPSRunway = std::clamp(runwayCPS * scFactCPS, 0.0, runwayCPS);
