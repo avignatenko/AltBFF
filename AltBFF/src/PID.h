@@ -14,15 +14,14 @@ class PIDController
 {
 public:
 
-    PIDController(double kp, double ki, double kd, double duMax, double min, double max, double sampleTimeMs, double input, double output)
+    PIDController(double kp, double ti, double td, double duMax, double min, double max, double sampleTimeMs, double input, double output)
     {
         sampleTimeMs_ = sampleTimeMs;
 
         lastInput_ = input;
-        lastOutput_ = output;
-        iTerm_ = std::clamp(output / kp, min , max );
-
-        setTunings(kp, ki, kd);
+        lastOutput_ = output; 
+        spdlog::trace("Initial iTerm: {}, as {} / {}", iTerm_, output, kp);
+        setTunings(kp, ti, td);
         setOutputLimits(duMax, min, max);
     }
 
@@ -31,18 +30,22 @@ public:
     {
         // Compute all the working error variables
         const double error = setPoint_ - input_;
-        iTerm_ += tiInv_ * error;
-        iTerm_ = std::clamp(iTerm_, outMin_, outMax_);
+
+        spdlog::trace("Compute iTerm: before {}", iTerm_);
+        iTerm_ += ki_ * error;
+        spdlog::trace("Compute iTerm: add error {}", iTerm_);
+        iTerm_ = std::clamp(iTerm_, outMin_ - lastOutput_, outMax_ - lastOutput_);
+        spdlog::trace("Compute iTerm: clip {}, with {} - {}", iTerm_, outMin_, outMax_);
 
         const double dInput = input_ - lastInput_;
         //dInputAverage_.addSample(dInput);
  
         /// Compute PID output
         
-        double output = kp_ * (error + iTerm_ - td_ * dInput); // dInputAverage_.get());
+        double output =  kp_ * error + iTerm_ - kd_ * dInput; // dInputAverage_.get());
         
         // clamp output
-        double dOutput = std::clamp(output - lastOutput_, -outDuMax_, outDuMax_);
+        double dOutput = std::clamp(output, -outDuMax_, outDuMax_);
         output_ = std::clamp(lastOutput_ + dOutput, outMin_, outMax_);
         
         // Remember some variables for next time
@@ -52,13 +55,16 @@ public:
 
     void setSimulatedOutput(double output)
     {
-        output_ = output;
+        output_ = lastOutput_ + output;
         output_ = std::clamp(output_, outMin_, outMax_);
+
+        lastOutput_ = output_;
     }
+
 
     std::array<double, 9> dumpInternals()
     {
-        return {kp_, tiInv_, td_, setPoint_,  input_, output_, setPoint_ - input_, iTerm_, -td_ * (input_ - lastInput_)  };
+        return {kp_, ki_, kd_, setPoint_,  input_, output_, setPoint_ - input_, iTerm_, -kd_ * (input_ - lastInput_)  };
     }
 
     void setInput(double input) { input_ = input; }
@@ -75,15 +81,15 @@ public:
         outDuMax_ = duMax * sampleTimeSec;
 
         output_ = std::clamp(output_, outMin_, outMax_);
-        iTerm_ = std::clamp(iTerm_, outMin_, outMax_);
+        iTerm_ = std::clamp(iTerm_, outMin_- lastOutput_, outMax_ - lastOutput_);
     }
     
-    void setTunings(double kp, double ki, double kd)
+    void setTunings(double kp, double ti, double td)
     {
         const double sampleTimeSec = sampleTimeMs_ / 1000.0;
         kp_ = kp;
-        tiInv_ = sampleTimeSec / ki;
-        td_ = kd / sampleTimeSec;
+        ki_ = (kp / ti) * sampleTimeSec;
+        kd_ = (kp * td) / sampleTimeSec;
     }
 
     double getOutput() { return output_; }
@@ -99,8 +105,8 @@ private:
     double setPoint_ = 0.0;
     double iTerm_ = 0.0;
     double kp_ = 0.0;
-    double tiInv_ = 0.0;
-    double td_ = 0.0;
+    double ki_ = 0.0;
+    double kd_ = 0.0;
     double outMin_ = 0.0;
     double outMax_ = 0.0;
     double outDuMax_ = 0.0;
