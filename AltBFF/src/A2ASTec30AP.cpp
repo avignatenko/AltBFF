@@ -139,7 +139,7 @@ void A2AStec30AP::process()
         // error = 0 ? keep elevator as is
         PIDController& elevatorController = pitchController_.value().elevatorController;
         if (settings_.pitchmode > 0)
-            elevatorController.setSetPoint(pitchController_.value().fpmController.getOutput());
+            elevatorController.setSetPoint(pitchController_.value().pitchController.getOutput());
         elevatorController.setInput(simPitch_);
   
         if (stepResponseInProgress && settings_.pitchmode == 0)

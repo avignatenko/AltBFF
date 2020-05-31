@@ -60,7 +60,7 @@ public:
 
     std::array<double, 9> dumpInternals()
     {
-        return {kp_, ki_, kd_, setPoint_,  input_, output_, setPoint_ - input_, iTerm_, -kd_ * (input_ - lastInput_)  };
+        return {kp_, ki_, kd_, setPoint_,  input_, output_, kp_ * (setPoint_ - input_), iTerm_, -kd_ * (input_ - lastInput_)  };
     }
 
     void setInput(double input) { input_ = input; }
