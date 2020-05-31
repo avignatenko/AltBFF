@@ -20,7 +20,6 @@ public:
 
         lastInput_ = input;
         lastOutput_ = output; 
-        spdlog::trace("Initial iTerm: {}, as {} / {}", iTerm_, output, kp);
         setTunings(kp, ti, td);
         setOutputLimits(duMax, min, max);
     }
@@ -31,12 +30,9 @@ public:
         // Compute all the working error variables
         const double error = setPoint_ - input_;
 
-        spdlog::trace("Compute iTerm: before {}", iTerm_);
         iTerm_ += ki_ * error;
-        spdlog::trace("Compute iTerm: add error {}", iTerm_);
         iTerm_ = std::clamp(iTerm_, outMin_ - lastOutput_, outMax_ - lastOutput_);
-        spdlog::trace("Compute iTerm: clip {}, with {} - {}", iTerm_, outMin_, outMax_);
-
+ 
         const double dInput = input_ - lastInput_;
         //dInputAverage_.addSample(dInput);
  

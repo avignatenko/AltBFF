@@ -7,6 +7,7 @@
 
 #include <Utils/QueueRunner.h>
 #include <Utils/Timer.h>
+#include <Utils/Common.h>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -46,12 +47,6 @@ struct LogSettings
 {
     spdlog::level::level_enum logLevel = spdlog::level::info;
 };
-
-namespace
-{
-const double kPi = std::acos(-1);
-double degToRad(double deg) { return deg * kPi / 180.0; }
-}
 
 LogSettings readLogSettings(const ptree& settings)
 {
@@ -135,7 +130,7 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.pitchRatePID.p = settings.get<double>("AP.PitchRateP");
     apSettings.pitchRatePID.i = settings.get<double>("AP.PitchRateI");
     apSettings.pitchRatePID.d = settings.get<double>("AP.PitchRateD");
-    apSettings.pitchRate = degToRad(settings.get<double>("AP.PitchRateMaxDegpS"));
+    apSettings.pitchRateMax = degToRad(settings.get<double>("AP.PitchRateMaxDegpS"));
     apSettings.pitchRateDuMax = settings.get<double>("AP.PitchRateDuMax");
 
     apSettings.pitchPID.p = settings.get<double>("AP.PitchP");

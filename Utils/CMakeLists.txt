@@ -22,4 +22,4 @@ target_sources(${PROJECT_NAME}
 		"include/Utils/DispatchQueue.h"
 		"include/Utils/IRunner.h"
 		"include/Utils/Timer.h"
-		"include/Utils/Accumulators.h")
+		"include/Utils/Accumulators.h" "include/Utils/Common.h")

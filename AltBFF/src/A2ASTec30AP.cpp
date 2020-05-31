@@ -4,11 +4,11 @@
 #include "Model.h"
 #include <BFFCLAPI/CLStructures.h>
 #include <CSV/CSV.hpp>
+#include <Utils/Common.h>
 #include <fmt/ranges.h>
 
 namespace
 {
-const double kPi = std::acos(-1);
 const double kLoopTimeMs = 1000.0 / 30;
 }
 
@@ -35,11 +35,11 @@ void A2AStec30AP::enablePitchAxis(bool enable)
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
                           settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
             // pitch rate controller
-            PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d,
-                         settings_.pitchRateDuMax, -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs, simPitch_, simPitchRate_),
+      //      PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d,
+      //                   settings_.pitchRateDuMax, -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs, simPitch_, simPitchRate_),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitchRate_, simElevator_)
+                        settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitch_, simElevator_)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
@@ -47,12 +47,12 @@ void A2AStec30AP::enablePitchAxis(bool enable)
         switch (pitchController_.value().mode)
         {
         case PitchController::Mode::Pitch:
-            pitchController_.value().pitchRateController.setSetPoint(simPitch_);
+            pitchController_.value().elevatorController.setSetPoint(simPitch_);
             spdlog::info("AP pitch enabled with target pitch: {}", simPitch_);
             break;
         case PitchController::Mode::FPM:
-            pitchController_.value().pitchController.setSetPoint(simFpm_);
-            spdlog::info("AP pitch enabled with target fpm: {}", simFpm_);
+            pitchController_.value().pitchController.setSetPoint(500.0);
+            spdlog::info("AP pitch enabled with target fpm: {}", 500.0);
             break;
         case PitchController::Mode::Alt:
             pitchController_.value().fpmController.setSetPoint(simPressure_);
@@ -134,36 +134,21 @@ void A2AStec30AP::process()
             spdlog::trace("total output pitch: {}", pitchController.getOutput());
         }
 
-        // mode Pitch = 0
-        // pitch rate controller: pitch -> pitch rate (absolute!)
-        // todo: check with pitch rate offset
-        // error = 0 ? set pitch rate to 0
-        if (settings_.pitchmode >= 0)
-        {
-            PIDController& pitchRateController = pitchController_.value().pitchRateController;
-            if (settings_.pitchmode > 0)
-                pitchRateController.setSetPoint(pitchController_.value().pitchController.getOutput());
-            pitchRateController.setInput(simPitch_);
-            if (stepResponseInProgress && settings_.pitchmode == 0)
-                computeStepResponseInput(pitchRateController);
-            else
-                pitchRateController.compute();
-
-            spdlog::trace("pitch rate pid: {}", pitchRateController.dumpInternals());
-            spdlog::trace("total output pitch rate: {}", pitchRateController.getOutput());
-        }
-
+      
         // elevator controller: pitch rate -> elevator offset
         // error = 0 ? keep elevator as is
         PIDController& elevatorController = pitchController_.value().elevatorController;
-        if (settings_.pitchmode >= 0)
-            elevatorController.setSetPoint(pitchController_.value().pitchRateController.getOutput());
-        elevatorController.setInput(simPitchRate_);
+        if (settings_.pitchmode > 0)
+            elevatorController.setSetPoint(pitchController_.value().fpmController.getOutput());
+        elevatorController.setInput(simPitch_);
   
-        if (stepResponseInProgress && settings_.pitchmode < 0)
+        if (stepResponseInProgress && settings_.pitchmode == 0)
             computeStepResponseInput(elevatorController);
         else
             elevatorController.compute();
+
+        spdlog::trace("elevator pid: {}", elevatorController.dumpInternals());
+        spdlog::trace("total output elevator: {}", elevatorController.getOutput());
 
         /*
         // check for excessive forces

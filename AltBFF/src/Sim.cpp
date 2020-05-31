@@ -1,5 +1,7 @@
 #include "Sim.h"
 
+#include <Utils/Common.h>
+
 #include <windows.h>
 #include "FSUIPC_User64.h"
 
@@ -7,10 +9,6 @@
 
 #include <set>
 
-namespace
-{
-static double kPi = std::acos(-1);
-}
 
 Sim::Sim(Settings& settings) : settings_(settings)
 {

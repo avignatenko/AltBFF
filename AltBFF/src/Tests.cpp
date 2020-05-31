@@ -3,13 +3,9 @@
 #include "PID.h"
 
 #include <Utils/Accumulators.h>
+#include <Utils/Common.h>
 #include <catch2/catch.hpp>
 #include <iostream>
-
-namespace
-{
-static double kPi = std::acos(-1);
-}
 
 class StandardSettingsTestFixture {
 protected:
@@ -102,8 +98,8 @@ TEST_CASE("AP pitch")
     A2AStec30AP::Settings s;
     A2AStec30AP ap(s);
 
-    ap.enablePitchAxis(true);
     ap.setSimElevator(-50);
+    ap.enablePitchAxis(true);
     ap.process();
 
     REQUIRE(ap.getCLElevator().value() == -50);
@@ -119,19 +115,23 @@ TEST_CASE("AP pitch")
     REQUIRE(!ap.getSimElevator());
 }
 
-TEST_CASE("AP pitch 2")
+TEST_CASE("AP pitch: maintain pitch")
 {
     A2AStec30AP::Settings s;
-    s.elevatorPID = { 50, 0, 50 };
+    s.elevatorPID = { 100, 10000, 0 };
+    s.pitchmode = 0;
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
-    ap.setAirPressure(84307.28); // at 5000 feet
+    ap.setSimPitch(0);
     ap.enablePitchAxis(true);
     ap.process();
+    REQUIRE(ap.getSimElevator() == -50);
 
-    ap.setAirPressure(84149.64); // at 5050 feet
+    ap.setSimPitch(degToRad(-5));
     ap.process();
+    REQUIRE(ap.getSimElevator() == -41.273324651207489);
+   
     //std::cout << ap.getCLElevator();
 
 }

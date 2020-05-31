@@ -18,25 +18,25 @@ public:
 			double d;
 		};
 
-		PID rollPID = { 0.0, 0.0, 0.0 };
+		PID rollPID = { 0.0, 10000.0, 0.0 };
 
 		// pitch
 		int pitchmode = 0;
 
-		PID elevatorPID = { 0.0, 0.0, 0.0 };
-		double elevatorDuMax = 0.0;
+		PID elevatorPID = { 0.0, 10000.0, 0.0 };
+		double elevatorDuMax = std::numeric_limits<double>::infinity();
 
-		PID pitchRatePID = { 0.0, 0.0, 0.0 };
-		double pitchRateDuMax = 0.0;
-		double pitchRate = 0;
+		PID pitchRatePID = { 0.0, 10000.0, 0.0 };
+		double pitchRateDuMax = std::numeric_limits<double>::infinity();
+		double pitchRateMax = std::numeric_limits<double>::infinity();
 
-		PID pitchPID = { 0.0, 0.0, 0.0 };
-		double pitchDuMax = 0.0;
-		double pitchMax = 0.0;
+		PID pitchPID = { 0.0, 10000.0, 0.0 };
+		double pitchDuMax = std::numeric_limits<double>::infinity();
+		double pitchMax = std::numeric_limits<double>::infinity();
 
-		PID fpmPID = { 0.0, 0.0, 0.0 };
-		double fpmDuMax = 0.0;
-		double fpmMax = 0.0;
+		PID fpmPID = { 0.0, 10000.0, 0.0 };
+		double fpmDuMax = std::numeric_limits<double>::infinity();
+		double fpmMax = std::numeric_limits<double>::infinity();
 
 		bool doStepResponse = false;
 		std::string stepResponseInputFile;
@@ -174,7 +174,7 @@ private:
 		Mode mode = Mode::Alt;
 		PIDController fpmController;
 		PIDController pitchController;
-		PIDController pitchRateController;
+		//PIDController pitchRateController;
 		PIDController elevatorController;
 	};
 

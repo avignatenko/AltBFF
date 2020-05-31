@@ -1,17 +1,11 @@
 #include "Model.h"
 
+#include <Utils/Common.h>
+
 #include <cmath>
 #include <optional>
 #include <chrono>
 
-namespace
-{
-const double kBaseAirDensity = 1.2; // at msl, used with tas
-const double kPi = std::acos(-1);
-
-inline double clampMin(double val, double min) { return val < min ? min : val; }
-
-}
 
 Model::Model(const Settings& settings)
 {
@@ -119,7 +113,7 @@ double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCo
 {
     // test advanced prop wash calculation (for single prop GA)
     // https://www.grc.nasa.gov/www/k-12/airplane/propth.html
-    double thrustN = clampMin(thrust_, 0.0) * 4.45; // pounds to newton
+    double thrustN = std::max(thrust_, 0.0) * 4.45; // pounds to newton
     const double propArea = 3.14 / 4 * std::pow(1.8, 2); // prop diameter roughly 1.8m
     double airSpeed2 = std::sqrt(thrustN / (.5 * airDensity_ * propArea) * std::pow(propWashCoeff, 2.0) + tas_ * tas_);
 
