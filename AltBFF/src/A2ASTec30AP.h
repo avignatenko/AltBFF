@@ -98,10 +98,10 @@ public:
 	}
 
 	// Pa
-	void setAirPressure(double pressure)
+	void setPressureAltitude (double pressureAltitude)
 	{
-		simPressure_ = pressure * 1e-5; // convert to bar
-		spdlog::trace("Air pressure set to AP: {}", simPressure_);
+		simPressureAltitude_ = pressureAltitude;
+		spdlog::trace("Pressure altitude set to AP: {}", simPressureAltitude_);
 	}
 
 	// model vars
@@ -183,7 +183,7 @@ private:
 
 	double simAileron_ = 0.0;
 	double simElevator_ = 0.0;
-	double simPressure_ = 0.0;
+	double simPressureAltitude_ = 0.0;
 	double simPitch_ = 0.0;
 	double simPitchRate_ = 0.0;
 	double simFpm_ = 0.0;

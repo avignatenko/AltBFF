@@ -11,6 +11,7 @@ public:
         int clElevatorTrimOffset = 0;
         int apRollEngagedOffset = 0;
         int apPitchEngagedOffset = 0;
+        int apPitchLimitsOffset = 0;
     };
 
     Sim(Settings& settings);
@@ -30,6 +31,17 @@ public:
     // +/- 1, mid = 0
     void writeElevatorTrim(double trim);
 
+    enum class APPitchLimits
+    {
+        TrimOk,
+        TrimUp,
+        TrimUpMore,
+        TrimDown,
+        TrimDownMore
+    };
+
+    void writeAPPitchLimits(APPitchLimits limits);
+
     // read
 
      // +/- 100%, mid = 0
@@ -44,6 +56,9 @@ public:
     // Pa
     double readAmbienAirPressure();
 
+    // meters
+    double readPressureAltitude();
+    
     // m/s
     double readTAS();
 
@@ -124,6 +139,7 @@ private:
         double thrust = 0.0;
         double airDensity = 0.0;
         double airPressure = 0.0;
+        double pressureAltitude = 0.0;
         double alpha = 0.0;
         double pitchRate = 0.0;
         int32_t pitch = 0;
@@ -135,6 +151,7 @@ private:
         int16_t clElevatorTrim = 0;
         int8_t apRollEngaged = 0;
         int8_t apPitchEnaged = 0;
+        int8_t apPitchLimits;
     } simData_;
 
     struct
@@ -142,13 +159,16 @@ private:
         bool elevator = false;
         bool elevatorTrim = false;
         bool aileron = false;
+        bool apPitchLimits = false;
 
         void reset()
         {
             elevator = false;
             elevatorTrim = false;
             aileron = false;
+            apPitchLimits = false;
         }
+
     } simDataWriteFlags_;
 
     bool connected_ = false;

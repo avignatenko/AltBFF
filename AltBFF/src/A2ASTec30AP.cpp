@@ -30,7 +30,7 @@ void A2AStec30AP::enablePitchAxis(bool enable)
             static_cast<PitchController::Mode>(settings_.pitchmode),
             // fpm controller
             PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                          settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs, simPressure_, simFpm_),
+                          settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs, simPressureAltitude_, simFpm_),
             // pitch controller
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
                           settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
@@ -55,12 +55,10 @@ void A2AStec30AP::enablePitchAxis(bool enable)
             spdlog::info("AP pitch enabled with target fpm: {}", 500.0);
             break;
         case PitchController::Mode::Alt:
-            pitchController_.value().fpmController.setSetPoint(simPressure_);
-            spdlog::info("AP pitch enabled with target pressure: {}", simPressure_);
+            pitchController_.value().fpmController.setSetPoint(simPressureAltitude_);
+            spdlog::info("AP pitch enabled with target pressure altitude: {}", simPressureAltitude_);
             break;
         }
-
-        elevatorOut_ = simElevator_;
 
         if (settings_.doStepResponse)
         {
@@ -102,7 +100,7 @@ void A2AStec30AP::process()
         if (settings_.pitchmode == 2)
         {
             PIDController& fpmController = pitchController_.value().fpmController;
-            fpmController.setInput(simPressure_);
+            fpmController.setInput(simPressureAltitude_);
 
 
             if (stepResponseInProgress && settings_.pitchmode == 2)

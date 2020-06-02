@@ -112,6 +112,7 @@ Sim::Settings readSimSettings(const ptree& settings)
     simSettings.clElevatorTrimOffset = std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
     simSettings.apRollEngagedOffset = std::stoul(settings.get<std::string>("Sim.APRollEngagedOffset"), nullptr, 16);
     simSettings.apPitchEngagedOffset = std::stoul(settings.get<std::string>("Sim.APPitchEngagedOffset"), nullptr, 16);
+    simSettings.apPitchLimitsOffset = std::stoul(settings.get<std::string>("Sim.APPitchLimitsOffset"), nullptr, 16);
     return simSettings;
 }
 
@@ -310,7 +311,7 @@ int checkedMain(int argc, char** argv)
         autopilot.enableRollAxis(sim.readAxisControlState(Sim::Aileron) != Sim::AxisControl::Manual);
         autopilot.setSimAileron(sim.readAileron());
         autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
-        autopilot.setAirPressure(sim.readAmbienAirPressure());
+        autopilot.setPressureAltitude(sim.readPressureAltitude());
         autopilot.setSimPitch(sim.readPitch());
         autopilot.setSimPitchRate(sim.readPitchRate());
         autopilot.setSimFpm(sim.readFpm());
@@ -323,8 +324,21 @@ int checkedMain(int argc, char** argv)
         if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Auto)
         {
             auto apWarning = autopilot.getTrimNeededWarning();
+
+            Sim::APPitchLimits simPitchLimits = Sim::APPitchLimits::TrimOk;
             if (apWarning.warningLevel > 0)
+            {
+                if (apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down)
+                    simPitchLimits = Sim::APPitchLimits::TrimDown;
+                else if (apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Up)
+                    simPitchLimits = Sim::APPitchLimits::TrimUp;
+
+                simPitchLimits = Sim::APPitchLimits(int(simPitchLimits) + apWarning.warningLevel - 1);
+
                 spdlog::info("AP warning: Pitch {}! dforce: {}", apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down ? "down" : "up", apWarning.forceDelta);
+            }
+           
+            sim.writeAPPitchLimits(simPitchLimits);               
         }
 
         // 4. write model calculation results to CL
@@ -332,15 +346,11 @@ int checkedMain(int argc, char** argv)
 
         if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
         {
-            input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
-            input.elevator.springForce = model.getSpringForce(Model::Elevator);
             input.positionFollowingEngage &= ~(1u << 0); // clear pos following
         }
         else
         {
-            input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
-            input.elevator.springForce = model.getSpringForce(Model::Elevator);
-            input.positionFollowingEngage |= (1u << 0); // set pos following
+           input.positionFollowingEngage |= (1u << 0); // set pos following
 
             // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
             const float bffMin = 0;
@@ -352,6 +362,9 @@ int checkedMain(int argc, char** argv)
             spdlog::trace("Elevator in follow mode: {}", input.elevator.positionFollowingSetPoint);
         }
 
+        input.elevator.fixedForce = model.getFixedForce(Model::Elevator);
+        input.elevator.springForce = model.getSpringForce(Model::Elevator);
+
         input.elevator.vibrationCh1Hz = model.getVibrationEngineHz(Model::Elevator);
         input.elevator.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Elevator);
         input.elevator.vibrationCh2Hz = model.getVibrationRunwayHz(Model::Elevator);
@@ -361,16 +374,12 @@ int checkedMain(int argc, char** argv)
 
         if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
         {
-            input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
-            input.aileron.springForce = model.getSpringForce(Model::Aileron);
             input.positionFollowingEngage &= ~(1u << 1); // clear pos following
         }
         else
         {
 
-            input.aileron.fixedForce = 0;
-            input.aileron.springForce = 0;
-            input.positionFollowingEngage |= (1u << 1); // set pos following
+             input.positionFollowingEngage |= (1u << 1); // set pos following
 
             // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
             const float bffMin = 0;
@@ -381,6 +390,9 @@ int checkedMain(int argc, char** argv)
 
             spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
         }
+
+        input.aileron.fixedForce = model.getFixedForce(Model::Aileron);
+        input.aileron.springForce = model.getSpringForce(Model::Aileron);
 
         input.aileron.vibrationCh1Hz = model.getVibrationEngineHz(Model::Aileron);
         input.aileron.vibrationCh1Amp = model.getVibrationEngineAmp(Model::Aileron);
@@ -402,7 +414,7 @@ int checkedMain(int argc, char** argv)
         else if (auto axisValue = autopilot.getSimAileron())
             sim.writeAileron(axisValue.value());
 
-        sim.writeElevatorTrim(0.0); // set default sim trim to zero (fixme: do once)
+        sim.writeElevatorTrim(0.0); 
 
         sim.process();
 

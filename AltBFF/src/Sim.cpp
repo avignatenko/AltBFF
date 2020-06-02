@@ -42,14 +42,21 @@ void Sim::disconnect()
 
 void Sim::writeElevator(double elevator)
 {
-    simData_.elevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
+    int16_t newElevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
+    if (simData_.elevator == newElevator) return;
+
+    simData_.elevator = newElevator;
     simDataWriteFlags_.elevator = true;
 
     spdlog::trace("Sim Elevator Write: {}", simData_.elevator);
 }
+
 void Sim::writeAileron(double aileron)
 {
-    simData_.aileron = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
+    int16_t newAileron = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
+    if (simData_.aileron == newAileron) return;
+
+    simData_.aileron = newAileron;
     simDataWriteFlags_.aileron = true;
 }
 
@@ -67,8 +74,20 @@ double Sim::readAileron()
 
 void Sim::writeElevatorTrim(double trim)
 {
-    simData_.elevatorTrim = static_cast<int16_t>(trim * 16383);
+    int16_t newElevatorTrim = static_cast<int16_t>(trim * 16383);
+    if (simData_.elevatorTrim == newElevatorTrim) return;
+
+    simData_.elevatorTrim = newElevatorTrim;
     simDataWriteFlags_.elevatorTrim = true;
+}
+
+void Sim::writeAPPitchLimits(APPitchLimits limits)
+{
+    int8_t newApPitchLimits = static_cast<int8_t>(limits);
+    if (simData_.apPitchLimits == newApPitchLimits) return;
+
+    simData_.apPitchLimits = newApPitchLimits;
+    simDataWriteFlags_.apPitchLimits = true;
 }
 
 double Sim::readAmbientAirDensity()
@@ -83,6 +102,12 @@ double Sim::readAmbienAirPressure()
     return pressurePfs2pa(simData_.airPressure);
 
 }
+
+double Sim::readPressureAltitude()
+{
+    return simData_.pressureAltitude;
+}
+
 double Sim::readTAS()
 {
     auto kn2mps = [](double kn) { return kn * 0.515; };
@@ -197,11 +222,13 @@ void Sim::process()
     BOOL failed = !FSUIPC_Write_IF(0x0BB2, 2, &simData_.elevator, simDataWriteFlags_.elevator, &dwResult) ||
         !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
         !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
+        !FSUIPC_Write_IF(settings_.apPitchLimitsOffset, 1, &simData_.apPitchLimits, simDataWriteFlags_.apPitchLimits, &dwResult) ||
 
         !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
         !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
         !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
         !FSUIPC_Read(0x28C8, 8, &simData_.airPressure, &dwResult) ||
+        !FSUIPC_Read(0x34B0, 8, &simData_.pressureAltitude, &dwResult) ||
         !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
         !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
         !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||
