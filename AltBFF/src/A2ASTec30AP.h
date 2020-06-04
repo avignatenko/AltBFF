@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PID.h"
+#include "RateLimiter.h"
 
 #include <spdlog/spdlog.h>
 #include <optional>
@@ -22,6 +23,8 @@ public:
 
 		// pitch
 		int pitchmode = 0;
+
+		double elevatorServoDuMax = 0.0;
 
 		PID elevatorPID = { 0.0, 10000.0, 0.0 };
 		double elevatorDuMax = std::numeric_limits<double>::infinity();
@@ -165,6 +168,7 @@ private:
 		PIDController fpmController;
 		PIDController pitchController;
 		PIDController elevatorController;
+		RateLimiter elevatorServo;
 	};
 
 	std::optional<PitchController>  pitchController_;

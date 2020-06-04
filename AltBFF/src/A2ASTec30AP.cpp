@@ -36,7 +36,9 @@ void A2AStec30AP::enablePitchAxis(bool enable)
                           -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitch_, simElevator_)
+                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitch_, simElevator_),
+            // elevator servo
+            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_, kLoopTimeMs)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
@@ -145,15 +147,18 @@ void A2AStec30AP::process()
         spdlog::trace("elevator pid: {}", elevatorController.dumpInternals());
         spdlog::trace("total output elevator: {}", elevatorController.getOutput());
 
-        
+        // send to motor
+        RateLimiter& elevatorServo = pitchController_.value().elevatorServo;
+        elevatorServo.setInput(pitchController_.value().elevatorController.getOutput());
+
         // check for excessive forces
 
         double forceError = std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce;
 
-        double duMin = -settings_.elevatorDuMax;
-        double duMax = settings_.elevatorDuMax;
+        double duMin = -settings_.elevatorServoDuMax;
+        double duMax = settings_.elevatorServoDuMax;
 
-        if (forceError > 0)
+        if (!stepResponseInProgress && forceError > 0)
         {
             double kDegradation = std::clamp(1 -
                 (std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce) /
@@ -163,14 +168,17 @@ void A2AStec30AP::process()
                 duMin = duMin * kDegradation;
             else
                 duMax = duMax * kDegradation;
-                
+
             spdlog::trace("AP force error: {}, kDegr: {}, duMin: {}, duMax: {}", forceError, kDegradation, duMin, duMax);
         }
 
-        elevatorController.setOutputLimits(duMin, duMax, -100, 100);
+        elevatorServo.setRate(duMin, duMax);
 
-        // finally send back
-        elevatorOut_ = pitchController_.value().elevatorController.getOutput();
+        elevatorServo.process();
+
+        spdlog::trace("Elevator servo input: {}, output: {}", elevatorServo.getInput(), elevatorServo.getOutput());
+
+        elevatorOut_ = elevatorServo.getOutput();
 
         timeSamplesPitch_++;
 

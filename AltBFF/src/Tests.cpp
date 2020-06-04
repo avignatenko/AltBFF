@@ -1,6 +1,7 @@
 #include "Model.h"
 #include "A2ASTec30AP.h"
 #include "PID.h"
+#include "RateLimiter.h"
 
 #include <Utils/Accumulators.h>
 #include <Utils/Common.h>
@@ -234,3 +235,53 @@ TEST_CASE("Moving average")
     REQUIRE(ma.get() == 1.0);
 
 }
+
+TEST_CASE("Rate limiter")
+{
+    RateLimiter r(-10, 20, -100, 1000.0/30.0);
+
+    SECTION("check low and high steps")
+    {
+        r.setInput(-100);
+        r.process();
+        REQUIRE(r.getOutput() == -100.0);
+
+        r.setInput(-99);
+        r.process();
+        REQUIRE(r.getOutput() == -99.333333333333329);
+
+        r.setInput(0);
+        r.process();
+        REQUIRE(r.getOutput() == -98.666666666666657);
+
+        r.setInput(-98.166666666666657);
+        r.process();
+        REQUIRE(r.getOutput() == -98.166666666666657);
+
+        r.setInput(-98.166666666666657);
+        r.process();
+        REQUIRE(r.getOutput() == -98.166666666666657);
+    }
+
+    // make a cycle
+    SECTION("check integral time as expected")
+    {
+        for (int i = 0; i < 20 * 30; ++i)
+        {
+            r.setInput(100);
+            r.process();
+        }
+
+        REQUIRE(r.getOutput() == 100.0);
+
+        for (int i = 0; i < 20 * 30; ++i)
+        {
+            r.setInput(-100);
+            r.process();
+        }
+
+        REQUIRE(r.getOutput() == 0.0);
+    }
+ 
+}
+

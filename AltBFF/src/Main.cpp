@@ -123,6 +123,8 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
 
     apSettings.pitchmode = settings.get<int>("AP.PitchMode");
 
+    apSettings.elevatorServoDuMax = settings.get<int>("AP.ElevatorServoDuMax");
+
     apSettings.elevatorPID.p = settings.get<double>("AP.ElevatorP");
     apSettings.elevatorPID.i = settings.get<double>("AP.ElevatorI");
     apSettings.elevatorPID.d = settings.get<double>("AP.ElevatorD");
