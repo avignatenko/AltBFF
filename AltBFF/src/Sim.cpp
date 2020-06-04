@@ -84,8 +84,9 @@ void Sim::writeElevatorTrim(double trim)
 void Sim::writeAPPitchLimits(APPitchLimits limits)
 {
     int8_t newApPitchLimits = static_cast<int8_t>(limits);
+    
     if (simData_.apPitchLimits == newApPitchLimits) return;
-
+ 
     simData_.apPitchLimits = newApPitchLimits;
     simDataWriteFlags_.apPitchLimits = true;
 }
@@ -243,8 +244,8 @@ void Sim::process()
         !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
         !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||
         !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
-        !FSUIPC_Read(settings_.apRollEngagedOffset, 2, &simData_.apRollEngaged, &dwResult) ||
-        !FSUIPC_Read(settings_.apPitchEngagedOffset, 2, &simData_.apPitchEnaged, &dwResult);
+        !FSUIPC_Read(settings_.apRollEngagedOffset, 1, &simData_.apRollEngaged, &dwResult) ||
+        !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &simData_.apPitchEnaged, &dwResult);
 
     // process
     failed = failed || !FSUIPC_Process(&dwResult);

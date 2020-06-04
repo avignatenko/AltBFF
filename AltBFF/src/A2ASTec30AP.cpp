@@ -30,16 +30,13 @@ void A2AStec30AP::enablePitchAxis(bool enable)
             static_cast<PitchController::Mode>(settings_.pitchmode),
             // fpm controller
             PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                          settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs, simPressureAltitude_, simFpm_),
+                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs, simPressureAltitude_, simFpm_),
             // pitch controller
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
-                          settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
-            // pitch rate controller
-      //      PIDController(settings_.pitchRatePID.p, settings_.pitchRatePID.i, settings_.pitchRatePID.d,
-      //                   settings_.pitchRateDuMax, -settings_.pitchRate, settings_.pitchRate, kLoopTimeMs, simPitch_, simPitchRate_),
+                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitch_, simElevator_)
+                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitch_, simElevator_)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
@@ -148,20 +145,32 @@ void A2AStec30AP::process()
         spdlog::trace("elevator pid: {}", elevatorController.dumpInternals());
         spdlog::trace("total output elevator: {}", elevatorController.getOutput());
 
-        /*
+        
         // check for excessive forces
 
         double forceError = std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce;
 
-        double forceShift = 0.0;
+        double duMin = -settings_.elevatorDuMax;
+        double duMax = settings_.elevatorDuMax;
+
         if (forceError > 0)
         {
-            forceShift = settings_.pitchMaxCLForce * std::copysign(forceError, clForceElevator_);
-            spdlog::trace("AP force coeff: {}, AP Force Shift: {}", forceError, forceShift);
-        }*/
+            double kDegradation = std::clamp(1 -
+                (std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce) /
+                (settings_.pitchMaxCLForce - settings_.pitchStartDegradeCLForce), 0.0, 1.0);
+
+            if (clForceElevator_ > 0)
+                duMin = duMin * kDegradation;
+            else
+                duMax = duMax * kDegradation;
+                
+            spdlog::trace("AP force error: {}, kDegr: {}, duMin: {}, duMax: {}", forceError, kDegradation, duMin, duMax);
+        }
+
+        elevatorController.setOutputLimits(duMin, duMax, -100, 100);
 
         // finally send back
-        elevatorOut_ = pitchController_.value().elevatorController.getOutput();// + forceShift;
+        elevatorOut_ = pitchController_.value().elevatorController.getOutput();
 
         timeSamplesPitch_++;
 
@@ -219,9 +228,7 @@ void A2AStec30AP::computeStepResponseInput(PIDController& controller)
 
 
     // 7 -- iterm
-    controller.setSimulatedOutput(
-        controller.dumpInternals()[0] * controller.dumpInternals()[7] +
-        stepResponseInput_[currentInputSample_].second);
+    controller.setManualOutput(stepResponseInput_[currentInputSample_].second);
 
     stepResponseOutput_.push_back(
         {

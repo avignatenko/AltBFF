@@ -136,41 +136,11 @@ TEST_CASE("AP pitch: maintain pitch")
 
 }
 
-TEST_CASE("PID")
-{
-    PIDController p(-1.0/10, 10, 0, 200.0 / (1.0 / 30), -100, 100, 1000.0 / 30, 10100, -100);
-
-    auto syst = [](double output) { return 10000 - (output + 30); };
-
-    p.setSetPoint(10000);
-    p.setInput(syst(-30));
-
-
-    double output = 0;
-    for (int i = 0; i < 10000; ++i)
-    {
-        p.compute();
-        output = p.getOutput();
-        p.setInput(syst(output));
-    }
-
-
- 
-     output = p.getOutput();
-//    REQUIRE(output == -30.0);
-
-    p.setInput(10050);
-    p.compute();
-
-    output = p.getOutput();
-  //  REQUIRE(output == -15.299999999999999);
-
-}
 
 TEST_CASE("AP pitch pitch 1")
 {
     A2AStec30AP::Settings s;
-    s.elevatorPID = { 50, 10, 0 };
+    s.elevatorPID = { 50, 1, 0 };
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -178,13 +148,13 @@ TEST_CASE("AP pitch pitch 1")
     ap.enablePitchAxis(true);
     ap.process();
 
-    ap.setSimPitch(-10.0 / 180.0 * 3.14); // pitch up
+    ap.setSimPitch(degToRad(-10.0)); // pitch up
     ap.process();
-    REQUIRE(ap.getSimElevator() == -41.220211111111112);
+    REQUIRE(ap.getSimElevator() == -40.982465531362635);
     ap.process();
-    REQUIRE(ap.getSimElevator() == -32.382855555555558);
+    REQUIRE(ap.getSimElevator() == -40.691577322696915);
     ap.process();
-    REQUIRE(ap.getSimElevator() == -23.487933333333338);
+    REQUIRE(ap.getSimElevator() == -40.400689114031188);
 }
 
 TEST_CASE("AP pitch pitch 2")
@@ -263,21 +233,4 @@ TEST_CASE("Moving average")
     // test for cached
     REQUIRE(ma.get() == 1.0);
 
-}
-
-TEST_CASE("AP Impulse Response")
-{
-    A2AStec30AP::Settings s;
-    s.pitchmode = -1;
-    s.doStepResponse = true;
-    s.stepResponseInputFile = "elev_sr.csv";
-    A2AStec30AP ap(s);
-
-    ap.enablePitchAxis(true);
-
-    for (int i = 0; i < 30 * 20; ++i)
-    {
-        ap.setSimPitchRate(i);
-        ap.process();
-    }
 }

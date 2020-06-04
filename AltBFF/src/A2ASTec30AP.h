@@ -26,10 +26,6 @@ public:
 		PID elevatorPID = { 0.0, 10000.0, 0.0 };
 		double elevatorDuMax = std::numeric_limits<double>::infinity();
 
-		PID pitchRatePID = { 0.0, 10000.0, 0.0 };
-		double pitchRateDuMax = std::numeric_limits<double>::infinity();
-		double pitchRateMax = std::numeric_limits<double>::infinity();
-
 		PID pitchPID = { 0.0, 10000.0, 0.0 };
 		double pitchDuMax = std::numeric_limits<double>::infinity();
 		double pitchMax = std::numeric_limits<double>::infinity();
@@ -83,12 +79,6 @@ public:
 	{
 		simPitch_ = pitch;
 		spdlog::trace("Pitch set to AP: {}", simPitch_);
-	}
-
-	void setSimPitchRate(double pitchRate)
-	{
-		simPitchRate_ = pitchRate;
-		spdlog::trace("Pitch rate set to AP: {}", simPitchRate_);
 	}
 
 	void setSimFpm(double fpm)
@@ -174,7 +164,6 @@ private:
 		Mode mode = Mode::Alt;
 		PIDController fpmController;
 		PIDController pitchController;
-		//PIDController pitchRateController;
 		PIDController elevatorController;
 	};
 
@@ -185,7 +174,6 @@ private:
 	double simElevator_ = 0.0;
 	double simPressureAltitude_ = 0.0;
 	double simPitch_ = 0.0;
-	double simPitchRate_ = 0.0;
 	double simFpm_ = 0.0;
 
 	double clForceElevator_ = 0.0;

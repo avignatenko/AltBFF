@@ -128,12 +128,6 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.elevatorPID.d = settings.get<double>("AP.ElevatorD");
     apSettings.elevatorDuMax = settings.get<double>("AP.ElevatorDuMax");
    
-    apSettings.pitchRatePID.p = settings.get<double>("AP.PitchRateP");
-    apSettings.pitchRatePID.i = settings.get<double>("AP.PitchRateI");
-    apSettings.pitchRatePID.d = settings.get<double>("AP.PitchRateD");
-    apSettings.pitchRateMax = degToRad(settings.get<double>("AP.PitchRateMaxDegpS"));
-    apSettings.pitchRateDuMax = settings.get<double>("AP.PitchRateDuMax");
-
     apSettings.pitchPID.p = settings.get<double>("AP.PitchP");
     apSettings.pitchPID.i = settings.get<double>("AP.PitchI");
     apSettings.pitchPID.d = settings.get<double>("AP.PitchD");
@@ -313,7 +307,6 @@ int checkedMain(int argc, char** argv)
         autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
         autopilot.setPressureAltitude(sim.readPressureAltitude());
         autopilot.setSimPitch(sim.readPitch());
-        autopilot.setSimPitchRate(sim.readPitchRate());
         autopilot.setSimFpm(sim.readFpm());
         autopilot.setTotalAxisCLForceAileron(model.getTotalForce(Model::Aileron));
         autopilot.setTotalAxisCLForceElevator(model.getTotalForce(Model::Elevator));
