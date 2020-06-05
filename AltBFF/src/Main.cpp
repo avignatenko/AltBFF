@@ -277,13 +277,18 @@ int checkedMain(int argc, char** argv)
 
         // 1. read CL data
         const bffcl::CLReturn& output = cl.lockOutput();
-        float elevator = output.axisElevatorPosition;
-        float aileron = output.axisAileronPosition;
+        float elevatorCL = output.axisElevatorPosition;
+        float aileronCL = output.axisAileronPosition;
         cl.unlockOutput();
 
         // 2. read values from CL and Sim => send to model
-        model.setAileron(aileron);
-        model.setElevator(elevator);
+        model.setAileron(
+            sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual ? 
+            aileronCL : autopilot.getCLAileron().value_or(aileronCL));
+
+        model.setElevator(
+            sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual ?
+            elevatorCL : autopilot.getCLElevator().value_or(elevatorCL));
 
         model.setAirDensity(sim.readAmbientAirDensity());
         model.setTAS(sim.readTAS());
@@ -306,7 +311,7 @@ int checkedMain(int argc, char** argv)
         autopilot.enablePitchAxis(sim.readAxisControlState(Sim::Elevator) != Sim::AxisControl::Manual);
         autopilot.enableRollAxis(sim.readAxisControlState(Sim::Aileron) != Sim::AxisControl::Manual);
         autopilot.setSimAileron(sim.readAileron());
-        autopilot.setSimElevator(elevator); // workaround!! wrong elevator value in sim :(
+        autopilot.setSimElevator(elevatorCL); // workaround!! wrong elevator value in sim :(
         autopilot.setPressureAltitude(sim.readPressureAltitude());
         autopilot.setSimPitch(sim.readPitch());
         autopilot.setSimFpm(sim.readFpm());
@@ -400,12 +405,12 @@ int checkedMain(int argc, char** argv)
 
         // 7. pass values to sim 
         if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
-            sim.writeElevator(elevator);
+            sim.writeElevator(elevatorCL);
         else if (auto axisValue = autopilot.getSimElevator())
             sim.writeElevator(axisValue.value());
 
         if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
-            sim.writeAileron(aileron);
+            sim.writeAileron(aileronCL);
         else if (auto axisValue = autopilot.getSimAileron())
             sim.writeAileron(axisValue.value());
 
