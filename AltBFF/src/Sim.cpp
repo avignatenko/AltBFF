@@ -195,6 +195,18 @@ double Sim::readCLElevatorTrim()
     return simData_.clElevatorTrim / 16383.0;
 }
 
+Sim::CLEngage Sim::readCLEngage()
+{
+    return CLEngage(simData_.clEngage);
+}
+
+void Sim::writeCLForceEnabled(bool enabled)
+{
+    if (simData_.clForceEnabled == int(enabled)) return;
+    simData_.clForceEnabled = int(enabled);
+    simDataWriteFlags_.clForceEnabled = true;
+}
+
 Sim::AxisControl Sim::readAxisControlState(Axis axis)
 {
     switch (axis)
@@ -219,11 +231,12 @@ BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void* pSrce, bool write, DWOR
 void Sim::process()
 {
     DWORD dwResult = FSUIPC_ERR_OK;
-
+  
     BOOL failed = !FSUIPC_Write_IF(0x0BB2, 2, &simData_.elevator, simDataWriteFlags_.elevator, &dwResult) ||
         !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
         !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
         !FSUIPC_Write_IF(settings_.apPitchLimitsOffset, 1, &simData_.apPitchLimits, simDataWriteFlags_.apPitchLimits, &dwResult) ||
+        !FSUIPC_Write_IF(settings_.clForceEnabledOffset, 1, &simData_.clForceEnabled, simDataWriteFlags_.clForceEnabled, &dwResult) ||
 
         !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
         !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
@@ -245,8 +258,8 @@ void Sim::process()
         !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||
         !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
         !FSUIPC_Read(settings_.apRollEngagedOffset, 1, &simData_.apRollEngaged, &dwResult) ||
-        !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &simData_.apPitchEnaged, &dwResult);
-
+        !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &simData_.apPitchEnaged, &dwResult) ||
+        !FSUIPC_Read(settings_.clEngageOffset, 1, &simData_.clEngage, &dwResult);
     // process
     failed = failed || !FSUIPC_Process(&dwResult);
 

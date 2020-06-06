@@ -114,6 +114,8 @@ Sim::Settings readSimSettings(const ptree& settings)
     simSettings.apRollEngagedOffset = std::stoul(settings.get<std::string>("Sim.APRollEngagedOffset"), nullptr, 16);
     simSettings.apPitchEngagedOffset = std::stoul(settings.get<std::string>("Sim.APPitchEngagedOffset"), nullptr, 16);
     simSettings.apPitchLimitsOffset = std::stoul(settings.get<std::string>("Sim.APPitchLimitsOffset"), nullptr, 16);
+    simSettings.clForceEnabledOffset = std::stoul(settings.get<std::string>("Sim.CLForceEnabledOffset"), nullptr, 16);
+    simSettings.clEngageOffset = std::stoul(settings.get<std::string>("Sim.CLEngageOffset"), nullptr, 16);
     return simSettings;
 }
 
@@ -280,6 +282,7 @@ int checkedMain(int argc, char** argv)
         const bffcl::CLReturn& output = cl.lockOutput();
         float elevatorCL = output.axisElevatorPosition;
         float aileronCL = output.axisAileronPosition;
+        bool clForceEnabled = output.forceEnableStatus;
         cl.unlockOutput();
 
         // 2. read values from CL and Sim => send to model
@@ -345,21 +348,27 @@ int checkedMain(int argc, char** argv)
         // 4. write model calculation results to CL
         auto& input = cl.lockInput();
 
+        Sim::CLEngage simCLEngageCmd = sim.readCLEngage();
+        if (simCLEngageCmd != Sim::CLEngage::NoChange)
+            input.loadingEngage = (simCLEngageCmd == Sim::CLEngage::Engage ? 1 : 0);
+
+        auto fixBFFPos = [](double pos) 
+        {
+            // fix for BFF CL acception [0, 100] instead of [-100, 100]
+            const float bffMin = 0;
+            const float bffMax = 100;
+            float bffFixPos = std::clamp(((float)pos + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
+            return bffFixPos;
+        };
+
         if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
         {
             input.positionFollowingEngage &= ~(1u << 0); // clear pos following
         }
         else
         {
-           input.positionFollowingEngage |= (1u << 0); // set pos following
-
-            // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
-            const float bffMin = 0;
-            const float bffMax = 100;
-            float bffFixPos = std::clamp(((float)autopilot.getCLElevator().value() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
-
-            input.elevator.positionFollowingSetPoint = bffFixPos;
-
+            input.positionFollowingEngage |= (1u << 0); // set pos following 
+            input.elevator.positionFollowingSetPoint = fixBFFPos(autopilot.getCLElevator().value());
             spdlog::trace("Elevator in follow mode: {}", input.elevator.positionFollowingSetPoint);
         }
 
@@ -379,16 +388,8 @@ int checkedMain(int argc, char** argv)
         }
         else
         {
-
-             input.positionFollowingEngage |= (1u << 1); // set pos following
-
-            // fix for BFF CL acception [-100, -eps] instead of [-100, 100]
-            const float bffMin = 0;
-            const float bffMax = 100;
-            float bffFixPos = std::clamp(((float)autopilot.getCLAileron().value() + 100.0f) * (bffMax - bffMin) / 200.0f + bffMin, bffMin, bffMax);
-
-            input.aileron.positionFollowingSetPoint = bffFixPos;
-
+            input.positionFollowingEngage |= (1u << 1); // set pos following
+            input.aileron.positionFollowingSetPoint = fixBFFPos(autopilot.getCLAileron().value());
             spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
         }
 
@@ -416,6 +417,8 @@ int checkedMain(int argc, char** argv)
             sim.writeAileron(axisValue.value());
 
         sim.writeElevatorTrim(0.0); 
+
+        sim.writeCLForceEnabled(clForceEnabled);
 
         sim.process();
 

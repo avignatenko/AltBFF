@@ -12,6 +12,8 @@ public:
         int apRollEngagedOffset = 0;
         int apPitchEngagedOffset = 0;
         int apPitchLimitsOffset = 0;
+        int clForceEnabledOffset = 0;
+        int clEngageOffset = 0;
     };
 
     Sim(Settings& settings);
@@ -107,6 +109,17 @@ public:
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
 
+    enum class CLEngage
+    {
+        NoChange = 0,
+        Engage = 1,
+        Disengage = 2
+    };
+
+    CLEngage readCLEngage();
+
+    void writeCLForceEnabled(bool enabled);
+
     // ap
 
     enum Axis
@@ -151,7 +164,9 @@ private:
         int16_t clElevatorTrim = 0;
         int8_t apRollEngaged = 0;
         int8_t apPitchEnaged = 0;
-        int8_t apPitchLimits;
+        int8_t apPitchLimits = 0;
+        int8_t clForceEnabled = 0;
+        int8_t clEngage = 0;
     } simData_;
 
     struct
@@ -160,6 +175,7 @@ private:
         bool elevatorTrim = false;
         bool aileron = false;
         bool apPitchLimits = false;
+        bool clForceEnabled = false;
 
         void reset()
         {
@@ -167,6 +183,7 @@ private:
             elevatorTrim = false;
             aileron = false;
             apPitchLimits = false;
+            clForceEnabled = false;
         }
 
     } simDataWriteFlags_;
