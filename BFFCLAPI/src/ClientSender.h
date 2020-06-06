@@ -19,7 +19,7 @@ public:
     using address = boost::asio::ip::address;
     using steady_timer = boost::asio::steady_timer;
 
-    ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote);
+    ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote, double freq);
     ~ClientSender();
 
     void start();
@@ -29,8 +29,7 @@ public:
 
 private:
 
-    const std::chrono::milliseconds kTimerInterval = boost::asio::chrono::milliseconds(1000 / 30); // 50 Hz
-
+  
     void send();
     void doSend();
 
@@ -40,6 +39,7 @@ private:
 
     endpoint endpointRemote_;
 
+    std::chrono::milliseconds timerInterval_;
     steady_timer timer_;
     bool stopRequested_ = false;
 

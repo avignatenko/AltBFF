@@ -20,6 +20,8 @@ public:
         int toPort;
         std::string fromAddress;
         int fromPort;
+
+        double sendFreq = 50.0; // 50hz
     };
 
     UDPClient(const Settings& settings);

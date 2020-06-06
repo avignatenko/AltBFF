@@ -100,6 +100,7 @@ bffcl::UDPClient::Settings readCLSettings(const ptree& settings)
     clSettings.toPort = settings.get<int>("Network.CLPort"),
         clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
         clSettings.fromPort = settings.get<int>("Network.ThisPort");
+    clSettings.sendFreq = settings.get<double>("Network.SendFreqHz");
 
     return clSettings;
 }

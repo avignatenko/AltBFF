@@ -26,7 +26,7 @@ UDPClient::UDPClient(const Settings& settings)
     socket_.bind(send_endpoint);
     spdlog::info("Socket opened successfully");
 
-    sender_ = std::make_unique<ClientSender>(io_, socket_, settings.toAddress, settings.toPort);
+    sender_ = std::make_unique<ClientSender>(io_, socket_, settings.toAddress, settings.toPort, settings.sendFreq);
     receiver_ = std::make_unique<ClientReceiver>(io_, socket_);
 
     runner_ = std::make_unique<std::thread>([this] {

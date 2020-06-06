@@ -3,8 +3,12 @@
 using namespace boost::asio;
 using namespace bffcl;
 
-ClientSender::ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote)
-    : io_(io), socket_(socket), endpointRemote_(endpoint(address::from_string(addressRemote), portRemote)), timer_(io)
+ClientSender::ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote, double timerInterval)
+    : io_(io)
+    , socket_(socket)
+    , endpointRemote_(endpoint(address::from_string(addressRemote), portRemote))
+    , timer_(io)
+    , timerInterval_(int(1000.0 / timerInterval))
 {
     // set CL input defaults
     CLInput& input = lockInput();
@@ -45,7 +49,7 @@ void ClientSender::unlockInput()
 void ClientSender::send()
 {
     // reengage the timer
-    timer_.expires_at(timer_.expiry() + kTimerInterval);
+    timer_.expires_at(timer_.expiry() + timerInterval_);
     timer_.async_wait([this](const boost::system::error_code&) { doSend(); });
 }
 
