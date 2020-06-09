@@ -73,6 +73,9 @@ public:
     // true if on ground
     bool readOnGround();
 
+    /// any kind of simulation pause (slew, in-menu, pause)
+    bool simulationPaused();
+
     enum class GroundType
     {
         NA,
@@ -161,6 +164,9 @@ private:
         int32_t gs = 0;
         int16_t onGround = 0;
         int32_t surfaceType = 0;
+        int16_t slewMode = 0; // 05DC
+        int16_t pauseMode = 0; // 0264
+        int8_t inmenuMode = 0; // 3365
         int16_t clElevatorTrim = 0;
         int8_t apRollEngaged = 0;
         int8_t apPitchEnaged = 0;

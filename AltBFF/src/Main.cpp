@@ -277,6 +277,20 @@ int checkedMain(int argc, char** argv)
     auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
     Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model, &autopilot]
     {
+        // 0. deal with pause first of all
+        if (sim.simulationPaused())
+        {
+            // send CL disengage
+            auto& input = cl.lockInput();
+            input.loadingEngage = 0;
+            cl.unlockInput();
+
+            // we only process sim to update pause status
+            sim.process();
+
+            // and that's it until simulation not restored
+            return false;  // false means call again
+        }
 
         // 1. read CL data
         const bffcl::CLReturn& output = cl.lockOutput();

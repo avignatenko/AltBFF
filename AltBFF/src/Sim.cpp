@@ -169,6 +169,11 @@ bool Sim::readOnGround()
     return (simData_.onGround == 1);
 }
 
+bool Sim::simulationPaused()
+{
+    return simData_.slewMode != 0 || simData_.pauseMode != 0 || simData_.inmenuMode != 0;
+}
+
 Sim::GroundType Sim::readGroundType()
 {
     if (!readOnGround()) return Sim::GroundType::NA;
@@ -256,6 +261,9 @@ void Sim::process()
         !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
         !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
         !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||
+        !FSUIPC_Read(0x05DC, 2, &simData_.slewMode, &dwResult) ||
+        !FSUIPC_Read(0x0264, 2, &simData_.pauseMode, &dwResult) ||
+        !FSUIPC_Read(0x3365, 1, &simData_.inmenuMode, &dwResult) ||
         !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
         !FSUIPC_Read(settings_.apRollEngagedOffset, 1, &simData_.apRollEngaged, &dwResult) ||
         !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &simData_.apPitchEnaged, &dwResult) ||
