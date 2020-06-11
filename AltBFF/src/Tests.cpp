@@ -285,3 +285,18 @@ TEST_CASE("Rate limiter")
  
 }
 
+
+TEST_CASE("Test EMA")
+{
+    ExponentialMovingAverage a(1);
+    a.addSample(10);
+    REQUIRE(a.get() == 10);
+    a.addSample(15);
+    REQUIRE(a.get() == 15);
+
+    ExponentialMovingAverage b(3);
+    b.addSample(10);
+    REQUIRE(b.get() == 10);
+    b.addSample(15);
+    REQUIRE(b.get() == 12.5);
+}

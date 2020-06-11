@@ -7,11 +7,6 @@
 #include <Utils/Common.h>
 #include <fmt/ranges.h>
 
-namespace
-{
-const double kLoopTimeMs = 1000.0 / 30;
-}
-
 void A2AStec30AP::enableRollAxis(bool enable)
 {
     if (rollEnabled_ == enable) return;
@@ -30,15 +25,15 @@ void A2AStec30AP::enablePitchAxis(bool enable)
             static_cast<PitchController::Mode>(settings_.pitchmode),
             // fpm controller
             PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, kLoopTimeMs, simPressureAltitude_, simFpm_),
+                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, settings_.loopTimeMs, simPressureAltitude_, simFpm_),
             // pitch controller
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
-                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, kLoopTimeMs, simFpm_, simPitch_),
+                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, settings_.loopTimeMs, simFpm_, simPitch_),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , kLoopTimeMs, simPitch_, simElevator_),
+                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , settings_.loopTimeMs, simPitch_, simElevator_),
             // elevator servo
-            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_, kLoopTimeMs)
+            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_, settings_.loopTimeMs)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
@@ -153,7 +148,7 @@ void A2AStec30AP::process()
 
         // check for excessive forces
 
-        double forceError = std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce;
+        double forceError = std::abs(clForceElevator_.get()) - settings_.pitchStartDegradeCLForce;
 
         double duMin = -settings_.elevatorServoDuMax;
         double duMax = settings_.elevatorServoDuMax;
@@ -161,10 +156,10 @@ void A2AStec30AP::process()
         if (!stepResponseInProgress && forceError > 0)
         {
             double kDegradation = std::clamp(1 -
-                (std::abs(clForceElevator_) - settings_.pitchStartDegradeCLForce) /
+                (std::abs(clForceElevator_.get()) - settings_.pitchStartDegradeCLForce) /
                 (settings_.pitchMaxCLForce - settings_.pitchStartDegradeCLForce), 0.0, 1.0);
 
-            if (clForceElevator_ > 0)
+            if (clForceElevator_.get() > 0)
                 duMin = duMin * kDegradation;
             else
                 duMax = duMax * kDegradation;
@@ -210,22 +205,22 @@ std::optional<double> A2AStec30AP::getSimElevator()
 A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
 {
     TrimNeededWarning warning;
-    if (std::abs(clForceElevator_) < settings_.pitchWarningCLForce)
+    if (std::abs(clForceElevator_.get()) < settings_.pitchWarningCLForce)
     {
         warning.pitchDirection = TrimNeededWarning::NA;
         warning.warningLevel = 0;
         return warning;
     }
 
-    warning.pitchDirection = clForceElevator_ > 0 ? TrimNeededWarning::Up : TrimNeededWarning::Down;
+    warning.pitchDirection = clForceElevator_.get() > 0 ? TrimNeededWarning::Up : TrimNeededWarning::Down;
     warning.warningLevel = 1; // for now (todo)
-    warning.forceDelta = std::abs(clForceElevator_) - settings_.pitchWarningCLForce;
+    warning.forceDelta = std::abs(clForceElevator_.get()) - settings_.pitchWarningCLForce;
     return warning;
 }
 
 void A2AStec30AP::computeStepResponseInput(PIDController& controller)
 {
-    long curTimeMs = timeSamplesPitch_ * kLoopTimeMs;
+    long curTimeMs = timeSamplesPitch_ * settings_.loopTimeMs;
     int i = currentInputSample_;
     for ( ; i < stepResponseInput_.size(); ++i)
     {
@@ -240,7 +235,7 @@ void A2AStec30AP::computeStepResponseInput(PIDController& controller)
 
     stepResponseOutput_.push_back(
         {
-        timeSamplesPitch_ * kLoopTimeMs / 1000.0,
+        timeSamplesPitch_ * settings_.loopTimeMs / 1000.0,
         stepResponseInput_[currentInputSample_].second,
         controller.getInput() 
         });

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Utils/RateLimiter.h>
+#include <Utils/Accumulators.h>
 #include <Utils/PID.h>
 
 #include <spdlog/spdlog.h>
@@ -46,9 +47,13 @@ public:
 		double pitchStartDegradeCLForce = 90.0;
 		// 0..100%
 		double pitchMaxCLForce = 100.0;
+
+		double loopTimeMs = 1000.0 / 30.0;
 	};
 
-	A2AStec30AP(const Settings& settings) 
+	A2AStec30AP(const Settings& settings)
+		: clForceElevator_(1000 / settings.loopTimeMs)
+		, clForceAileron_(1000 / settings.loopTimeMs)
 	{
 		setSettings(settings);
 	}
@@ -102,14 +107,14 @@ public:
 	//[-100, 100]
 	void setTotalAxisCLForceElevator(double force)
 	{
-		clForceElevator_ = force;
-		spdlog::trace("CL Force elevator set to AP: {}", clForceElevator_);
+		clForceElevator_.addSample(force);
+		spdlog::trace("CL Force elevator set to AP: {}", force);
 	}
 
 	void setTotalAxisCLForceAileron(double force)
 	{
-		clForceAileron_ = force;
-		spdlog::trace("CL Force aileron set to AP: {}", clForceAileron_);
+		clForceAileron_.addSample(force);
+		spdlog::trace("CL Force aileron set to AP: {}", force);
 	}
 
 	void process();
@@ -180,8 +185,8 @@ private:
 	double simPitch_ = 0.0;
 	double simFpm_ = 0.0;
 
-	double clForceElevator_ = 0.0;
-	double clForceAileron_ = 0.0;
+	ExponentialMovingAverage clForceElevator_;
+	ExponentialMovingAverage clForceAileron_ ;
 
 	double aileronOut_ = 0.0;
 	double elevatorOut_ = 0.0;
