@@ -16,11 +16,10 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"src/Main.cpp"
 	"src/Model.cpp"
 	"src/Model.h"
-	"src/PID.h"
 	"src/Sim.cpp"
 	"src/Sim.h"
 	"src/Tests.cpp" 
-	"src/A2ASTec30AP.cpp" "src/RateLimiter.h")
+	"src/A2ASTec30AP.cpp")
 
 
 set (settingsfile_source "${CMAKE_CURRENT_SOURCE_DIR}/resources/")
