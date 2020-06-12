@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Utils/Accumulators.h>
-
+#include <Utils/Common.h>
 #include <spdlog/spdlog.h>
 #include <cstdint>
 
@@ -103,6 +103,7 @@ public:
     void setAirDensity(double density)
     {
         airDensity_ = density;
+        if (airDensity_ < 1) airDensity_ = kBaseAirDensity;
         spdlog::trace("Air density set to model: {}", airDensity_);
     }
 
