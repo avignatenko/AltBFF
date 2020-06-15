@@ -71,6 +71,7 @@ void A2AStec30AP::enablePitchAxis(bool enable)
     
     timeSamplesPitch_ = 0;
     currentInputSample_ = 0;
+    loopsInWarningState_ = 0;
     stepResponseOutput_.clear();
 }
 
@@ -205,16 +206,31 @@ std::optional<double> A2AStec30AP::getSimElevator()
 A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
 {
     TrimNeededWarning warning;
-    if (std::abs(clForceElevator_.get()) < settings_.pitchWarningCLForce)
+  
+    const int kTimeoutMsForWarningLevel2 = 3000;
+
+    spdlog::trace("loops in warn: {}", loopsInWarningState_);
+
+    int timeoutMsInWarningState = loopsInWarningState_ * settings_.loopTimeMs;
+
+    bool forceExceedsWarnLimit = (std::abs(clForceElevator_.get()) > settings_.pitchWarningCLForce);
+
+    if (!forceExceedsWarnLimit)
     {
+        loopsInWarningState_ = 0;
+
         warning.pitchDirection = TrimNeededWarning::NA;
         warning.warningLevel = 0;
         return warning;
     }
 
+    loopsInWarningState_++;
+
     warning.pitchDirection = clForceElevator_.get() > 0 ? TrimNeededWarning::Up : TrimNeededWarning::Down;
-    warning.warningLevel = 1; // for now (todo)
+    warning.warningLevel = (timeoutMsInWarningState < kTimeoutMsForWarningLevel2 ? 1 : 2);
     warning.forceDelta = std::abs(clForceElevator_.get()) - settings_.pitchWarningCLForce;
+
+ 
     return warning;
 }
 

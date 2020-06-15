@@ -52,8 +52,8 @@ public:
 	};
 
 	A2AStec30AP(const Settings& settings)
-		: clForceElevator_(1000 / settings.loopTimeMs)
-		, clForceAileron_(1000 / settings.loopTimeMs)
+		: clForceElevator_(int(1000.0 / settings.loopTimeMs)) // 1 sec
+		, clForceAileron_(int(1000.0 / settings.loopTimeMs)) // 1 sec
 	{
 		setSettings(settings);
 	}
@@ -108,13 +108,13 @@ public:
 	void setTotalAxisCLForceElevator(double force)
 	{
 		clForceElevator_.addSample(force);
-		spdlog::trace("CL Force elevator set to AP: {}", force);
+		spdlog::trace("CL Force elevator set to AP: {}, average: {}", force, clForceElevator_.get());
 	}
 
 	void setTotalAxisCLForceAileron(double force)
 	{
 		clForceAileron_.addSample(force);
-		spdlog::trace("CL Force aileron set to AP: {}", force);
+		spdlog::trace("CL Force aileron set to AP: {}, average: {}", force, clForceElevator_.get());
 	}
 
 	void process();
@@ -187,6 +187,8 @@ private:
 
 	ExponentialMovingAverage clForceElevator_;
 	ExponentialMovingAverage clForceAileron_ ;
+
+	int loopsInWarningState_ = 0;
 
 	double aileronOut_ = 0.0;
 	double elevatorOut_ = 0.0;
