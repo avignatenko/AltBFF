@@ -40,10 +40,10 @@ void Sim::disconnect()
     connected_ = false;
 }
 
-void Sim::writeElevator(double elevator)
+void Sim::writeElevator(double elevator, bool force /*= false*/)
 {
     int16_t newElevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
-    if (simData_.elevator == newElevator) return;
+    if (!force && simData_.elevator == newElevator) return;
 
     simData_.elevator = newElevator;
     simDataWriteFlags_.elevator = true;
@@ -51,10 +51,10 @@ void Sim::writeElevator(double elevator)
     spdlog::trace("Sim Elevator Write: {}", simData_.elevator);
 }
 
-void Sim::writeAileron(double aileron)
+void Sim::writeAileron(double aileron, bool force /*= false*/)
 {
     int16_t newAileron = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
-    if (simData_.aileron == newAileron) return;
+    if (!force && simData_.aileron == newAileron) return;
 
     simData_.aileron = newAileron;
     simDataWriteFlags_.aileron = true;
@@ -72,20 +72,21 @@ double Sim::readAileron()
     return simData_.aileron * 100.0 / 16383 * (settings_.invertFSAileron ? -1 : 1);
 }
 
-void Sim::writeElevatorTrim(double trim)
+void Sim::writeElevatorTrim(double trim, bool force /*= false*/)
 {
     int16_t newElevatorTrim = static_cast<int16_t>(trim * 16383);
-    if (simData_.elevatorTrim == newElevatorTrim) return;
+    if (!force && simData_.elevatorTrim == newElevatorTrim) return;
 
+    spdlog::trace("Sim trim: {}", newElevatorTrim);
     simData_.elevatorTrim = newElevatorTrim;
     simDataWriteFlags_.elevatorTrim = true;
 }
 
-void Sim::writeAPPitchLimits(APPitchLimits limits)
+void Sim::writeAPPitchLimits(APPitchLimits limits, bool force /*= false*/)
 {
     int8_t newApPitchLimits = static_cast<int8_t>(limits);
     
-    if (simData_.apPitchLimits == newApPitchLimits) return;
+    if (!force && simData_.apPitchLimits == newApPitchLimits) return;
  
     simData_.apPitchLimits = newApPitchLimits;
     simDataWriteFlags_.apPitchLimits = true;
@@ -205,9 +206,9 @@ Sim::CLEngage Sim::readCLEngage()
     return CLEngage(simData_.clEngage);
 }
 
-void Sim::writeCLForceEnabled(bool enabled)
+void Sim::writeCLForceEnabled(bool enabled, bool force /*= false*/)
 {
-    if (simData_.clForceEnabled == int(enabled)) return;
+    if (!force && simData_.clForceEnabled == int(enabled)) return;
     simData_.clForceEnabled = int(enabled);
     simDataWriteFlags_.clForceEnabled = true;
 }

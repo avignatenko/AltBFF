@@ -25,13 +25,13 @@ public:
     // write
 
     // +/- 100%, mid = 0
-    void writeElevator(double elevator);
+    void writeElevator(double elevator, bool force = false);
 
     // +/- 100%, mid = 0
-    void writeAileron(double aileron);
+    void writeAileron(double aileron, bool force = false);
 
     // +/- 1, mid = 0
-    void writeElevatorTrim(double trim);
+    void writeElevatorTrim(double trim, bool force = false);
 
     enum class APPitchLimits
     {
@@ -42,7 +42,7 @@ public:
         TrimDownMore
     };
 
-    void writeAPPitchLimits(APPitchLimits limits);
+    void writeAPPitchLimits(APPitchLimits limits, bool force = false);
 
     // read
 
@@ -121,7 +121,7 @@ public:
 
     CLEngage readCLEngage();
 
-    void writeCLForceEnabled(bool enabled);
+    void writeCLForceEnabled(bool enabled, bool force = false);
 
     // ap
 

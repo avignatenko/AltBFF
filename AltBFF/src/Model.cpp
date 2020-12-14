@@ -128,6 +128,7 @@ double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCo
     return flElevatorDueToSpeed;
 }
 
+/*
 void Model::calculateElevatorForces2()
 {
     auto forceFromSpeed = [this] ()
@@ -155,7 +156,7 @@ void Model::calculateElevatorForces2()
     //elevator = 100.0 * (alpha / settings_.maxElevatorAngleRadians + elevatorTrim_  * settings_.elevatorTrimGain);
 
 }
-
+*/
 
 void Model::calculateElevatorForces()
 {
@@ -168,7 +169,15 @@ void Model::calculateElevatorForces()
     double flElevatorSpring = clElevatorMax * flElevatorDueToSpeed / 100.0;
 
     // trim works same as elevator, but with gain (effectiveness)
-    double elevatorTrimDeflectionAngleRad = elevatorTrim_ * settings_.maxElevatorAngleRadians;
+    auto axisOffset = [](double trim, double neutralPos) 
+    {
+        // offset and normalize
+        double axisOffset = (trim - neutralPos) / (1 + std::abs(neutralPos));
+        return axisOffset;
+    };
+
+    double elevatorTrimOffset = axisOffset(elevatorTrim_, settings_.elevatorTrimNeutralPos);
+    double elevatorTrimDeflectionAngleRad = elevatorTrimOffset * settings_.maxElevatorAngleRadians;
     double clElevatorTrim = clCoeffElevator * elevatorTrimDeflectionAngleRad;
     double fElevatorTrim = clElevatorTrim * flElevatorDueToSpeed * settings_.elevatorTrimGain;
 
@@ -189,6 +198,7 @@ void Model::calculateElevatorForces()
 
     spdlog::debug("Alpha force: {} (gs = {})", fElevatorAlpha, gs_);
     spdlog::debug("Trim force: {}", fElevatorTrim);
+    spdlog::trace("Trim pos: {} -> offseted: {}", elevatorTrim_, elevatorTrimOffset);
 
     double fElevatorWeight = 0.0; // todo
 

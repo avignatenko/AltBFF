@@ -175,7 +175,9 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.wingRootChord = settings.get<double>("Model.WingRootChord");
 
     modelSettings.elevatorArea = settings.get<double>("Model.ElevatorArea");
+    modelSettings.elevatorNeutralPos = settings.get<double>("Model.ElevatorNeutralPos");
     modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");
+    modelSettings.elevatorTrimNeutralPos = settings.get<double>("Model.ElevatorTrimNeutralPos");
     modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
     modelSettings.elevatorAlphaGain = settings.get<double>("Model.ElevatorAlphaGain");
     modelSettings.elevatorAlphaScaleSpeedKn = settings.get<double>("Model.ElevatorAlphaScaleSpeedKn");

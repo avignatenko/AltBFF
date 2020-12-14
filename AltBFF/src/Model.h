@@ -34,6 +34,7 @@ public:
         double wingRootChord = 0.0;
 
         double elevatorArea = 0.0;
+        double elevatorNeutralPos = 0.0;
         double propWashElevatorCoeff = 0.0;
         double elevatorAlphaGain = 0.0;
         double elevatorAlphaScaleSpeedKn = 0.0;
@@ -41,6 +42,7 @@ public:
         double maxElevatorLift = 0.0;
         double maxElevatorAngleRadians = 0.0;
         double elevatorTrimGain = 0.0;
+        double elevatorTrimNeutralPos = 0.0;
 
         double elevatorEngineFlowGain = 0.0;
         double elevatorEngineFreqGain = 0.0;
@@ -223,7 +225,7 @@ public:
  private:
 
         void calculateElevatorForces();
-        void calculateElevatorForces2();
+        //void calculateElevatorForces2();
         void calculateAileronForces();
         void calculateEngineVibrations();
         void calculateStallVibrations();
