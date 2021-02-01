@@ -261,8 +261,10 @@ void Model::calculateEngineVibrations()
 {
     const double engine1CPS = engine1RPM_ / 60.0;
 
+    const double vibrationAirGain = (onGround_ ? 1.0 : settings_.engineVibAirGain);
+
     // elevator
-    double elevatorVibIntensity = (engine1Flow_ * settings_.elevatorEngineFlowGain * settings_.engineVibAirGain) / 100.0;
+    double elevatorVibIntensity = (engine1Flow_ * settings_.elevatorEngineFlowGain * vibrationAirGain) / 100.0;
     double elevatorVibCPS = engine1CPS * settings_.elevatorEngineFreqGain;
 
     if (elevatorVibCPS < settings_.elevatorEngineFreqMin)
@@ -274,7 +276,7 @@ void Model::calculateEngineVibrations()
 
     // aileron
 
-    double aileronVibIntensity = (engine1Flow_ * settings_.aileronEngineFlowGain * settings_.engineVibAirGain) / 100.0;
+    double aileronVibIntensity = (engine1Flow_ * settings_.aileronEngineFlowGain * vibrationAirGain) / 100.0;
     double aileronVibCPS = engine1CPS * settings_.aileronEngineFreqGain;
 
     if (aileronVibCPS < settings_.aileronEngineFreqMin)
