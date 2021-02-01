@@ -186,6 +186,8 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.maxElevatorLift = settings.get<double>("Model.MaxElevatorLift");
     modelSettings.maxElevatorAngleRadians = degToRad(settings.get<double>("Model.MaxElevatorAngleDegrees"));
 
+    modelSettings.engineVibAirGain = settings.get<double>("Model.EngineVibAirGain");
+
     modelSettings.elevatorEngineFlowGain = settings.get<double>("Model.ElevatorEngineFlowGain");
     modelSettings.elevatorEngineFreqGain = settings.get<double>("Model.ElevatorEngineFreqGain");
     modelSettings.elevatorEngineFreqMin = settings.get<double>("Model.ElevatorEngineFreqMin");

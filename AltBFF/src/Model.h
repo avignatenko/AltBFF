@@ -44,6 +44,7 @@ public:
         double elevatorTrimGain = 0.0;
         double elevatorTrimNeutralPos = 0.0;
 
+        double engineVibAirGain = 0.0;
         double elevatorEngineFlowGain = 0.0;
         double elevatorEngineFreqGain = 0.0;
         double elevatorEngineFreqMin = 0.0;
