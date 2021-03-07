@@ -9,8 +9,6 @@ project(AltBFF)
 add_executable (${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME}  PRIVATE BFFCLAPI Utils FSUIPC CSV CONAN_PKG::spdlog CONAN_PKG::catch2)
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-
 
 target_sources(${PROJECT_NAME} PRIVATE 
 	"src/Main.cpp"

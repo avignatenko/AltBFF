@@ -6,8 +6,6 @@ project(CSV)
 # Add source to this project's executable.
 add_library (${PROJECT_NAME})
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "include" 
 	PRIVATE "include/CSV")
