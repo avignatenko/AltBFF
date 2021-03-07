@@ -3,6 +3,7 @@
 #include <Utils/Accumulators.h>
 #include <Utils/Common.h>
 #include <spdlog/spdlog.h>
+#include <array>
 #include <cstdint>
 
 // Model assumes it's running at certain rate, e.g. 30hz
@@ -70,12 +71,9 @@ public:
 
         double aileronVibRunwayGain = 0.0;
         double aileronVibRunwayFreq = 0.0;
-
-
-       
     };
 
-    Model(const Settings& settings);
+    explicit Model(const Settings& settings);
 
     void setSettings(const Settings& settings);
 
@@ -89,16 +87,16 @@ public:
     // inputs
 
     // +/- 100%, mid = 0
-    void setElevator(double elevator) 
-    { 
-        elevator_ = elevator; 
+    void setElevator(double elevator)
+    {
+        elevator_ = elevator;
         spdlog::trace("Elevator set to model: {}", elevator_);
     }
 
     // +/- 100%, mid = 0
-    void setAileron(double aileron) 
-    { 
-        aileron_ = aileron; 
+    void setAileron(double aileron)
+    {
+        aileron_ = aileron;
         spdlog::trace("Aileron set to model: {}", aileron_);
     }
 
@@ -111,9 +109,9 @@ public:
     }
 
     // tas in ms/sec
-    void setTAS(double tas) 
-    { 
-        tas_ = tas; 
+    void setTAS(double tas)
+    {
+        tas_ = tas;
         spdlog::trace("TAS set to model: {}", tas_);
     }
 
@@ -146,11 +144,10 @@ public:
 
     // thrust in pounds
     void setThrust(double thrust)
-    { 
-        thrust_ = thrust; 
+    {
+        thrust_ = thrust;
         spdlog::trace("Thrust set to model: {}", thrust_);
     }
-
 
     // incidence "alpha" in radians
     void setAlpha(double alpha)
@@ -174,11 +171,12 @@ public:
     }
 
     // [-1, 1]
-    void setElevatorTrim(double clElevatorTrim) { 
-        elevatorTrim_ = clElevatorTrim; 
+    void setElevatorTrim(double clElevatorTrim)
+    {
+        elevatorTrim_ = clElevatorTrim;
         spdlog::trace("Elevator trim set to model: {}", elevatorTrim_);
     }
-    
+
     // rot per minute
     void setEngine1RPM(int rpm)
     {
@@ -200,41 +198,41 @@ public:
 
     // result
 
-    int getFrictionCoeff(Axis axis);
-    int getDumpingCoeff(Axis axis);
-    
-    int getPositionFollowingP(Axis axis);
-    int getPositionFollowingI(Axis axis);
-    int getPositionFollowingD(Axis axis);
+    [[nodiscard]] int getFrictionCoeff(Axis axis) const;
+    [[nodiscard]] int getDumpingCoeff(Axis axis) const;
 
-    float getFixedForce(Axis axis) { return fixedForce_[axis]; }
-    float getSpringForce(Axis axis) { return springForce_[axis]; }
-    
+    [[nodiscard]] int getPositionFollowingP(Axis axis) const;
+    [[nodiscard]] int getPositionFollowingI(Axis axis) const;
+    [[nodiscard]] int getPositionFollowingD(Axis axis) const;
+
+    [[nodiscard]] float getFixedForce(Axis axis) const { return fixedForce_[axis]; }
+    [[nodiscard]] float getSpringForce(Axis axis) const { return springForce_[axis]; }
+
     double getTotalForce(Axis axis);
 
-    uint16_t getVibrationEngineHz(Axis axis) { return vibrationsHz_[0][axis]; }
-    uint16_t getVibrationEngineAmp(Axis axis) { return vibrationsAmp_[0][axis]; }
-    uint16_t getVibrationRunwayHz(Axis axis) { return vibrationsHz_[1][axis]; }
-    uint16_t getVibrationRunwayAmp(Axis axis) { return vibrationsAmp_[1][axis]; }
-    uint16_t getVibrationStallHz(Axis axis) { return vibrationsHz_[2][axis]; }
-    uint16_t getVibrationStallAmp(Axis axis) { return vibrationsAmp_[2][axis]; }
+    [[nodiscard]] uint16_t getVibrationEngineHz(Axis axis) const { return vibrationsEngine_[axis].hz; }
+    [[nodiscard]] uint16_t getVibrationEngineAmp(Axis axis) const { return vibrationsEngine_[axis].amp; }
+    [[nodiscard]] uint16_t getVibrationRunwayHz(Axis axis) const { return vibrationsRunway_[axis].hz; }
+    [[nodiscard]] uint16_t getVibrationRunwayAmp(Axis axis) const { return vibrationsRunway_[axis].amp; }
+    [[nodiscard]] uint16_t getVibrationStallHz(Axis axis) const { return vibrationsStall_[axis].hz; }
+    [[nodiscard]] uint16_t getVibrationStallAmp(Axis axis) const { return vibrationsStall_[axis].amp; }
 
     // update internal calculations
     void process();
 
     Settings settings_;
- private:
 
-        void calculateElevatorForces();
-        //void calculateElevatorForces2();
-        void calculateAileronForces();
-        void calculateEngineVibrations();
-        void calculateStallVibrations();
-        void calculateRunwayVibrations();
-
-        double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
 private:
+    void calculateElevatorForces();
+    // void calculateElevatorForces2();
+    void calculateAileronForces();
+    void calculateEngineVibrations();
+    void calculateStallVibrations();
+    void calculateRunwayVibrations();
 
+    double calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff);
+
+private:
     // inputs
     double elevator_ = 0.0;
     double aileron_ = 0.0;
@@ -246,7 +244,7 @@ private:
     double elevatorTrim_ = 0.0;
     double pitchRate_ = 0.0;
     double cgPosFrac_ = 0.0;
-    double relativeAoA_ = 0.0; // [0, 100]
+    double relativeAoA_ = 0.0;  // [0, 100]
     int engine1RPM_ = 0;
     double engine1Flow_ = 0;
     bool onGround_ = false;
@@ -255,16 +253,18 @@ private:
     MovingAverage<5> alphaAngleRadAccum_;
 
     // outputs
-    MovingAverage<5> fixedForceAccum_[AxisCount];
+    std::array<MovingAverage<5>, AxisCount> fixedForceAccum_;
 
-    float fixedForce_[AxisCount] = {0.0f};
-    float springForce_[AxisCount] = {0.0f};
+    std::array<float, AxisCount> fixedForce_ = {0.0f};
+    std::array<float, AxisCount> springForce_ = {0.0f};
 
-    const int kEngineVibrationsChannel = 0;
-    const int kRunwayVibrationChannel = 1;
-    const int kStallVibrationsChannel = 2;
+    struct Vibrations
+    {
+        uint16_t hz = 0;
+        uint16_t amp = 0;
+    };
 
-
-    uint16_t vibrationsHz_[3][AxisCount] = { 0 };
-    uint16_t vibrationsAmp_[3][AxisCount] = { 0 };
+    std::array<Vibrations, AxisCount> vibrationsEngine_;
+    std::array<Vibrations, AxisCount> vibrationsRunway_;
+    std::array<Vibrations, AxisCount> vibrationsStall_;
 };

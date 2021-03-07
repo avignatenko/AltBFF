@@ -1,13 +1,13 @@
 ﻿
+#include "A2ASTec30AP.h"
 #include "Model.h"
 #include "Sim.h"
-#include "A2ASTec30AP.h"
 
 #include <BFFCLAPI/UDPClient.h>
 
+#include <Utils/Common.h>
 #include <Utils/QueueRunner.h>
 #include <Utils/Timer.h>
-#include <Utils/Common.h>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -15,19 +15,19 @@
 #include <spdlog/spdlog.h>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/math/constants/constants.hpp>
 
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
 #include <windows.h>
 
-#include <filesystem>
 #include <stdio.h>
-#include <string>
+#include <filesystem>
 #include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -40,8 +40,8 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 }
 
 using boost::property_tree::ptree;
-using std::filesystem::path;
 using std::filesystem::file_time_type;
+using std::filesystem::path;
 
 struct LogSettings
 {
@@ -57,7 +57,7 @@ LogSettings readLogSettings(const ptree& settings)
     std::map<std::string, spdlog::level::level_enum> settingsStrToEnum = {
         {"trace", spdlog::level::trace}, {"debug", spdlog::level::debug}, {"info", spdlog::level::info},
         {"warn", spdlog::level::warn},   {"err", spdlog::level::err},     {"critical", spdlog::level::critical},
-        {"off", spdlog::level::off} };
+        {"off", spdlog::level::off}};
 
     if (auto levelFound = settingsStrToEnum.find(logLevelStr); levelFound != settingsStrToEnum.end())
         logSettings.logLevel = levelFound->second;
@@ -75,9 +75,7 @@ void initLogging(const LogSettings& settings)
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("altfs.log", true);
     file_sink->set_level(settings.logLevel);
 
-    auto logger = std::make_shared<spdlog::logger>(
-        "multi_sink",
-        spdlog::sinks_init_list{ console_sink, file_sink });
+    auto logger = std::make_shared<spdlog::logger>("multi_sink", spdlog::sinks_init_list{console_sink, file_sink});
 
     logger->set_level(spdlog::level::trace);
 
@@ -98,8 +96,8 @@ bffcl::UDPClient::Settings readCLSettings(const ptree& settings)
     bffcl::UDPClient::Settings clSettings;
     clSettings.toAddress = settings.get<std::string>("Network.CLIPAddress");
     clSettings.toPort = settings.get<int>("Network.CLPort"),
-        clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
-        clSettings.fromPort = settings.get<int>("Network.ThisPort");
+    clSettings.fromAddress = settings.get<std::string>("Network.ThisIPAddress"),
+    clSettings.fromPort = settings.get<int>("Network.ThisPort");
     clSettings.sendFreq = settings.get<double>("Network.SendFreqHz");
 
     return clSettings;
@@ -119,7 +117,6 @@ Sim::Settings readSimSettings(const ptree& settings)
     return simSettings;
 }
 
-
 A2AStec30AP::Settings readAPSettings(const ptree& settings)
 {
     A2AStec30AP::Settings apSettings;
@@ -132,7 +129,7 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.elevatorPID.i = settings.get<double>("AP.ElevatorI");
     apSettings.elevatorPID.d = settings.get<double>("AP.ElevatorD");
     apSettings.elevatorDuMax = settings.get<double>("AP.ElevatorDuMax");
-   
+
     apSettings.pitchPID.p = settings.get<double>("AP.PitchP");
     apSettings.pitchPID.i = settings.get<double>("AP.PitchI");
     apSettings.pitchPID.d = settings.get<double>("AP.PitchD");
@@ -148,7 +145,7 @@ A2AStec30AP::Settings readAPSettings(const ptree& settings)
     apSettings.pitchWarningCLForce = settings.get<double>("AP.PitchWarningCLForce");
     apSettings.pitchMaxCLForce = settings.get<double>("AP.PitchMaxCLForce");
     apSettings.pitchStartDegradeCLForce = settings.get<double>("AP.PitchStartDegradeCLForce");
-    
+
     apSettings.doStepResponse = settings.get<bool>("AP.DoStepResponse");
     apSettings.stepResponseInputFile = settings.get<std::string>("AP.StepResponseInputFile");
     return apSettings;
@@ -276,11 +273,10 @@ int checkedMain(int argc, char** argv)
 
     updateCLDefaultsFromModel(cl, model);
 
-    QueueRunner runner;  // setup runner for this thread 
+    QueueRunner runner;  // setup runner for this thread
 
     auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model, &autopilot]
-    {
+    Timer simModelLoop(kModelLoopFreq, runner, [&cl, &sim, &model, &autopilot] {
         // 0. deal with pause first of all
         if (sim.simulationPaused())
         {
@@ -304,13 +300,13 @@ int checkedMain(int argc, char** argv)
         cl.unlockOutput();
 
         // 2. read values from CL and Sim => send to model
-        model.setAileron(
-            sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual ? 
-            aileronCL : autopilot.getCLAileron().value_or(aileronCL));
+        model.setAileron(sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual
+                             ? aileronCL
+                             : autopilot.getCLAileron().value_or(aileronCL));
 
-        model.setElevator(
-            sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual ?
-            elevatorCL : autopilot.getCLElevator().value_or(elevatorCL));
+        model.setElevator(sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual
+                              ? elevatorCL
+                              : autopilot.getCLElevator().value_or(elevatorCL));
 
         model.setAirDensity(sim.readAmbientAirDensity());
         model.setTAS(sim.readTAS());
@@ -333,7 +329,7 @@ int checkedMain(int argc, char** argv)
         autopilot.enablePitchAxis(sim.readAxisControlState(Sim::Elevator) != Sim::AxisControl::Manual);
         autopilot.enableRollAxis(sim.readAxisControlState(Sim::Aileron) != Sim::AxisControl::Manual);
         autopilot.setSimAileron(sim.readAileron());
-        autopilot.setSimElevator(elevatorCL); // workaround!! wrong elevator value in sim :(
+        autopilot.setSimElevator(elevatorCL);  // workaround!! wrong elevator value in sim :(
         autopilot.setPressureAltitude(sim.readPressureAltitude());
         autopilot.setSimPitch(sim.readPitch());
         autopilot.setSimFpm(sim.readFpm());
@@ -357,10 +353,12 @@ int checkedMain(int argc, char** argv)
 
                 simPitchLimits = Sim::APPitchLimits(int(simPitchLimits) + apWarning.warningLevel - 1);
 
-                spdlog::info("AP warning: Pitch {}! dforce: {}", apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down ? "down" : "up", apWarning.forceDelta);
+                spdlog::info("AP warning: Pitch {}! dforce: {}",
+                             apWarning.pitchDirection == A2AStec30AP::TrimNeededWarning::Down ? "down" : "up",
+                             apWarning.forceDelta);
             }
-           
-            sim.writeAPPitchLimits(simPitchLimits);               
+
+            sim.writeAPPitchLimits(simPitchLimits);
         }
 
         // 4. write model calculation results to CL
@@ -370,8 +368,7 @@ int checkedMain(int argc, char** argv)
         if (simCLEngageCmd != Sim::CLEngage::NoChange)
             input.loadingEngage = (simCLEngageCmd == Sim::CLEngage::Engage ? 1 : 0);
 
-        auto fixBFFPos = [](double pos) 
-        {
+        auto fixBFFPos = [](double pos) {
             // fix for BFF CL acception [0, 100] instead of [-100, 100]
             const float bffMin = 0;
             const float bffMax = 100;
@@ -381,11 +378,11 @@ int checkedMain(int argc, char** argv)
 
         if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
         {
-            input.positionFollowingEngage &= ~(1u << 0); // clear pos following
+            input.positionFollowingEngage &= ~(1u << 0);  // clear pos following
         }
         else
         {
-            input.positionFollowingEngage |= (1u << 0); // set pos following 
+            input.positionFollowingEngage |= (1u << 0);  // set pos following
             input.elevator.positionFollowingSetPoint = fixBFFPos(autopilot.getCLElevator().value());
             spdlog::trace("Elevator in follow mode: {}", input.elevator.positionFollowingSetPoint);
         }
@@ -402,11 +399,11 @@ int checkedMain(int argc, char** argv)
 
         if (sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual)
         {
-            input.positionFollowingEngage &= ~(1u << 1); // clear pos following
+            input.positionFollowingEngage &= ~(1u << 1);  // clear pos following
         }
         else
         {
-            input.positionFollowingEngage |= (1u << 1); // set pos following
+            input.positionFollowingEngage |= (1u << 1);  // set pos following
             input.aileron.positionFollowingSetPoint = fixBFFPos(autopilot.getCLAileron().value());
             spdlog::trace("Aileron in follow mode: {}", input.aileron.positionFollowingSetPoint);
         }
@@ -423,7 +420,7 @@ int checkedMain(int argc, char** argv)
 
         cl.unlockInput();
 
-        // 7. pass values to sim 
+        // 7. pass values to sim
         if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
             sim.writeElevator(elevatorCL);
         else if (auto axisValue = autopilot.getSimElevator())
@@ -434,7 +431,7 @@ int checkedMain(int argc, char** argv)
         else if (auto axisValue = autopilot.getSimAileron())
             sim.writeAileron(axisValue.value());
 
-        sim.writeElevatorTrim(0.0); 
+        sim.writeElevatorTrim(0.0);
 
         sim.writeCLForceEnabled(clForceEnabled);
 
@@ -446,8 +443,7 @@ int checkedMain(int argc, char** argv)
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
     auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
-    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
-    {
+    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime] {
         file_time_type newSettingsWriteTime = last_write_time(settingsPath);
         if (newSettingsWriteTime > settingsWriteTime)
         {
@@ -466,7 +462,7 @@ int checkedMain(int argc, char** argv)
 
             settingsWriteTime = newSettingsWriteTime;
         }
-        return false; // call again
+        return false;  // call again
     });
 
     spdlog::info("Starting sim/model loop");
@@ -487,16 +483,15 @@ int checkedMain(int argc, char** argv)
 int main(int argc, char** argv)
 {
     // check for tests session
-    if (argc > 1 && strcmp(argv[1], "test") == 0)
-        return runTests(argc, argv);
+    if (argc > 1 && strcmp(argv[1], "test") == 0) return runTests(argc, argv);
 
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     try
     {
-       return   checkedMain(argc, argv);
+        return checkedMain(argc, argv);
     }
-    catch (std::exception& e)
+    catch (const std::exception& e)
     {
         spdlog::critical("Exception: {}", e.what());
         spdlog::shutdown();

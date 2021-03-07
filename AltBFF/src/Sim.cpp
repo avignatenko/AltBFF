@@ -10,7 +10,7 @@
 #include <set>
 
 
-Sim::Sim(Settings& settings) : settings_(settings)
+Sim::Sim(const Settings& settings) : settings_(settings)
 {
     connect();
 }

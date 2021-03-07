@@ -16,11 +16,12 @@ public:
         int clEngageOffset = 0;
     };
 
-    Sim(Settings& settings);
+    explicit Sim(const Settings& settings);
     ~Sim();
+
     bool connect();
     void disconnect();
-    bool connected() { return connected_; }
+    [[nodiscard]] bool connected() const { return connected_; }
 
     // write
 

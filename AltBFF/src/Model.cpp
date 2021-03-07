@@ -17,7 +17,7 @@ void Model::setSettings(const Settings& settings)
 {
     settings_ = settings;
 }
-int Model::getFrictionCoeff(Axis axis)
+int Model::getFrictionCoeff(Axis axis) const
 {
     switch (axis)
     {
@@ -30,7 +30,7 @@ int Model::getFrictionCoeff(Axis axis)
     }
 }
 
-int Model::getDumpingCoeff(Axis axis)
+int Model::getDumpingCoeff(Axis axis) const
 {
     switch (axis)
     {
@@ -43,7 +43,7 @@ int Model::getDumpingCoeff(Axis axis)
     }
 }
 
-int Model::getPositionFollowingP(Axis axis)
+int Model::getPositionFollowingP(Axis axis) const
 {
     switch (axis)
     {
@@ -56,7 +56,7 @@ int Model::getPositionFollowingP(Axis axis)
     }
 }
 
-int Model::getPositionFollowingI(Axis axis)
+int Model::getPositionFollowingI(Axis axis) const
 {
     switch (axis)
     {
@@ -69,7 +69,7 @@ int Model::getPositionFollowingI(Axis axis)
     }
 }
 
-int Model::getPositionFollowingD(Axis axis)
+int Model::getPositionFollowingD(Axis axis) const
 {
     switch (axis)
     {
@@ -271,8 +271,8 @@ void Model::calculateEngineVibrations()
         elevatorVibCPS = settings_.elevatorEngineFreqMin;
 
     // engine vibrations go to channel 1
-    vibrationsAmp_[kEngineVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibIntensity);
-    vibrationsHz_[kEngineVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibCPS);
+    vibrationsEngine_[Elevator].amp = static_cast<uint16_t>(elevatorVibIntensity);
+    vibrationsEngine_[Elevator].hz = static_cast<uint16_t>(elevatorVibCPS);
 
     // aileron
 
@@ -282,8 +282,8 @@ void Model::calculateEngineVibrations()
     if (aileronVibCPS < settings_.aileronEngineFreqMin)
         aileronVibCPS = settings_.aileronEngineFreqMin;
 
-    vibrationsAmp_[kEngineVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibIntensity);
-    vibrationsHz_[kEngineVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibCPS);
+    vibrationsEngine_[Aileron].amp = static_cast<uint16_t>(aileronVibIntensity);
+    vibrationsEngine_[Aileron].hz = static_cast<uint16_t>(aileronVibCPS);
 }
 
 void Model::calculateStallVibrations()
@@ -295,8 +295,8 @@ void Model::calculateStallVibrations()
     double elevatorVibIntensity = 100 * (settings_.elevatorVibStallGain / 10.0) * elevatorAngleFactor * elevatorSpeedFactor;
     double elevatorVibCPS = settings_.elevatorVibStalFreq;
 
-    vibrationsAmp_[kStallVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibIntensity);
-    vibrationsHz_[kStallVibrationsChannel][Elevator] = static_cast<uint16_t>(elevatorVibCPS);
+    vibrationsStall_[Elevator].amp = static_cast<uint16_t>(elevatorVibIntensity);
+    vibrationsStall_[Elevator].hz = static_cast<uint16_t>(elevatorVibCPS);
 
     // aileron
     double aileronAngleFactor = std::clamp((std::abs(relativeAoA_ / 100.0) - 0.5) * 2.0, 0.0, 1.0);
@@ -305,17 +305,17 @@ void Model::calculateStallVibrations()
     double aileronVibIntensity = 100 * (settings_.aileronVibStallGain / 10.0) * aileronAngleFactor * aileronSpeedFactor;
     double aileronVibCPS = settings_.aileronVibStalFreq;
 
-    vibrationsAmp_[kStallVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibIntensity);
-    vibrationsHz_[kStallVibrationsChannel][Aileron] = static_cast<uint16_t>(aileronVibCPS);
+    vibrationsStall_[Aileron].amp = static_cast<uint16_t>(aileronVibIntensity);
+    vibrationsStall_[Aileron].hz = static_cast<uint16_t>(aileronVibCPS);
 
 }
 
 void Model::calculateRunwayVibrations()
 {
  
-    auto calculateRunwayVibrationsForAxis = [this] (double runwayAmp, double runwayCPS) -> std::pair<double, double>
+    auto calculateRunwayVibrationsForAxis = [this] (double runwayAmp, double runwayCPS)
     {
-        if (!onGround_) return { 0.0, 0.0 };
+        if (!onGround_) return std::pair<double, double>(0.0, 0.0);
 
         const double takeoffSpeedMps = 50; // empirical
   
@@ -333,17 +333,17 @@ void Model::calculateRunwayVibrations()
         double scFactCPS = std::clamp(0.5 + std::abs(0.5 * gs_ / takeoffSpeedMps), 0.0, 1.0);
         double CPSRunway = std::clamp(runwayCPS * scFactCPS, 0.0, runwayCPS);
 
-        return { AmpRunway, CPSRunway };
+        return std::pair<double, double>(AmpRunway, CPSRunway);
     };
 
-    auto elevatorVibrations = calculateRunwayVibrationsForAxis(settings_.elevatorVibRunwayGain, settings_.elevatorVibRunwayFreq);
+    auto [ampEl, cpsEl] = calculateRunwayVibrationsForAxis(settings_.elevatorVibRunwayGain, settings_.elevatorVibRunwayFreq);
     
-    vibrationsAmp_[kRunwayVibrationChannel][Elevator] = static_cast<uint16_t>(elevatorVibrations.first);
-    vibrationsHz_[kRunwayVibrationChannel][Elevator] = static_cast<uint16_t>(elevatorVibrations.second);
+    vibrationsRunway_[Elevator].amp = static_cast<uint16_t>(ampEl);
+    vibrationsRunway_[Elevator].hz = static_cast<uint16_t>(cpsEl);
 
-    auto aileronVibrations = calculateRunwayVibrationsForAxis(settings_.aileronVibRunwayGain, settings_.aileronVibRunwayFreq);
+    auto [ampAil, cpsAil] = calculateRunwayVibrationsForAxis(settings_.aileronVibRunwayGain, settings_.aileronVibRunwayFreq);
 
-    vibrationsAmp_[kRunwayVibrationChannel][Aileron] = static_cast<uint16_t>(aileronVibrations.first);
-    vibrationsHz_[kRunwayVibrationChannel][Aileron] = static_cast<uint16_t>(aileronVibrations.second);
+    vibrationsRunway_[Aileron].amp = static_cast<uint16_t>(ampAil);
+    vibrationsRunway_[Aileron].hz = static_cast<uint16_t>(cpsAil);
 
 }
