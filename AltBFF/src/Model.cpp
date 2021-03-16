@@ -218,7 +218,7 @@ void Model::calculateElevatorForces()
 
 }
 
-double Model::getTotalForce(Axis axis)
+double Model::getTotalForce(Axis axis) const
 {
     double axisPos = 0.0;
     switch (axis)

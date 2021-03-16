@@ -208,7 +208,7 @@ public:
     [[nodiscard]] float getFixedForce(Axis axis) const { return fixedForce_[axis]; }
     [[nodiscard]] float getSpringForce(Axis axis) const { return springForce_[axis]; }
 
-    double getTotalForce(Axis axis);
+    [[nodiscard]] double getTotalForce(Axis axis) const;
 
     [[nodiscard]] uint16_t getVibrationEngineHz(Axis axis) const { return vibrationsEngine_[axis].hz; }
     [[nodiscard]] uint16_t getVibrationEngineAmp(Axis axis) const { return vibrationsEngine_[axis].amp; }
