@@ -18,12 +18,6 @@ endif()
 
 include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-conan_cmake_configure(REQUIRES 
-                        boost/1.71.0@conan/stable
-                        spdlog/1.4.2@bincrafters/stable
-                        catch2/2.12.1
-                      GENERATORS cmake_multi)
-
 set(CMAKE_CONFIGURATION_TYPES  Debug Release)
 
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG )
@@ -32,19 +26,25 @@ if(is_multi_config)
     message("Multi config generator detected")
     set(conan_configs_to_create ${CMAKE_CONFIGURATION_TYPES})
     set(conan_cmake_file conanbuildinfo_multi.cmake)
+    set(conan_generator cmake_multi)
 else()
      message("Single config generator detected")
     set(conan_configs_to_create ${CMAKE_BUILD_TYPE})
     set(conan_cmake_file conanbuildinfo.cmake)
+    set(conan_generator cmake)
 endif()
 
+conan_cmake_configure(REQUIRES 
+                        boost/1.71.0@conan/stable
+                        spdlog/1.4.2@bincrafters/stable
+                        catch2/2.12.1
+                      GENERATORS ${conan_generator})
+
 foreach(config ${conan_configs_to_create})
-    set(CMAKE_BUILD_TYPE ${config})
-    conan_cmake_autodetect(settings)
+    conan_cmake_autodetect(settings BUILD_TYPE ${config})
     conan_cmake_install(PATH_OR_REFERENCE .
                         BUILD missing
                         SETTINGS ${settings})
-    set(CMAKE_BUILD_TYPE "")
 endforeach()
 
 include(${CMAKE_BINARY_DIR}/${conan_cmake_file})
