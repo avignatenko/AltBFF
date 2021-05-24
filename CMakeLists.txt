@@ -11,7 +11,7 @@ enable_testing()
 # conan
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
+  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/develop/conan.cmake"
                 "${CMAKE_BINARY_DIR}/conan.cmake"
                 TLS_VERIFY ON)
 endif()
@@ -36,7 +36,7 @@ endif()
 
 conan_cmake_configure(REQUIRES 
                         boost/1.71.0@conan/stable
-                        spdlog/1.4.2@bincrafters/stable
+                        spdlog/1.8.5
                         catch2/2.12.1
                       GENERATORS ${conan_generator})
 
