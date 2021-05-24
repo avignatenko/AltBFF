@@ -9,6 +9,8 @@
 #include <optional>
 
 // after http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
+// controller is calculated in velocity form after
+// https://www.philadelphia.edu.jo/academics/kaubaidy/uploads/RTS-Lec6N.pdf
 class PIDController
 {
 public:

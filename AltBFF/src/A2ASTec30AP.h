@@ -83,8 +83,13 @@ public:
     void setSimulationRate(double rate)
     {
         simRate_ = rate;
-        if (pitchController_.has_value()) pitchController_.value().setSampleTimeMs(getSimLoopTimeMs());
-        spdlog::trace("simulationRate set to model: {}", rate);
+        spdlog::trace("simulationRate set to AP: {}", simRate_);
+        if (pitchController_.has_value())
+        {
+            spdlog::trace("pitchController loop time: {}", getSimLoopTimeMs());
+            pitchController_.value().setSampleTimeMs(getSimLoopTimeMs());
+        }
+       
     }
 
     // rad
@@ -156,7 +161,7 @@ private:
     void readStepResponseInput();
     void writeStepResponse();
 
-    double getSimLoopTimeMs() const { return settings_.loopTimeMs / simRate_; }
+    double getSimLoopTimeMs() const { return settings_.loopTimeMs * simRate_; }
 
 private:
     bool rollEnabled_ = false;
