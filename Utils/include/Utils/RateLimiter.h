@@ -2,52 +2,56 @@
 
 class RateLimiter
 {
-
 public:
-
     RateLimiter(double fallingRate, double risingRate, double input, double sampleTimeMs)
     {
         output_ = input;
         sampleTimeMs_ = sampleTimeMs;
-        setRate(fallingRate, risingRate);
+        fallingRateOrig_ = fallingRate;
+        risingRateOrig_ = risingRate;
+        updateRate();
     }
 
-    void setInput(double input)
-    {
-        input_ = input;
-    }
+    void setInput(double input) { input_ = input; }
 
-    double getInput() const
-    {
-        return input_;
-    }
+    double getInput() const { return input_; }
 
     void setRate(double fallingRate, double risingRate)
     {
-        fallingRate_ = fallingRate * getSampleTimeSec();
-        risingRate_ = risingRate * getSampleTimeSec();
+        fallingRateOrig_ = fallingRate;
+        risingRateOrig_ = risingRate;
+        updateRate();
+    }
+    
+    void setSampleTimeMs(double sampleTimeMs)
+    {
+        sampleTimeMs_ = sampleTimeMs;
+        updateRate();
     }
 
     void process()
     {
         lastOutput_ = output_;
-     
+
         double rate = input_ - lastOutput_;
-        
-        if (rate > risingRate_) 
+
+        if (rate > risingRate_)
             output_ = lastOutput_ + risingRate_;
-        else if (rate < fallingRate_) 
+        else if (rate < fallingRate_)
             output_ = lastOutput_ + fallingRate_;
-        else 
+        else
             output_ = input_;
     }
 
-    double getOutput()
-    {
-        return output_;
-    }
+    double getOutput() { return output_; }
 
 private:
+
+    void updateRate()
+    {
+        fallingRate_ = fallingRateOrig_ * getSampleTimeSec();
+        risingRate_ = risingRateOrig_ * getSampleTimeSec();
+    }
 
 private:
     double getSampleTimeSec() const { return sampleTimeMs_ / 1000.0; }
@@ -56,6 +60,9 @@ private:
     double input_ = 0.0;
     double lastOutput_ = 0.0;
     double output_ = 0.0;
+
+    double fallingRateOrig_ = 0.0;
+    double risingRateOrig_ = 0.0;
 
     double fallingRate_ = 0.0;
     double risingRate_ = 0.0;

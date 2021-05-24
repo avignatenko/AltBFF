@@ -333,6 +333,7 @@ int checkedMain(int argc, char** argv)
         autopilot.setPressureAltitude(sim.readPressureAltitude());
         autopilot.setSimPitch(sim.readPitch());
         autopilot.setSimFpm(sim.readFpm());
+        autopilot.setSimulationRate(sim.readSimulationRate());
         autopilot.setTotalAxisCLForceAileron(model.getTotalForce(Model::Aileron));
         autopilot.setTotalAxisCLForceElevator(model.getTotalForce(Model::Elevator));
 

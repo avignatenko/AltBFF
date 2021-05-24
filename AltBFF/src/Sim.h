@@ -109,6 +109,9 @@ public:
     // [0, 100]
     double readRelativeAoA();
 
+    // 1x, 2x, etc
+    double readSimulationRate();
+
     // range [-1, 1]
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
@@ -165,6 +168,7 @@ private:
         int32_t gs = 0;
         int16_t onGround = 0;
         int32_t surfaceType = 0;
+        int16_t simulationRate = 1;  // 0C1A
         int16_t slewMode = 0; // 05DC
         int16_t pauseMode = 0; // 0264
         int8_t inmenuMode = 0; // 3365

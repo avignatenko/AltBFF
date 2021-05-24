@@ -19,21 +19,24 @@ void A2AStec30AP::enablePitchAxis(bool enable)
 
     if (enable)
     {
-      
+        const double loopTimeMs = getSimLoopTimeMs();
         pitchController_ = PitchController
         {
             static_cast<PitchController::Mode>(settings_.pitchmode),
             // fpm controller
             PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, settings_.loopTimeMs, simPressureAltitude_, simFpm_),
+                                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax,
+                                          loopTimeMs, simPressureAltitude_, simFpm_),
             // pitch controller
             PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
-                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, settings_.loopTimeMs, simFpm_, simPitch_),
+                                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax,
+                                          settings_.pitchMax, loopTimeMs, simFpm_, simPitch_),
             // elevator controller
             PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , settings_.loopTimeMs, simPitch_, simElevator_),
+                                          -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100, loopTimeMs,
+                                          simPitch_, simElevator_),
             // elevator servo
-            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_, settings_.loopTimeMs)
+            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_, loopTimeMs)
         };
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);

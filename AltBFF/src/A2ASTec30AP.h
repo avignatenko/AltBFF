@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Utils/RateLimiter.h>
 #include <Utils/Accumulators.h>
 #include <Utils/PID.h>
+#include <Utils/RateLimiter.h>
 
 #include <spdlog/spdlog.h>
 #include <optional>
@@ -10,198 +10,204 @@
 class A2AStec30AP
 {
 public:
+    struct Settings
+    {
+        struct PID
+        {
+            double p;
+            double i;
+            double d;
+        };
 
-	struct Settings
-	{
-		struct PID
-		{
-			double p;
-			double i;
-			double d;
-		};
+        PID rollPID = {0.0, 10000.0, 0.0};
 
-		PID rollPID = { 0.0, 10000.0, 0.0 };
+        // pitch
+        int pitchmode = 0;
 
-		// pitch
-		int pitchmode = 0;
+        double elevatorServoDuMax = 0.0;
 
-		double elevatorServoDuMax = 0.0;
+        PID elevatorPID = {0.0, 10000.0, 0.0};
+        double elevatorDuMax = std::numeric_limits<double>::infinity();
 
-		PID elevatorPID = { 0.0, 10000.0, 0.0 };
-		double elevatorDuMax = std::numeric_limits<double>::infinity();
+        PID pitchPID = {0.0, 10000.0, 0.0};
+        double pitchDuMax = std::numeric_limits<double>::infinity();
+        double pitchMax = std::numeric_limits<double>::infinity();
 
-		PID pitchPID = { 0.0, 10000.0, 0.0 };
-		double pitchDuMax = std::numeric_limits<double>::infinity();
-		double pitchMax = std::numeric_limits<double>::infinity();
+        PID fpmPID = {0.0, 10000.0, 0.0};
+        double fpmDuMax = std::numeric_limits<double>::infinity();
+        double fpmMax = std::numeric_limits<double>::infinity();
 
-		PID fpmPID = { 0.0, 10000.0, 0.0 };
-		double fpmDuMax = std::numeric_limits<double>::infinity();
-		double fpmMax = std::numeric_limits<double>::infinity();
+        bool doStepResponse = false;
+        std::string stepResponseInputFile;
 
-		bool doStepResponse = false;
-		std::string stepResponseInputFile;
+        // 0..100%
+        double pitchWarningCLForce = 80;
+        // 0..100%
+        double pitchStartDegradeCLForce = 90.0;
+        // 0..100%
+        double pitchMaxCLForce = 100.0;
 
-		// 0..100%
-		double pitchWarningCLForce = 80;
-		// 0..100%
-		double pitchStartDegradeCLForce = 90.0;
-		// 0..100%
-		double pitchMaxCLForce = 100.0;
+        double loopTimeMs = 1000.0 / 30.0;
+    };
 
-		double loopTimeMs = 1000.0 / 30.0;
-	};
+    A2AStec30AP(const Settings& settings)
+        : clForceElevator_(int(1000.0 / settings.loopTimeMs))  // 1 sec
+          ,
+          clForceAileron_(int(1000.0 / settings.loopTimeMs))  // 1 sec
+    {
+        setSettings(settings);
+    }
 
-	A2AStec30AP(const Settings& settings)
-		: clForceElevator_(int(1000.0 / settings.loopTimeMs)) // 1 sec
-		, clForceAileron_(int(1000.0 / settings.loopTimeMs)) // 1 sec
-	{
-		setSettings(settings);
-	}
+    // own state
+    void setSettings(const Settings& settings)
+    {
+        settings_ = settings;
+        if (settings_.doStepResponse) readStepResponseInput();
+    }
 
-	// own state
-	void setSettings(const Settings& settings)
-	{
-		settings_ = settings; 
-		if (settings_.doStepResponse)
-			readStepResponseInput();
-	}
+    void enableRollAxis(bool enable);
+    void enablePitchAxis(bool enable);
 
-	void enableRollAxis(bool enable);
-	void enablePitchAxis(bool enable);
+    // sim vars
+    void setSimAileron(double aileron)
+    {
+        simAileron_ = aileron;
+        spdlog::trace("Aileron set to AP: {}", simAileron_);
+    }
+    void setSimElevator(double elevator)
+    {
+        simElevator_ = elevator;
+        spdlog::trace("Elevator set to AP: {}", simElevator_);
+    }
 
-	// sim vars
-	void setSimAileron(double aileron)
-	{
-		simAileron_ = aileron;
-		spdlog::trace("Aileron set to AP: {}", simAileron_);
+    void setSimulationRate(double rate)
+    {
+        simRate_ = rate;
+        if (pitchController_.has_value()) pitchController_.value().setSampleTimeMs(getSimLoopTimeMs());
+        spdlog::trace("simulationRate set to model: {}", rate);
+    }
 
-	}
-	void setSimElevator(double elevator)
-	{
-		simElevator_ = elevator;
-		spdlog::trace("Elevator set to AP: {}", simElevator_);
-	}
+    // rad
+    void setSimPitch(double pitch)
+    {
+        simPitch_ = pitch;
+        spdlog::trace("Pitch set to AP: {}", simPitch_);
+    }
 
-	// rad
-	void setSimPitch(double pitch)
-	{
-		simPitch_ = pitch;
-		spdlog::trace("Pitch set to AP: {}", simPitch_);
-	}
+    void setSimFpm(double fpm)
+    {
+        simFpm_ = fpm;
+        spdlog::trace("FPM set to AP: {}", simFpm_);
+    }
 
-	void setSimFpm(double fpm)
-	{
-		simFpm_ = fpm;
-		spdlog::trace("FPM set to AP: {}", simFpm_);
-	}
+    // Pa
+    void setPressureAltitude(double pressureAltitude)
+    {
+        simPressureAltitude_ = pressureAltitude;
+        spdlog::trace("Pressure altitude set to AP: {}", simPressureAltitude_);
+    }
 
-	// Pa
-	void setPressureAltitude (double pressureAltitude)
-	{
-		simPressureAltitude_ = pressureAltitude;
-		spdlog::trace("Pressure altitude set to AP: {}", simPressureAltitude_);
-	}
+    // model vars
 
-	// model vars
+    //[-100, 100]
+    void setTotalAxisCLForceElevator(double force)
+    {
+        clForceElevator_.addSample(force);
+        spdlog::trace("CL Force elevator set to AP: {}, average: {}", force, clForceElevator_.get());
+    }
 
-	//[-100, 100]
-	void setTotalAxisCLForceElevator(double force)
-	{
-		clForceElevator_.addSample(force);
-		spdlog::trace("CL Force elevator set to AP: {}, average: {}", force, clForceElevator_.get());
-	}
+    void setTotalAxisCLForceAileron(double force)
+    {
+        clForceAileron_.addSample(force);
+        spdlog::trace("CL Force aileron set to AP: {}, average: {}", force, clForceElevator_.get());
+    }
 
-	void setTotalAxisCLForceAileron(double force)
-	{
-		clForceAileron_.addSample(force);
-		spdlog::trace("CL Force aileron set to AP: {}, average: {}", force, clForceElevator_.get());
-	}
+    void process();
 
-	void process();
+    // [-100, 100]
+    std::optional<double> getCLAileron();
 
-	// [-100, 100]
-	std::optional<double> getCLAileron();
+    // [-100, 100]
+    std::optional<double> getCLElevator();
 
-	// [-100, 100]
-	std::optional<double> getCLElevator();
+    std::optional<double> getSimAileron();
+    std::optional<double> getSimElevator();
 
+    struct TrimNeededWarning
+    {
+        enum PitchDirection
+        {
+            NA,
+            Up,
+            Down
+        };
 
-	std::optional<double> getSimAileron();
-	std::optional<double> getSimElevator();
+        double forceDelta = 0.0;
+        PitchDirection pitchDirection = NA;
+        int warningLevel = 0;  // 0 - no warning, 1 - warning, 2 - level 2 warning
+    };
 
-	struct TrimNeededWarning
-	{
-		enum PitchDirection
-		{
-			NA,
-			Up,
-			Down
-		};
-
-		double forceDelta = 0.0;
-		PitchDirection pitchDirection = NA;
-		int warningLevel = 0; // 0 - no warning, 1 - warning, 2 - level 2 warning
-	};
-
-	TrimNeededWarning getTrimNeededWarning();
-
-private:
-
-	bool enabled()
-	{
-		return rollEnabled_ || pitchEnabled_;
-	}
-
-	void computeStepResponseInput(PIDController& controller);
-	void readStepResponseInput();
-	void writeStepResponse();
+    TrimNeededWarning getTrimNeededWarning();
 
 private:
+    bool enabled() { return rollEnabled_ || pitchEnabled_; }
 
-	bool rollEnabled_ = false;
-	bool pitchEnabled_ = false;
+    void computeStepResponseInput(PIDController& controller);
+    void readStepResponseInput();
+    void writeStepResponse();
 
-	struct PitchController
-	{
-		enum class Mode
-		{
-			Pitch = 0,
-			FPM,
-			Alt
-		};
-		Mode mode = Mode::Alt;
-		PIDController fpmController;
-		PIDController pitchController;
-		PIDController elevatorController;
-		RateLimiter elevatorServo;
-	};
+    double getSimLoopTimeMs() const { return settings_.loopTimeMs / simRate_; }
 
-	std::optional<PitchController>  pitchController_;
-	
+private:
+    bool rollEnabled_ = false;
+    bool pitchEnabled_ = false;
 
-	double simAileron_ = 0.0;
-	double simElevator_ = 0.0;
-	double simPressureAltitude_ = 0.0;
-	double simPitch_ = 0.0;
-	double simFpm_ = 0.0;
+    struct PitchController
+    {
+        enum class Mode
+        {
+            Pitch = 0,
+            FPM,
+            Alt
+        };
+        Mode mode = Mode::Alt;
+        PIDController fpmController;
+        PIDController pitchController;
+        PIDController elevatorController;
+        RateLimiter elevatorServo;
 
-	ExponentialMovingAverage clForceElevator_;
-	ExponentialMovingAverage clForceAileron_ ;
+        void setSampleTimeMs(double sampleTimeMs)
+        {
+            fpmController.setSampleTimeMs(sampleTimeMs);
+            pitchController.setSampleTimeMs(sampleTimeMs);
+            elevatorController.setSampleTimeMs(sampleTimeMs);
+            elevatorServo.setSampleTimeMs(sampleTimeMs);
+        }
+    };
 
-	int loopsInWarningState_ = 0;
+    std::optional<PitchController> pitchController_;
 
-	double aileronOut_ = 0.0;
-	double elevatorOut_ = 0.0;
+    double simAileron_ = 0.0;
+    double simElevator_ = 0.0;
+    double simPressureAltitude_ = 0.0;
+    double simPitch_ = 0.0;
+    double simFpm_ = 0.0;
+    double simRate_ = 1.0;
 
-	// for pid tuning
-	bool stepResponseInProgress = false;
-	unsigned long currentInputSample_ = 0;
-	std::vector<std::pair<long, double>> stepResponseInput_;
-	std::vector<std::array<double, 3>> stepResponseOutput_;
-	unsigned long timeSamplesPitch_ = 0;
-	
+    ExponentialMovingAverage clForceElevator_;
+    ExponentialMovingAverage clForceAileron_;
 
-	Settings settings_;
+    int loopsInWarningState_ = 0;
 
+    double aileronOut_ = 0.0;
+    double elevatorOut_ = 0.0;
 
+    // for pid tuning
+    bool stepResponseInProgress = false;
+    unsigned long currentInputSample_ = 0;
+    std::vector<std::pair<long, double>> stepResponseInput_;
+    std::vector<std::array<double, 3>> stepResponseOutput_;
+    unsigned long timeSamplesPitch_ = 0;
+
+    Settings settings_;
 };
