@@ -3,3 +3,4 @@ out/
 docs-local
 .DS_Store
 /Build/
+.vscode
