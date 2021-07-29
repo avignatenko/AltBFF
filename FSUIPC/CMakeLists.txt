@@ -13,4 +13,5 @@ target_include_directories(${PROJECT_NAME} PUBLIC "." )
 target_sources(${PROJECT_NAME} 
 	PRIVATE 
 	IPCuser64.c
-	IPCuser64.h)
+	IPCuser64.h
+	FSUIPC_User64.h)
