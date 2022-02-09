@@ -109,6 +109,7 @@ Sim::Settings readSimSettings(const ptree& settings)
     simSettings.invertFSElevator = settings.get<bool>("Sim.InvertElevator");
     simSettings.invertFSAileron = settings.get<bool>("Sim.InvertAileron");
     simSettings.invertCLElevatorTrim = settings.get<bool>("Sim.InvertCLElevatorTrim");
+    simSettings.propWashOffset = std::stoul(settings.get<std::string>("Sim.PropWashOffset"), nullptr, 16);
     simSettings.clElevatorTrimOffset = std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
     simSettings.apRollEngagedOffset = std::stoul(settings.get<std::string>("Sim.APRollEngagedOffset"), nullptr, 16);
     simSettings.apPitchEngagedOffset = std::stoul(settings.get<std::string>("Sim.APPitchEngagedOffset"), nullptr, 16);
@@ -177,6 +178,8 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.elevatorTrimGain = settings.get<double>("Model.ElevatorTrimGain");
     modelSettings.elevatorTrimNeutralPos = settings.get<double>("Model.ElevatorTrimNeutralPos");
     modelSettings.propWashElevatorCoeff = settings.get<double>("Model.PropWashElevatorCoeff");
+    modelSettings.calculatePropWash = settings.get<bool>("Model.CalculatePropWash");
+    
     modelSettings.elevatorAlphaGain = settings.get<double>("Model.ElevatorAlphaGain");
     modelSettings.elevatorAlphaScaleSpeedKn = settings.get<double>("Model.ElevatorAlphaScaleSpeedKn");
 
@@ -322,6 +325,7 @@ int checkedMain(int argc, char** argv)
         model.setEngine1RPM(sim.readEngine1RPM());
         model.setEngine1Flow(sim.readEngine1Flow());
         model.setRelativeAoA(sim.readRelativeAoA());
+        model.setPropWash(sim.readPropWash());
 
         // 3. update model
         model.process();

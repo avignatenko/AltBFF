@@ -16,7 +16,10 @@ Model::Model(const Settings& settings)
 void Model::setSettings(const Settings& settings)
 {
     settings_ = settings;
+    spdlog::trace("Settings set");
+    spdlog::trace("Settings::calculatePropWash: {}", settings_.calculatePropWash);
 }
+
 int Model::getFrictionCoeff(Axis axis) const
 {
     switch (axis)
@@ -111,11 +114,22 @@ double scaleAlpha(double alpha, double scaleThesholdKn, double gs)
 
 double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCoeff)
 {
-    // test advanced prop wash calculation (for single prop GA)
-    // https://www.grc.nasa.gov/www/k-12/airplane/propth.html
-    double thrustN = std::max(thrust_, 0.0) * 4.45; // pounds to newton
-    const double propArea = 3.14 / 4 * std::pow(1.8, 2); // prop diameter roughly 1.8m
-    double airSpeed2 = std::sqrt(thrustN / (.5 * airDensity_ * propArea) * std::pow(propWashCoeff, 2.0) + tas_ * tas_);
+    double airSpeed2 = 0;
+    if (settings_.calculatePropWash)
+    {
+        // test advanced prop wash calculation (for single prop GA)
+        // https://www.grc.nasa.gov/www/k-12/airplane/propth.html
+        double thrustN = std::max(thrust_, 0.0) * 4.45;       // pounds to newton
+        const double propArea = 3.14 / 4 * std::pow(1.8, 2);  // prop diameter roughly 1.8m
+        
+        airSpeed2 =
+            std::sqrt(thrustN / (.5 * airDensity_ * propArea) * std::pow(propWashCoeff, 2.0) + tas_ * tas_);
+
+    }
+    else
+    {
+        airSpeed2 = propWash_;
+    }
 
    spdlog::debug("Airspeeds tas: {}, propwash_new: {}", tas_,airSpeed2);
 

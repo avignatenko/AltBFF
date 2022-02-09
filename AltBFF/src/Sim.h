@@ -9,6 +9,7 @@ public:
         bool invertFSElevator = false;
         bool invertFSAileron = false;
         bool invertCLElevatorTrim = false;
+        int propWashOffset = 0;
         int clElevatorTrimOffset = 0;
         int apRollEngagedOffset = 0;
         int apPitchEngagedOffset = 0;
@@ -110,6 +111,9 @@ public:
     // [0, 100]
     double readRelativeAoA();
 
+    // m/s
+    double readPropWash();
+
     // range [-1, 1]
     // fixme: this can be linked directly to BFF, avoiding sim
     double readCLElevatorTrim();
@@ -152,6 +156,7 @@ private:
         int16_t aileron = 0;
         int32_t tas = 0;
         int16_t relativeAoA = 0;
+        double propWash = 0;
         double engine1Flow = 0.0;
         int16_t engine1RPM = 0;
         double thrust = 0.0;

@@ -37,6 +37,7 @@ public:
         double elevatorArea = 0.0;
         double elevatorNeutralPos = 0.0;
         double propWashElevatorCoeff = 0.0;
+        bool calculatePropWash = true;
         double elevatorAlphaGain = 0.0;
         double elevatorAlphaScaleSpeedKn = 0.0;
         double elevatorPRGain = 0.0;
@@ -196,6 +197,13 @@ public:
         spdlog::trace("relativeAoA set to model: {}", relativeAoA_);
     }
 
+    // in m/s
+    void setPropWash(double propWash)
+    {
+        propWash_ = propWash;
+        spdlog::trace("propWash set to model: {}", propWash_);
+    }
+
     // result
 
     [[nodiscard]] int getFrictionCoeff(Axis axis) const;
@@ -240,6 +248,7 @@ private:
     double tas_ = 0.0;
     double gs_ = 0.0;
     double thrust_ = 0.0;
+    double propWash_ = 0.0;
     double alphaAngleRad_ = 0.0;
     double elevatorTrim_ = 0.0;
     double pitchRate_ = 0.0;

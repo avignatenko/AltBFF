@@ -165,6 +165,11 @@ double Sim::readRelativeAoA()
     return 100 - (100.0 * simData_.relativeAoA / 32767);
 }
 
+double Sim::readPropWash()
+{
+    return simData_.propWash;
+}
+
 bool Sim::readOnGround()
 {
     return (simData_.onGround == 1);
@@ -265,6 +270,7 @@ void Sim::process()
         !FSUIPC_Read(0x05DC, 2, &simData_.slewMode, &dwResult) ||
         !FSUIPC_Read(0x0264, 2, &simData_.pauseMode, &dwResult) ||
         !FSUIPC_Read(0x3365, 1, &simData_.inmenuMode, &dwResult) ||
+        !FSUIPC_Read(settings_.propWashOffset, 8, &simData_.propWash, &dwResult) ||
         !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
         !FSUIPC_Read(settings_.apRollEngagedOffset, 1, &simData_.apRollEngaged, &dwResult) ||
         !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &simData_.apPitchEnaged, &dwResult) ||
