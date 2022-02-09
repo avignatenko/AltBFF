@@ -8,6 +8,7 @@ public:
     {
         bool invertFSElevator = false;
         bool invertFSAileron = false;
+        bool invertCLElevatorTrim = false;
         int clElevatorTrimOffset = 0;
         int apRollEngagedOffset = 0;
         int apPitchEngagedOffset = 0;

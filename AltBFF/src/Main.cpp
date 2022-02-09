@@ -108,6 +108,7 @@ Sim::Settings readSimSettings(const ptree& settings)
     Sim::Settings simSettings;
     simSettings.invertFSElevator = settings.get<bool>("Sim.InvertElevator");
     simSettings.invertFSAileron = settings.get<bool>("Sim.InvertAileron");
+    simSettings.invertCLElevatorTrim = settings.get<bool>("Sim.InvertCLElevatorTrim");
     simSettings.clElevatorTrimOffset = std::stoul(settings.get<std::string>("Sim.CLElevatorTrimOffset"), nullptr, 16);
     simSettings.apRollEngagedOffset = std::stoul(settings.get<std::string>("Sim.APRollEngagedOffset"), nullptr, 16);
     simSettings.apPitchEngagedOffset = std::stoul(settings.get<std::string>("Sim.APPitchEngagedOffset"), nullptr, 16);

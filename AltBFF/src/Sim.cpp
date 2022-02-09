@@ -198,7 +198,7 @@ Sim::GroundType Sim::readGroundType()
 
 double Sim::readCLElevatorTrim()
 {
-    return simData_.clElevatorTrim / 16383.0;
+    return simData_.clElevatorTrim / 16383.0 * (settings_.invertCLElevatorTrim ? -1 : 1);
 }
 
 Sim::CLEngage Sim::readCLEngage()
