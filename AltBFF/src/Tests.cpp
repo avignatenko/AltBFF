@@ -131,7 +131,7 @@ TEST_CASE("AP pitch: maintain pitch")
 
     ap.setSimPitch(degToRad(-5));
     ap.process();
-    REQUIRE(ap.getSimElevator() == -41.273324651207489);
+    REQUIRE(ap.getSimElevator().value() == -50);
    
     //std::cout << ap.getCLElevator();
 
@@ -151,11 +151,11 @@ TEST_CASE("AP pitch pitch 1")
 
     ap.setSimPitch(degToRad(-10.0)); // pitch up
     ap.process();
-    REQUIRE(ap.getSimElevator() == -40.982465531362635);
+    REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
-    REQUIRE(ap.getSimElevator() == -40.691577322696915);
+    REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
-    REQUIRE(ap.getSimElevator() == -40.400689114031188);
+    REQUIRE(ap.getSimElevator().value() == -50);
 }
 
 TEST_CASE("AP pitch pitch 2")
@@ -171,11 +171,11 @@ TEST_CASE("AP pitch pitch 2")
 
     ap.setSimPitch(-40.0 / 180.0 * 3.14); // pitch up
     ap.process();
-    REQUIRE(ap.getSimElevator() == -5.9004444444444459);
+    REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
-    REQUIRE(ap.getSimElevator() == 47.409777777777776);
+    REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
-    REQUIRE(ap.getSimElevator() == 100.0);
+    REQUIRE(ap.getSimElevator().value() == -50);
 }
 
 TEST_CASE("AP pitch pitch 3")
@@ -191,11 +191,11 @@ TEST_CASE("AP pitch pitch 3")
 
     ap.setSimPitch(-40.0 / 180.0 * 3.14); // pitch up
     ap.process();
-    REQUIRE(ap.getSimElevator() == -5.9004444444444459);
+    REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
-    REQUIRE(ap.getSimElevator() == 47.409777777777776);
+    REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
-    REQUIRE(ap.getSimElevator() == 100.0);
+    REQUIRE(ap.getSimElevator().value() == -50);
 }
 
 TEST_CASE("Moving average")
@@ -280,7 +280,7 @@ TEST_CASE("Rate limiter")
             r.process();
         }
 
-        REQUIRE(r.getOutput() == 0.0);
+        REQUIRE(r.getOutput() == -100.0);
     }
  
 }
