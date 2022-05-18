@@ -128,7 +128,7 @@ double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCo
     }
     else
     {
-        airSpeed2 = propWash_;
+        airSpeed2 = propWash_ + tas_;
     }
 
    spdlog::debug("Airspeeds tas: {}, propwash_new: {}", tas_,airSpeed2);
