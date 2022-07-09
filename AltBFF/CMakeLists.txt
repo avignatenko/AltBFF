@@ -17,6 +17,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"src/Sim.cpp"
 	"src/Sim.h"
 	"src/Tests.cpp" 
+	"src/A2ASTec30AP.h"
 	"src/A2ASTec30AP.cpp")
 
 
