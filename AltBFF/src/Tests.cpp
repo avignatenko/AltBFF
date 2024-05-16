@@ -1,16 +1,18 @@
-#include "Model.h"
-#include "A2ASTec30AP.h"
 #include <Utils/PID.h>
 #include <Utils/RateLimiter.h>
+#include "A2ASTec30AP.h"
+#include "Model.h"
 
 #include <Utils/Accumulators.h>
 #include <Utils/Common.h>
 #include <catch2/catch.hpp>
 #include <iostream>
 
-class StandardSettingsTestFixture {
+class StandardSettingsTestFixture
+{
 protected:
     Model::Settings s_;
+
 public:
     StandardSettingsTestFixture()
     {
@@ -19,7 +21,6 @@ public:
         s_.maxElevatorLift = 2.83;
         s_.maxElevatorAngleRadians = 17.0 / 180 * kPi;
     }
-
 };
 
 TEST_CASE_METHOD(StandardSettingsTestFixture, "test elevator forces balance")
@@ -119,7 +120,7 @@ TEST_CASE("AP pitch")
 TEST_CASE("AP pitch: maintain pitch")
 {
     A2AStec30AP::Settings s;
-    s.elevatorPID = { 100, 10000, 0 };
+    s.elevatorPID = {100, 10000, 0};
     s.pitchmode = 0;
     A2AStec30AP ap(s);
 
@@ -132,16 +133,14 @@ TEST_CASE("AP pitch: maintain pitch")
     ap.setSimPitch(degToRad(-5));
     ap.process();
     REQUIRE(ap.getSimElevator().value() == -50);
-   
-    //std::cout << ap.getCLElevator();
 
+    // std::cout << ap.getCLElevator();
 }
-
 
 TEST_CASE("AP pitch pitch 1")
 {
     A2AStec30AP::Settings s;
-    s.elevatorPID = { 50, 1, 0 };
+    s.elevatorPID = {50, 1, 0};
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -149,7 +148,7 @@ TEST_CASE("AP pitch pitch 1")
     ap.enablePitchAxis(true);
     ap.process();
 
-    ap.setSimPitch(degToRad(-10.0)); // pitch up
+    ap.setSimPitch(degToRad(-10.0));  // pitch up
     ap.process();
     REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
@@ -161,7 +160,7 @@ TEST_CASE("AP pitch pitch 1")
 TEST_CASE("AP pitch pitch 2")
 {
     A2AStec30AP::Settings s;
-    s.elevatorPID = { 50, 400, 0 };
+    s.elevatorPID = {50, 400, 0};
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -169,7 +168,7 @@ TEST_CASE("AP pitch pitch 2")
     ap.enablePitchAxis(true);
     ap.process();
 
-    ap.setSimPitch(-40.0 / 180.0 * 3.14); // pitch up
+    ap.setSimPitch(-40.0 / 180.0 * 3.14);  // pitch up
     ap.process();
     REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
@@ -181,7 +180,7 @@ TEST_CASE("AP pitch pitch 2")
 TEST_CASE("AP pitch pitch 3")
 {
     A2AStec30AP::Settings s;
-    s.elevatorPID = { 50, 400, 0 };
+    s.elevatorPID = {50, 400, 0};
     A2AStec30AP ap(s);
 
     ap.setSimElevator(-50);
@@ -189,7 +188,7 @@ TEST_CASE("AP pitch pitch 3")
     ap.enablePitchAxis(true);
     ap.process();
 
-    ap.setSimPitch(-40.0 / 180.0 * 3.14); // pitch up
+    ap.setSimPitch(-40.0 / 180.0 * 3.14);  // pitch up
     ap.process();
     REQUIRE(ap.getSimElevator().value() == -50);
     ap.process();
@@ -226,19 +225,17 @@ TEST_CASE("Moving average")
 
     REQUIRE(ma.get() == 2.4);
 
-    for (int i = 0; i < 5; ++i)
-        ma.addSample(1);
+    for (int i = 0; i < 5; ++i) ma.addSample(1);
 
     REQUIRE(ma.get() == 1.0);
 
     // test for cached
     REQUIRE(ma.get() == 1.0);
-
 }
 
 TEST_CASE("Rate limiter")
 {
-    RateLimiter r(-10, 20, -100, 1000.0/30.0);
+    RateLimiter r(-10, 20, -100, 1000.0 / 30.0);
 
     SECTION("check low and high steps")
     {
@@ -282,9 +279,7 @@ TEST_CASE("Rate limiter")
 
         REQUIRE(r.getOutput() == -100.0);
     }
- 
 }
-
 
 TEST_CASE("Test EMA")
 {

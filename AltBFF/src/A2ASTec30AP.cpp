@@ -1,11 +1,11 @@
 #include "A2ASTec30AP.h"
 
-#include "Sim.h"
-#include "Model.h"
 #include <BFFCLAPI/CLStructures.h>
-#include <CSV/CSV.hpp>
 #include <Utils/Common.h>
 #include <fmt/ranges.h>
+#include <CSV/CSV.hpp>
+#include "Model.h"
+#include "Sim.h"
 
 void A2AStec30AP::enableRollAxis(bool enable)
 {
@@ -19,22 +19,23 @@ void A2AStec30AP::enablePitchAxis(bool enable)
 
     if (enable)
     {
-      
-        pitchController_ = PitchController
-        {
-            static_cast<PitchController::Mode>(settings_.pitchmode),
-            // fpm controller
-            PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
-                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax, settings_.loopTimeMs, simPressureAltitude_, simFpm_),
-            // pitch controller
-            PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
-                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax, settings_.pitchMax, settings_.loopTimeMs, simFpm_, simPitch_),
-            // elevator controller
-            PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
-                        -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100 , settings_.loopTimeMs, simPitch_, simElevator_),
-            // elevator servo
-            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_, settings_.loopTimeMs)
-        };
+        pitchController_ =
+            PitchController{static_cast<PitchController::Mode>(settings_.pitchmode),
+                            // fpm controller
+                            PIDController(settings_.fpmPID.p, settings_.fpmPID.i, settings_.fpmPID.d,
+                                          -settings_.fpmDuMax, settings_.fpmDuMax, -settings_.fpmMax, settings_.fpmMax,
+                                          settings_.loopTimeMs, simPressureAltitude_, simFpm_),
+                            // pitch controller
+                            PIDController(settings_.pitchPID.p, settings_.pitchPID.i, settings_.pitchPID.d,
+                                          -settings_.pitchDuMax, settings_.pitchDuMax, -settings_.pitchMax,
+                                          settings_.pitchMax, settings_.loopTimeMs, simFpm_, simPitch_),
+                            // elevator controller
+                            PIDController(settings_.elevatorPID.p, settings_.elevatorPID.i, settings_.elevatorPID.d,
+                                          -settings_.elevatorDuMax, settings_.elevatorDuMax, -100, 100,
+                                          settings_.loopTimeMs, simPitch_, simElevator_),
+                            // elevator servo
+                            RateLimiter(-settings_.elevatorServoDuMax, settings_.elevatorServoDuMax, simElevator_,
+                                        settings_.loopTimeMs)};
 
         spdlog::info("AP Pitch mode: {}", settings_.pitchmode);
 
@@ -57,7 +58,7 @@ void A2AStec30AP::enablePitchAxis(bool enable)
         if (settings_.doStepResponse)
         {
             stepResponseInProgress = true;
-           
+
             spdlog::info("Started impulse response test");
         }
     }
@@ -68,7 +69,7 @@ void A2AStec30AP::enablePitchAxis(bool enable)
     }
 
     pitchEnabled_ = enable;
-    
+
     timeSamplesPitch_ = 0;
     currentInputSample_ = 0;
     loopsInWarningState_ = 0;
@@ -97,11 +98,10 @@ void A2AStec30AP::process()
             PIDController& fpmController = pitchController_.value().fpmController;
             fpmController.setInput(simPressureAltitude_);
 
-
             if (stepResponseInProgress && settings_.pitchmode == 2)
                 computeStepResponseInput(fpmController);
             else
-               fpmController.compute();
+                fpmController.compute();
 
             spdlog::trace("fpm pid: {}", fpmController.dumpInternals());
             spdlog::trace("total output fpm: {}", fpmController.getOutput());
@@ -112,29 +112,27 @@ void A2AStec30AP::process()
         // error = 0 ? keep pitch as is
         if (settings_.pitchmode >= 1)
         {
-
             PIDController& pitchController = pitchController_.value().pitchController;
             if (settings_.pitchmode > 1)
                 pitchController.setSetPoint(pitchController_.value().fpmController.getOutput());
             pitchController.setInput(simFpm_);
-  
+
             if (stepResponseInProgress && settings_.pitchmode == 1)
                 computeStepResponseInput(pitchController);
             else
-              pitchController.compute();
+                pitchController.compute();
 
             spdlog::trace("pitch pid: {}", pitchController.dumpInternals());
             spdlog::trace("total output pitch: {}", pitchController.getOutput());
         }
 
-      
         // elevator controller: pitch rate -> elevator offset
         // error = 0 ? keep elevator as is
         PIDController& elevatorController = pitchController_.value().elevatorController;
         if (settings_.pitchmode > 0)
             elevatorController.setSetPoint(pitchController_.value().pitchController.getOutput());
         elevatorController.setInput(simPitch_);
-  
+
         if (stepResponseInProgress && settings_.pitchmode == 0)
             computeStepResponseInput(elevatorController);
         else
@@ -156,16 +154,18 @@ void A2AStec30AP::process()
 
         if (!stepResponseInProgress && forceError > 0)
         {
-            double kDegradation = std::clamp(1 -
-                (std::abs(clForceElevator_.get()) - settings_.pitchStartDegradeCLForce) /
-                (settings_.pitchMaxCLForce - settings_.pitchStartDegradeCLForce), 0.0, 1.0);
+            double kDegradation =
+                std::clamp(1 - (std::abs(clForceElevator_.get()) - settings_.pitchStartDegradeCLForce) /
+                                   (settings_.pitchMaxCLForce - settings_.pitchStartDegradeCLForce),
+                           0.0, 1.0);
 
             if (clForceElevator_.get() > 0)
                 duMin = duMin * kDegradation;
             else
                 duMax = duMax * kDegradation;
 
-            spdlog::trace("AP force error: {}, kDegr: {}, duMin: {}, duMax: {}", forceError, kDegradation, duMin, duMax);
+            spdlog::trace("AP force error: {}, kDegr: {}, duMin: {}, duMax: {}", forceError, kDegradation, duMin,
+                          duMax);
         }
 
         elevatorServo.setRate(duMin, duMax);
@@ -180,7 +180,6 @@ void A2AStec30AP::process()
 
         spdlog::debug("AP elevator calculated: {}", elevatorOut_);
     }
-
 }
 
 std::optional<double> A2AStec30AP::getCLAileron()
@@ -195,7 +194,7 @@ std::optional<double> A2AStec30AP::getCLElevator()
 
 std::optional<double> A2AStec30AP::getSimAileron()
 {
-    return std::optional<double>(); // we follow and not write ailerons
+    return std::optional<double>();  // we follow and not write ailerons
 }
 
 std::optional<double> A2AStec30AP::getSimElevator()
@@ -206,7 +205,7 @@ std::optional<double> A2AStec30AP::getSimElevator()
 A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
 {
     TrimNeededWarning warning;
-  
+
     const int kTimeoutMsForWarningLevel2 = 3000;
 
     spdlog::trace("loops in warn: {}", loopsInWarningState_);
@@ -230,7 +229,6 @@ A2AStec30AP::TrimNeededWarning A2AStec30AP::getTrimNeededWarning()
     warning.warningLevel = (timeoutMsInWarningState < kTimeoutMsForWarningLevel2 ? 1 : 2);
     warning.forceDelta = std::abs(clForceElevator_.get()) - settings_.pitchWarningCLForce;
 
- 
     return warning;
 }
 
@@ -238,23 +236,17 @@ void A2AStec30AP::computeStepResponseInput(PIDController& controller)
 {
     long curTimeMs = timeSamplesPitch_ * settings_.loopTimeMs;
     int i = currentInputSample_;
-    for ( ; i < stepResponseInput_.size(); ++i)
+    for (; i < stepResponseInput_.size(); ++i)
     {
-        if (stepResponseInput_[i].first > curTimeMs)
-            break;
+        if (stepResponseInput_[i].first > curTimeMs) break;
     }
     currentInputSample_ = std::max(0, i - 1);
-
 
     // 7 -- iterm
     controller.setManualOutput(stepResponseInput_[currentInputSample_].second);
 
-    stepResponseOutput_.push_back(
-        {
-        timeSamplesPitch_ * settings_.loopTimeMs / 1000.0,
-        stepResponseInput_[currentInputSample_].second,
-        controller.getInput() 
-        });
+    stepResponseOutput_.push_back({timeSamplesPitch_ * settings_.loopTimeMs / 1000.0,
+                                   stepResponseInput_[currentInputSample_].second, controller.getInput()});
 
     if (currentInputSample_ == stepResponseInput_.size() - 1)
     {
@@ -262,12 +254,14 @@ void A2AStec30AP::computeStepResponseInput(PIDController& controller)
         spdlog::info("Finished step responce generation");
         stepResponseInProgress = false;
     }
-    
 }
 void A2AStec30AP::readStepResponseInput()
 {
     jay::util::CSVread csv(settings_.stepResponseInputFile);
-    if (csv.error) { throw std::runtime_error(fmt::format("Cannot read step response input: {}", csv.error_msg)); }
+    if (csv.error)
+    {
+        throw std::runtime_error(fmt::format("Cannot read step response input: {}", csv.error_msg));
+    }
     while (csv.ReadRecord())
         stepResponseInput_.push_back(std::make_pair(std::stoi(csv.fields[0]), std::stod(csv.fields[1])));
 }
@@ -276,8 +270,5 @@ void A2AStec30AP::writeStepResponse()
 {
     jay::util::CSVwrite csv(std::string("o-") + settings_.stepResponseInputFile);
     for (const auto& line : stepResponseOutput_)
-        csv.WriteRecord({
-            std::to_string(line[0]), 
-            std::to_string(line[1]),
-            std::to_string(line[2])});
+        csv.WriteRecord({std::to_string(line[0]), std::to_string(line[1]), std::to_string(line[2])});
 }

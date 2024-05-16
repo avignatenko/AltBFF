@@ -9,7 +9,6 @@
 
 #include <set>
 
-
 Sim::Sim(const Settings& settings) : settings_(settings)
 {
     connect();
@@ -85,9 +84,9 @@ void Sim::writeElevatorTrim(double trim, bool force /*= false*/)
 void Sim::writeAPPitchLimits(APPitchLimits limits, bool force /*= false*/)
 {
     int8_t newApPitchLimits = static_cast<int8_t>(limits);
-    
+
     if (!force && simData_.apPitchLimits == newApPitchLimits) return;
- 
+
     simData_.apPitchLimits = newApPitchLimits;
     simDataWriteFlags_.apPitchLimits = true;
 }
@@ -102,7 +101,6 @@ double Sim::readAmbienAirPressure()
 {
     auto pressurePfs2pa = [](double pressure) { return pressure * 47.8803; };
     return pressurePfs2pa(simData_.airPressure);
-
 }
 
 double Sim::readPressureAltitude()
@@ -185,21 +183,18 @@ Sim::GroundType Sim::readGroundType()
     if (!readOnGround()) return Sim::GroundType::NA;
 
     // see https://www.prepar3d.com/SDKv4/sdk/references/variables/simulation_variables.html
-    std::set<int> grass = { 1, 5, 6, 8, 9 };
-    std::set<int> noisy = { 2, 3, 10, 11, 12, 13, 14, 18, 19, 21, 22 };
+    std::set<int> grass = {1, 5, 6, 8, 9};
+    std::set<int> noisy = {2, 3, 10, 11, 12, 13, 14, 18, 19, 21, 22};
 
-    if (simData_.surfaceType > 23 || simData_.surfaceType < 0) // unknown?
+    if (simData_.surfaceType > 23 || simData_.surfaceType < 0)  // unknown?
         return Sim::GroundType::Grass;
 
-    if (grass.find(simData_.surfaceType) != grass.end())
-        return Sim::GroundType::Grass;
+    if (grass.find(simData_.surfaceType) != grass.end()) return Sim::GroundType::Grass;
 
-    if (noisy.find(simData_.surfaceType) != noisy.end())
-        return Sim::GroundType::Noisy;
+    if (noisy.find(simData_.surfaceType) != noisy.end()) return Sim::GroundType::Noisy;
 
     return Sim::GroundType::Concrete;
 }
-
 
 double Sim::readCLElevatorTrim()
 {
@@ -222,11 +217,13 @@ Sim::AxisControl Sim::readAxisControlState(Axis axis)
 {
     switch (axis)
     {
-    case Aileron: return simData_.apRollEngaged > 0 ? AxisControl::Auto : AxisControl::Manual;
-    case Elevator: return simData_.apPitchEnaged > 0 ? AxisControl::Auto : AxisControl::Manual;
+    case Aileron:
+        return simData_.apRollEngaged > 0 ? AxisControl::Auto : AxisControl::Manual;
+    case Elevator:
+        return simData_.apPitchEnaged > 0 ? AxisControl::Auto : AxisControl::Manual;
     }
 
-    return AxisControl::Manual; // just in case
+    return AxisControl::Manual;  // just in case
 }
 
 namespace
@@ -242,27 +239,27 @@ BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void* pSrce, bool write, DWOR
 void Sim::process()
 {
     DWORD dwResult = FSUIPC_ERR_OK;
-  
-    BOOL failed = !FSUIPC_Write_IF(0x0BB2, 2, &simData_.elevator, simDataWriteFlags_.elevator, &dwResult) ||
+
+    BOOL failed =
+        !FSUIPC_Write_IF(0x0BB2, 2, &simData_.elevator, simDataWriteFlags_.elevator, &dwResult) ||
         !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
         !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
-        !FSUIPC_Write_IF(settings_.apPitchLimitsOffset, 1, &simData_.apPitchLimits, simDataWriteFlags_.apPitchLimits, &dwResult) ||
-        !FSUIPC_Write_IF(settings_.clForceEnabledOffset, 1, &simData_.clForceEnabled, simDataWriteFlags_.clForceEnabled, &dwResult) ||
+        !FSUIPC_Write_IF(settings_.apPitchLimitsOffset, 1, &simData_.apPitchLimits, simDataWriteFlags_.apPitchLimits,
+                         &dwResult) ||
+        !FSUIPC_Write_IF(settings_.clForceEnabledOffset, 1, &simData_.clForceEnabled, simDataWriteFlags_.clForceEnabled,
+                         &dwResult) ||
 
         !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
         !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
         !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
         !FSUIPC_Read(0x28C8, 8, &simData_.airPressure, &dwResult) ||
         !FSUIPC_Read(0x34B0, 8, &simData_.pressureAltitude, &dwResult) ||
-        !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) ||
-        !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
-        !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) ||
-        !FSUIPC_Read(0x02B4, 4, &simData_.gs, &dwResult) ||
+        !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) || !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
+        !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) || !FSUIPC_Read(0x02B4, 4, &simData_.gs, &dwResult) ||
         !FSUIPC_Read(0x0366, 2, &simData_.onGround, &dwResult) ||
         !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||
         !FSUIPC_Read(0x0578, 4, &simData_.pitch, &dwResult) ||
-        !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) ||
-        !FSUIPC_Read(0x02C8, 4, &simData_.fpm, &dwResult) ||
+        !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) || !FSUIPC_Read(0x02C8, 4, &simData_.fpm, &dwResult) ||
         !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
         !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
         !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||

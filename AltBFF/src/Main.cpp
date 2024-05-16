@@ -1,9 +1,9 @@
 ﻿
-#include "SimModelLoop.h"
 #include "A2ASTec30AP.h"
 #include "Model.h"
 #include "ReadSettings.h"
 #include "Sim.h"
+#include "SimModelLoop.h"
 
 #include <BFFCLAPI/UDPClient.h>
 
@@ -94,7 +94,6 @@ int runTests(int argc, char** argv)
     int result = Catch::Session().run(argc2, &argv2[0]);
     return result;
 }
-
 
 bool settingsUpdateLoop(bffcl::UDPClient& cl, Model& model, A2AStec30AP& autopilot, const path& settingsPath,
                         file_time_type& settingsWriteTime)

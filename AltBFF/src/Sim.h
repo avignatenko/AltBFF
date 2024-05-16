@@ -49,21 +49,21 @@ public:
 
     // read
 
-     // +/- 100%, mid = 0
+    // +/- 100%, mid = 0
     double readElevator();
 
     // +/- 100%, mid = 0
     double readAileron();
 
-    // kg / m^3 
+    // kg / m^3
     double readAmbientAirDensity();
-    
+
     // Pa
     double readAmbienAirPressure();
 
     // meters
     double readPressureAltitude();
-    
+
     // m/s
     double readTAS();
 
@@ -171,9 +171,9 @@ private:
         int32_t gs = 0;
         int16_t onGround = 0;
         int32_t surfaceType = 0;
-        int16_t slewMode = 0; // 05DC
-        int16_t pauseMode = 0; // 0264
-        int8_t inmenuMode = 0; // 3365
+        int16_t slewMode = 0;   // 05DC
+        int16_t pauseMode = 0;  // 0264
+        int8_t inmenuMode = 0;  // 3365
         int16_t clElevatorTrim = 0;
         int8_t apRollEngaged = 0;
         int8_t apPitchEnaged = 0;
