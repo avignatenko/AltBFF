@@ -35,7 +35,7 @@ else()
 endif()
 
 conan_cmake_configure(REQUIRES 
-                        boost/1.71.0@conan/stable
+                        boost/1.71.0
                         spdlog/1.8.5
                         catch2/2.12.1
                       GENERATORS ${conan_generator})
