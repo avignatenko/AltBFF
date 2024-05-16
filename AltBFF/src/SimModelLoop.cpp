@@ -1,11 +1,10 @@
 #include "SimModelLoop.h"
 
 #include "A2ASTec30AP.h"
-#include "Sim.h"
 #include "Model.h"
+#include "Sim.h"
 
 #include <BFFCLAPI/UDPClient.h>
-
 
 bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& autopilot)
 {
@@ -165,7 +164,7 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
     else if (auto axisValue = autopilot.getSimAileron())
         sim.writeAileron(axisValue.value());
 
-    sim.writeElevatorTrim(0.0);
+    if (model.getForceTrimIntoSim()) sim.writeElevatorTrim(model.getForcedSimElevatorTrim());
 
     sim.writeCLForceEnabled(clForceEnabled);
 

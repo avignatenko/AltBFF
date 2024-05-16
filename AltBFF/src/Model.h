@@ -72,6 +72,9 @@ public:
 
         double aileronVibRunwayGain = 0.0;
         double aileronVibRunwayFreq = 0.0;
+
+        bool forceTrimIntoSim = false;
+        double forcedSimTrim = 0.0;
     };
 
     explicit Model(const Settings& settings);
@@ -224,6 +227,9 @@ public:
     [[nodiscard]] uint16_t getVibrationRunwayAmp(Axis axis) const { return vibrationsRunway_[axis].amp; }
     [[nodiscard]] uint16_t getVibrationStallHz(Axis axis) const { return vibrationsStall_[axis].hz; }
     [[nodiscard]] uint16_t getVibrationStallAmp(Axis axis) const { return vibrationsStall_[axis].amp; }
+
+    [[nodiscard]] bool getForceTrimIntoSim() const { return settings_.forceTrimIntoSim; }
+    [[nodiscard]] double getForcedSimElevatorTrim() const { return settings_.forcedSimTrim; }
 
     // update internal calculations
     void process();

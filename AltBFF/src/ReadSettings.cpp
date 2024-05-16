@@ -155,5 +155,8 @@ Model::Settings readModelSettings(const ptree& settings)
     modelSettings.aileronVibRunwayGain = settings.get<double>("Model.AileronVibRunwayGain");
     modelSettings.aileronVibRunwayFreq = settings.get<double>("Model.AileronVibRunwayFreq");
 
+    modelSettings.forceTrimIntoSim = settings.get<bool>("Model.ForceTrimIntoSim");
+    modelSettings.forcedSimTrim = settings.get<double>("Model.ForcedSimTrim");
+
     return modelSettings;
 }
