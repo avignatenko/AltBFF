@@ -20,7 +20,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 	"src/A2ASTec30AP.h"
 	"src/A2ASTec30AP.cpp"
 	"src/ReadSettings.cpp"
-	"src/ReadSettings.h")
+	"src/ReadSettings.h"
+	"src/SimModelLoop.cpp"
+	"src/SimModelLoop.h")
 
 
 set (settingsfile_source "${CMAKE_CURRENT_SOURCE_DIR}/resources/")
