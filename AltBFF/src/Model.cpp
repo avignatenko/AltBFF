@@ -2,6 +2,7 @@
 
 #include <Utils/Common.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <optional>

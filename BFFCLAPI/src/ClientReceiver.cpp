@@ -37,14 +37,14 @@ void ClientReceiver::receive()
     auto clOutput = std::make_shared<CLReturn>();
     auto senderEndpoint = std::make_shared<endpoint>();
 
-    socket_.async_receive_from(
-        boost::asio::buffer(clOutput.get(), sizeof(CLReturn)), *senderEndpoint,
-        [this, clOutput, senderEndpoint](const boost::system::error_code& error, std::size_t reply_length) {
-            // copy to destination
-            CLReturn& currentOutput = lockOutput();
-            currentOutput = *clOutput;
-            unlockOutput();
+    socket_.async_receive_from(asio::buffer(clOutput.get(), sizeof(CLReturn)), *senderEndpoint,
+                               [this, clOutput, senderEndpoint](const asio::error_code& error, std::size_t reply_length)
+                               {
+                                   // copy to destination
+                                   CLReturn& currentOutput = lockOutput();
+                                   currentOutput = *clOutput;
+                                   unlockOutput();
 
-            if (!stopRequested_) receive();
-        });
+                                   if (!stopRequested_) receive();
+                               });
 }

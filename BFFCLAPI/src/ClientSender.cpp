@@ -1,14 +1,15 @@
 #include "ClientSender.h"
 
-using namespace boost::asio;
+using namespace asio;
 using namespace bffcl;
 
-ClientSender::ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote, double timerInterval)
-    : io_(io)
-    , socket_(socket)
-    , endpointRemote_(endpoint(address::from_string(addressRemote), portRemote))
-    , timer_(io)
-    , timerInterval_(int(1000.0 / timerInterval))
+ClientSender::ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote,
+                           double timerInterval)
+    : io_(io),
+      socket_(socket),
+      endpointRemote_(endpoint(address::from_string(addressRemote), portRemote)),
+      timer_(io),
+      timerInterval_(int(1000.0 / timerInterval))
 {
     // set CL input defaults
     CLInput& input = lockInput();
@@ -19,7 +20,7 @@ ClientSender::ClientSender(io_context& io, socket& socket, const std::string& ad
     unlockInput();
 
     // start sendering (fixme: move to start())
-    timer_.expires_after(std::chrono::milliseconds(0)); // set default value to now
+    timer_.expires_after(std::chrono::milliseconds(0));  // set default value to now
     send();
 }
 
@@ -50,7 +51,7 @@ void ClientSender::send()
 {
     // reengage the timer
     timer_.expires_at(timer_.expiry() + timerInterval_);
-    timer_.async_wait([this](const boost::system::error_code&) { doSend(); });
+    timer_.async_wait([this](const asio::error_code&) { doSend(); });
 }
 
 void ClientSender::doSend()
@@ -65,7 +66,7 @@ void ClientSender::doSend()
 
     // clInput captured in lambda, so will be destroyed after handler completes
     socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
-                          [clInput](const boost::system::error_code& error, std::size_t bytes_transferred) {});
+                          [clInput](const asio::error_code& error, std::size_t bytes_transferred) {});
 
     send();
 }

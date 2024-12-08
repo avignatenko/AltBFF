@@ -16,10 +16,6 @@
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/math/constants/constants.hpp>
-#include <boost/property_tree/ptree.hpp>
-
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
@@ -40,7 +36,6 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
     return FALSE;  // let others work on this
 }
 
-using boost::property_tree::ptree;
 using std::filesystem::file_time_type;
 using std::filesystem::path;
 
@@ -102,7 +97,7 @@ bool settingsUpdateLoop(bffcl::UDPClient& cl, Model& model, A2AStec30AP& autopil
     if (newSettingsWriteTime > settingsWriteTime)
     {
         spdlog::info("Settings updated, reloading model settings...");
-        ptree settings = readSettings(settingsPath);
+        auto settings = readSettings(settingsPath);
         Model::Settings modelSettings = readModelSettings(settings);
         model.setSettings(modelSettings);
 
@@ -122,9 +117,9 @@ bool settingsUpdateLoop(bffcl::UDPClient& cl, Model& model, A2AStec30AP& autopil
 int checkedMain(int argc, char** argv)
 {
     path exeName = argv[0];
-    path settingsPath = exeName.parent_path() / "settings.ini";
+    path settingsPath = exeName.parent_path() / "settings.toml";
 
-    ptree settings = readSettings(settingsPath);
+    auto settings = readSettings(settingsPath);
 
     bffcl::UDPClient::Settings clSettings = readCLSettings(settings);
     Sim::Settings simSettings = readSimSettings(settings);

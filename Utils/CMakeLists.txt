@@ -8,7 +8,7 @@ project(Utils)
 # Add source to this project's library.
 add_library (${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME}  PUBLIC CONAN_PKG::boost)
+target_link_libraries(${PROJECT_NAME}  PUBLIC )
 
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "include" 

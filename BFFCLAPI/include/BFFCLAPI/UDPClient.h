@@ -2,8 +2,8 @@
 
 #include "CLStructures.h"
 
-#include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
+#include <asio.hpp>
+#include <asio/io_context.hpp>
 #include <thread>
 
 namespace bffcl
@@ -21,7 +21,7 @@ public:
         std::string fromAddress;
         int fromPort;
 
-        double sendFreq = 50.0; // 50hz
+        double sendFreq = 50;  // 50hz
     };
 
     UDPClient(const Settings& settings);
@@ -39,8 +39,8 @@ public:
 private:
     std::unique_ptr<std::thread> runner_;
 
-    using io_context = boost::asio::io_context;
-    using socket = boost::asio::ip::udp::socket;
+    using io_context = asio::io_context;
+    using socket = asio::ip::udp::socket;
 
     io_context io_;
     socket socket_;

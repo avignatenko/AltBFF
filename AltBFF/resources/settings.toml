@@ -1,0 +1,125 @@
+[App]
+
+LogLevel = "trace"
+
+[Network]
+
+CLIPAddress = "127.0.0.1"
+CLPort = 48010
+
+ThisIPAddress = "127.0.0.1"
+ThisPort = 50001
+SendFreqHz = 30.0
+
+[Sim]
+
+InvertElevator = true
+InvertAileron = false
+InvertCLElevatorTrim = false
+
+PropWashOffset = 0x66f8
+CLElevatorTrimOffset = 0x66c4
+APRollEngagedOffset = 0x66C0
+APPitchEngagedOffset = 0x66C1
+APPitchLimitsOffset = 0x66c6
+
+CLForceEnabledOffset = 0x66c7
+CLEngageOffset = 0x66c8
+
+[Model]
+
+AileronFrictionCoeff = -5
+AileronDumpingCoeff = -5
+
+AileronPositionFollowingP = 0
+AileronPositionFollowingI = 0
+AileronPositionFollowingD = 0
+
+ElevatorFrictionCoeff = -5
+ElevatorDumpingCoeff = -5
+
+ElevatorPositionFollowingP = 0
+ElevatorPositionFollowingI = 0
+ElevatorPositionFollowingD = 0
+
+CLExponent = 2.0
+
+HTailPosLon = 13.7
+WingRootChord = 5.0
+
+ElevatorArea = 2.0
+ElevatorNeutralPos = 0.0
+ElevatorTrimGain = 1.0
+ElevatorTrimNeutralPos = 0.0
+CalculatePropWash = true
+PropWashElevatorCoeff = 1.0
+MaxElevatorLift = 2.83
+MaxElevatorAngleDegrees = 17.0
+ElevatorAlphaGain = 1.0
+ElevatorPRGain = 1.0
+ElevatorAlphaScaleSpeedKn = 1.0
+
+EngineVibAirGain = 0.3
+
+ElevatorEngineFlowGain = 1.0
+ElevatorEngineFreqGain = 1.0
+ElevatorEngineFreqMin = 10.0
+
+ElevatorVibStallGain = 0.0
+ElevatorVibStalFreq = 10.0
+
+ElevatorVibRunwayGain = 0.0
+ElevatorVibRunwayFreq = 10.0
+
+AileronArea = 2.0
+AileronTrimGain = 1.0
+PropWashAileronCoeff = 1.0
+MaxAileronLift = 2.83
+MaxAileronAngleDegrees = 17.0
+
+AileronEngineFlowGain = 1.0
+AileronEngineFreqGain = 1.0
+AileronEngineFreqMin = 10.0
+
+AileronVibStallGain = 0.0
+AileronVibStalFreq = 10.0
+
+AileronVibRunwayGain = 0.0
+AileronVibRunwayFreq = 10.0
+
+ForceTrimIntoSim = false
+ForcedSimTrim = 0.0
+
+[AP]
+
+# 0 - keep pitch, 1 - keep fpm, 2 - keep alt
+PitchMode = 0
+
+ElevatorServoDuMax = 20
+
+# mode 0+
+ElevatorP = 50.0
+ElevatorI = 0.0
+ElevatorD = 50.0
+ElevatorDuMax = 1000.0
+
+# mode 1+
+PitchP = 50.0
+PitchI = 0.0
+PitchD = 50.0
+PitchMaxDeg = 20.0
+PitchDuMax = 1000.0
+
+# mode 2
+FpmP = 50.0
+FpmI = 0.0
+FpmD = 50.0
+FpmMax = 20.0
+FpmDuMax = 1000.0
+
+PitchWarningCLForce = 90.0
+PitchMaxCLForce = 100.0
+PitchStartDegradeCLForce = 90.0
+
+DoStepResponse = false
+StepResponseInputFile = "elev_sr.csv"

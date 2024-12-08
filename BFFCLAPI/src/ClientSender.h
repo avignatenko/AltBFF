@@ -2,8 +2,8 @@
 
 #include "CLStructures.h"
 
-#include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
+#include <asio.hpp>
+#include <asio/io_context.hpp>
 
 #include <mutex>
 
@@ -13,11 +13,11 @@ namespace bffcl
 class ClientSender
 {
 public:
-    using io_context = boost::asio::io_context;
-    using socket = boost::asio::ip::udp::socket;
-    using endpoint = boost::asio::ip::udp::endpoint;
-    using address = boost::asio::ip::address;
-    using steady_timer = boost::asio::steady_timer;
+    using io_context = asio::io_context;
+    using socket = asio::ip::udp::socket;
+    using endpoint = asio::ip::udp::endpoint;
+    using address = asio::ip::address;
+    using steady_timer = asio::steady_timer;
 
     ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote, double freq);
     ~ClientSender();
@@ -28,8 +28,6 @@ public:
     void unlockInput();
 
 private:
-
-  
     void send();
     void doSend();
 

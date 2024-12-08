@@ -8,7 +8,7 @@ project(BFFCLAPI)
 # Add source to this project's executable.
 add_library (${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME}  PUBLIC CONAN_PKG::boost promise-cpp CONAN_PKG::spdlog)
+target_link_libraries(${PROJECT_NAME}  PUBLIC CONAN_PKG::spdlog CONAN_PKG::asio)
 
 target_include_directories(${PROJECT_NAME} 
 	PUBLIC "include" 

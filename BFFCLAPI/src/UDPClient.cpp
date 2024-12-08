@@ -6,18 +6,17 @@
 
 #include "UDPClient.h"
 
-#include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
+#include <asio.hpp>
+#include <asio/io_context.hpp>
 
 #include <spdlog/spdlog.h>
 
-using address = boost::asio::ip::address;
-using endpoint = boost::asio::ip::udp::endpoint;
+using address = asio::ip::address;
+using endpoint = asio::ip::udp::endpoint;
 
 using namespace bffcl;
 
-UDPClient::UDPClient(const Settings& settings)
-    : socket_(io_)
+UDPClient::UDPClient(const Settings& settings) : socket_(io_)
 {
     spdlog::info("Opening socket, Endpoints: to {}:{}, from {}:{}", settings.toAddress, settings.toPort,
                  settings.fromAddress, settings.fromPort);
@@ -29,11 +28,13 @@ UDPClient::UDPClient(const Settings& settings)
     sender_ = std::make_unique<ClientSender>(io_, socket_, settings.toAddress, settings.toPort, settings.sendFreq);
     receiver_ = std::make_unique<ClientReceiver>(io_, socket_);
 
-    runner_ = std::make_unique<std::thread>([this] {
-        spdlog::info("Starting iocontext loop");
-        io_.run();
-        spdlog::info("iocontext finished");
-    });
+    runner_ = std::make_unique<std::thread>(
+        [this]
+        {
+            spdlog::info("Starting iocontext loop");
+            io_.run();
+            spdlog::info("iocontext finished");
+        });
 }
 
 bffcl::UDPClient::~UDPClient()

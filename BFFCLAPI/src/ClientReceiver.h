@@ -2,8 +2,8 @@
 
 #include "CLStructures.h"
 
-#include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
+#include <asio.hpp>
+#include <asio/io_context.hpp>
 
 #include <mutex>
 
@@ -15,10 +15,9 @@ struct CLReturn;
 class ClientReceiver
 {
 public:
-
-    using io_context = boost::asio::io_context;
-    using socket = boost::asio::ip::udp::socket;
-    using endpoint = boost::asio::ip::udp::endpoint;
+    using io_context = asio::io_context;
+    using socket = asio::ip::udp::socket;
+    using endpoint = asio::ip::udp::endpoint;
 
     ClientReceiver(io_context& io, socket& socket);
     ~ClientReceiver();
