@@ -17,34 +17,17 @@ ClientSender::ClientSender(io_context& io, socket& socket, const std::string& ad
     std::string localAddress = socket_.local_endpoint().address().to_string();
     localAddress.copy(input.feederIP, localAddress.size());
     input.returnPort = socket_.local_endpoint().port();
-    unlockInput();
 
     // start sendering (fixme: move to start())
     timer_.expires_after(std::chrono::milliseconds(0));  // set default value to now
     send();
 }
 
-ClientSender::~ClientSender()
-{
-    stop();
-}
-
-void ClientSender::start() {}
-
-void ClientSender::stop()
-{
-    io_.dispatch([this] { stopRequested_ = true; });
-}
+ClientSender::~ClientSender() {}
 
 CLInput& ClientSender::lockInput()
 {
-    currentInputMutex_.lock();
     return currentInput_;
-}
-
-void ClientSender::unlockInput()
-{
-    currentInputMutex_.unlock();
 }
 
 void ClientSender::send()
@@ -56,13 +39,10 @@ void ClientSender::send()
 
 void ClientSender::doSend()
 {
-    if (stopRequested_) return;
-
     // do send
     CLInput& input = lockInput();
     input.packetID = packetId_++;
     std::shared_ptr<CLInput> clInput = std::make_shared<CLInput>(input);
-    unlockInput();
 
     // clInput captured in lambda, so will be destroyed after handler completes
     socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,

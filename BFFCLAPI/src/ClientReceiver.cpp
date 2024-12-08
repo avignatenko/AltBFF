@@ -8,27 +8,11 @@ ClientReceiver::ClientReceiver(io_context& io, socket& socket) : io_(io), socket
     receive();
 }
 
-ClientReceiver::~ClientReceiver()
-{
-    stop();
-}
-
-void ClientReceiver::start() {}
-
-void ClientReceiver::stop()
-{
-    io_.dispatch([this] { stopRequested_ = true; });
-}
+ClientReceiver::~ClientReceiver() {}
 
 CLReturn& ClientReceiver::lockOutput()
 {
-    currentOutputMutex_.lock();
     return currentOutput_;
-}
-
-void ClientReceiver::unlockOutput()
-{
-    currentOutputMutex_.unlock();
 }
 
 void ClientReceiver::receive()
@@ -43,8 +27,7 @@ void ClientReceiver::receive()
                                    // copy to destination
                                    CLReturn& currentOutput = lockOutput();
                                    currentOutput = *clOutput;
-                                   unlockOutput();
 
-                                   if (!stopRequested_) receive();
+                                   receive();
                                });
 }

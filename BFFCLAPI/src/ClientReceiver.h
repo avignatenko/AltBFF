@@ -22,12 +22,7 @@ public:
     ClientReceiver(io_context& io, socket& socket);
     ~ClientReceiver();
 
-    void start();
-    void stop();
-
     CLReturn& lockOutput();
-
-    void unlockOutput();
 
 private:
     void receive();
@@ -37,10 +32,8 @@ private:
     socket& socket_;
 
     unsigned int packetId_ = 1;
-    bool stopRequested_ = false;
 
     CLReturn currentOutput_;
-    std::mutex currentOutputMutex_;
 };
 
 }  // namespace bffcl

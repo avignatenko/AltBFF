@@ -24,25 +24,21 @@ public:
         double sendFreq = 50;  // 50hz
     };
 
-    UDPClient(const Settings& settings);
+    UDPClient(const Settings& settings, asio::io_context& io);
     ~UDPClient();
 
     void start();
     void stop();
 
     CLInput& lockInput();
-    void unlockInput();
 
     const CLReturn& lockOutput();
-    void unlockOutput();
 
 private:
-    std::unique_ptr<std::thread> runner_;
-
     using io_context = asio::io_context;
     using socket = asio::ip::udp::socket;
 
-    io_context io_;
+    io_context& io_;
     socket socket_;
 
     std::unique_ptr<ClientSender> sender_;

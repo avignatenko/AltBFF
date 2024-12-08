@@ -22,10 +22,7 @@ public:
     ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote, double freq);
     ~ClientSender();
 
-    void start();
-    void stop();
     CLInput& lockInput();
-    void unlockInput();
 
 private:
     void send();
@@ -39,12 +36,10 @@ private:
 
     std::chrono::milliseconds timerInterval_;
     steady_timer timer_;
-    bool stopRequested_ = false;
 
     unsigned int packetId_ = 1;
 
     CLInput currentInput_;
-    std::mutex currentInputMutex_;
 };
 
 }  // namespace bffcl

@@ -76,8 +76,6 @@ void updateCLDefaultsFromModel(bffcl::UDPClient& cl, Model& model)
     input.elevator.positionFollowingP = model.getPositionFollowingP(Model::Elevator);
     input.elevator.positionFollowingI = model.getPositionFollowingI(Model::Elevator);
     input.elevator.positionFollowingD = model.getPositionFollowingD(Model::Elevator);
-
-    cl.unlockInput();
 }
 
 int runTests(int argc, char** argv)
@@ -166,7 +164,9 @@ int checkedMain(int argc, char** argv)
     // create main components
     spdlog::info("Creating main components");
 
-    bffcl::UDPClient cl(clSettings);
+    asio::io_context runner;
+
+    bffcl::UDPClient cl(clSettings, runner);
     Sim sim(simSettings);
     Model model(modelSettings);
     A2AStec30AP autopilot(apSettings);
@@ -174,9 +174,6 @@ int checkedMain(int argc, char** argv)
     spdlog::info("Main components created successfully");
 
     updateCLDefaultsFromModel(cl, model);
-
-    asio::io_context runner;
-    // asio::io_service::work work(runner);
 
     constexpr auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
     PeriodicTimer modelTimer(runner, kModelLoopFreq);

@@ -14,7 +14,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
         // send CL disengage
         auto& input = cl.lockInput();
         input.loadingEngage = 0;
-        cl.unlockInput();
 
         // we only process sim to update pause status
         sim.process();
@@ -28,7 +27,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
     float elevatorCL = output.axisElevatorPosition;
     float aileronCL = output.axisAileronPosition;
     bool clForceEnabled = output.forceEnableStatus;
-    cl.unlockOutput();
 
     // 2. read values from CL and Sim => send to model
     model.setAileron(sim.readAxisControlState(Sim::Aileron) == Sim::AxisControl::Manual
@@ -150,8 +148,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
     input.aileron.vibrationCh2Amp = model.getVibrationRunwayAmp(Model::Aileron);
     input.aileron.vibrationCh3Hz = model.getVibrationStallHz(Model::Aileron);
     input.aileron.vibrationCh3Amp = model.getVibrationStallAmp(Model::Aileron);
-
-    cl.unlockInput();
 
     // 7. pass values to sim
     if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Manual)
