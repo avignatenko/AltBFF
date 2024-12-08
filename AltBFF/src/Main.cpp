@@ -16,6 +16,10 @@
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <asio/io_context.hpp>
+#include <continuable/continuable.hpp>
+#include <continuable/external/asio.hpp>
+
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
@@ -114,6 +118,39 @@ bool settingsUpdateLoop(bffcl::UDPClient& cl, Model& model, A2AStec30AP& autopil
     return false;  // call again
 }
 
+class PeriodicTimer
+{
+public:
+    using Duration = typename std::chrono::steady_clock::duration;
+
+    PeriodicTimer(asio::io_context& io, Duration duration) : timer_(io), duration_(duration) {}
+
+    template <typename F>
+    void wait2(F&& func)
+    {
+        timer_.expires_after(std::chrono::milliseconds(0));
+        timeoutHandler2(func);
+    }
+
+private:
+    template <typename F>
+    void timeoutHandler2(F&& func)
+    {
+        timer_.async_wait(cti::use_continuable)
+            .then(
+                [this, f = std::move(func)]
+                {
+                    f();
+                    timer_.expires_at(timer_.expiry() + duration_);
+                    timeoutHandler2(std::move(f));
+                });
+    }
+
+private:
+    asio::steady_timer timer_;
+    Duration duration_;
+};
+
 int checkedMain(int argc, char** argv)
 {
     path exeName = argv[0];
@@ -141,29 +178,24 @@ int checkedMain(int argc, char** argv)
 
     updateCLDefaultsFromModel(cl, model);
 
-    QueueRunner runner;  // setup runner for this thread
+    asio::io_context runner;
+    // asio::io_service::work work(runner);
 
-    auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    Timer simModelLoopTimer(kModelLoopFreq, runner,
-                            [&cl, &sim, &model, &autopilot] { return simModelLoop(cl, sim, model, autopilot); });
+    constexpr auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
+    PeriodicTimer modelTimer(runner, kModelLoopFreq);
+    modelTimer.wait2([&cl, &sim, &model, &autopilot] { simModelLoop(cl, sim, model, autopilot); });
 
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
     auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
-    Timer settingsUpdateLoopTimer(
-        kSettingsLoopFreq, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
-        { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
 
-    spdlog::info("Starting sim/model loop");
-    simModelLoopTimer.start();
-    spdlog::info("Sim/model loop started");
-
-    spdlog::info("Starting settings refresh loop");
-    settingsUpdateLoopTimer.start();
-    spdlog::info("Settings refresh loop started");
+    PeriodicTimer modelTimer2(runner, kSettingsLoopFreq);
+    modelTimer2.wait2([&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
+                      { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
 
     spdlog::info("Starting main loop");
     runner.run();
+
     spdlog::info("Main loop finished");
 
     return 0;
