@@ -149,21 +149,22 @@ int checkedMain(int argc, char** argv)
     QueueRunner runner;  // setup runner for this thread
 
     auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    Timer simModelLoop(kModelLoopFreq, runner,
-                       [&cl, &sim, &model, &autopilot] { return simModelLoop(cl, sim, model, autopilot); });
+    Timer simModelLoopTimer(kModelLoopFreq, runner,
+                            [&cl, &sim, &model, &autopilot] { return simModelLoop(cl, sim, model, autopilot); });
 
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
     auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
-    Timer settingsUpdateLoop(kSettingsLoopFreq, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
-                             { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
+    Timer settingsUpdateLoopTimer(
+        kSettingsLoopFreq, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
+        { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
 
     spdlog::info("Starting sim/model loop");
-    simModelLoop.start();
+    simModelLoopTimer.start();
     spdlog::info("Sim/model loop started");
 
     spdlog::info("Starting settings refresh loop");
-    settingsUpdateLoop.start();
+    settingsUpdateLoopTimer.start();
     spdlog::info("Settings refresh loop started");
 
     spdlog::info("Starting main loop");
