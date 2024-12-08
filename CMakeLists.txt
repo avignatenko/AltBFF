@@ -23,7 +23,6 @@ conan_cmake_configure(REQUIRES
                         spdlog/1.14.1
                         catch2/2.12.1
                         toml11/4.2.0
-                        continuable/4.2.2
                       GENERATORS cmake)
 
 conan_cmake_autodetect(settings)

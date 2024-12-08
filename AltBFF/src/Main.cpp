@@ -17,8 +17,6 @@
 #include <spdlog/spdlog.h>
 
 #include <asio/io_context.hpp>
-#include <continuable/continuable.hpp>
-#include <continuable/external/asio.hpp>
 
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
@@ -126,24 +124,23 @@ public:
     PeriodicTimer(asio::io_context& io, Duration duration) : timer_(io), duration_(duration) {}
 
     template <typename F>
-    void wait2(F&& func)
+    void wait(F&& func)
     {
         timer_.expires_after(std::chrono::milliseconds(0));
-        timeoutHandler2(func);
+        timeoutHandler(func);
     }
 
 private:
     template <typename F>
-    void timeoutHandler2(F&& func)
+    void timeoutHandler(F&& func)
     {
-        timer_.async_wait(cti::use_continuable)
-            .then(
-                [this, f = std::move(func)]
-                {
-                    f();
-                    timer_.expires_at(timer_.expiry() + duration_);
-                    timeoutHandler2(std::move(f));
-                });
+        timer_.async_wait(
+            [this, f = std::move(func)](std::error_code ec)
+            {
+                f();
+                timer_.expires_at(timer_.expiry() + duration_);
+                timeoutHandler(std::move(f));
+            });
     }
 
 private:
@@ -183,15 +180,15 @@ int checkedMain(int argc, char** argv)
 
     constexpr auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
     PeriodicTimer modelTimer(runner, kModelLoopFreq);
-    modelTimer.wait2([&cl, &sim, &model, &autopilot] { simModelLoop(cl, sim, model, autopilot); });
+    modelTimer.wait([&cl, &sim, &model, &autopilot] { simModelLoop(cl, sim, model, autopilot); });
 
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
     auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
 
-    PeriodicTimer modelTimer2(runner, kSettingsLoopFreq);
-    modelTimer2.wait2([&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
-                      { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
+    PeriodicTimer settingsTimer(runner, kSettingsLoopFreq);
+    settingsTimer.wait([&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
+                       { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
 
     spdlog::info("Starting main loop");
     runner.run();
