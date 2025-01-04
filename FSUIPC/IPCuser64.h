@@ -29,4 +29,3 @@ typedef struct tagFS6IPC_WRITESTATEDATA_HDR
 } FS6IPC_WRITESTATEDATA_HDR;
 
 #pragma pack (pop, r1)
-

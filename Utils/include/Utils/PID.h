@@ -66,7 +66,7 @@ public:
 
         output_ = std::clamp(output_, outMin_, outMax_);
     }
-    
+
     void setTunings(double kp, double ti, double td)
     {
         double ts = getSampleTimeSec();
@@ -87,7 +87,7 @@ private:
 
     double input_ = 0.0;
     double setPoint_ = 0.0;
-   
+
     double output_ = 0.0;
     double output0_ = 0.0;
     double lastOutput_ = 0.0;

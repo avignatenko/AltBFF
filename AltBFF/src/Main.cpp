@@ -1,4 +1,4 @@
-﻿
+
 #include "A2ASTec30AP.h"
 #include "Model.h"
 #include "ReadSettings.h"

@@ -15,7 +15,7 @@ public:
         samples_.reserve(N);
     }
 
-    void addSample(double sample) 
+    void addSample(double sample)
     {
         if (samples_.size() < N)
             samples_.push_back(sample);
@@ -32,7 +32,7 @@ public:
     double get()
     {
         if (cachedAverage_) return cachedAverage_.value();
-        if (samples_.empty()) return 0.0;    
+        if (samples_.empty()) return 0.0;
 
         double total = 0.0;
         for (double sample : samples_)

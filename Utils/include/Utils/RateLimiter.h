@@ -31,14 +31,14 @@ public:
     void process()
     {
         lastOutput_ = output_;
-     
+
         double rate = input_ - lastOutput_;
-        
-        if (rate > risingRate_) 
+
+        if (rate > risingRate_)
             output_ = lastOutput_ + risingRate_;
-        else if (rate < fallingRate_) 
+        else if (rate < fallingRate_)
             output_ = lastOutput_ + fallingRate_;
-        else 
+        else
             output_ = input_;
     }
 

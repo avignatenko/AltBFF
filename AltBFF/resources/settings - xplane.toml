@@ -27,7 +27,7 @@ CLEngageOffset = 0x66c8
 
 [Model]
 
-# == H/W begin == 
+# == H/W begin ==
 
 AileronFrictionCoeff = -3
 AileronDumpingCoeff = -3
@@ -43,7 +43,7 @@ ElevatorPositionFollowingP = 60
 ElevatorPositionFollowingI = 0
 ElevatorPositionFollowingD = 40
 
-# == H/W end == 
+# == H/W end ==
 
 # == Common begin ==
 CLExponent = 2.0
@@ -86,7 +86,7 @@ MaxElevatorAngleDegrees = 17.0
 
 # == Elevator end
 
-# == Ailerons begin == 
+# == Ailerons begin ==
 
 AileronArea = 1.1
 AileronTrimGain = 0.5

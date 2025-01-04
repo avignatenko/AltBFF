@@ -1,4 +1,4 @@
-﻿// AlfBFF.cpp : Defines the entry point for the application.
+// AlfBFF.cpp : Defines the entry point for the application.
 //
 
 #include "ClientReceiver.h"

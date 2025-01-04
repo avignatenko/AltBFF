@@ -12,4 +12,3 @@ AllowShortFunctionsOnASingleLine: Inline
 DerivePointerAlignment: 'false'
 
 ...
-

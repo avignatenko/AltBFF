@@ -14,7 +14,7 @@ With acknowledgements to Adam Szofran (author of original FS6IPC).
 #include "IPCuser64.h"
 #include "FSUIPC_User64.h"
 
-#define FS6IPC_MSGNAME1      "FsasmLib:IPC" 
+#define FS6IPC_MSGNAME1      "FsasmLib:IPC"
 
 /******************************************************************************
 			IPC client stuff
@@ -39,7 +39,7 @@ static BYTE*   m_pNext = 0;
 void FSUIPC_Close(void)
 {	m_hWnd = 0;
 	m_msg = 0;
-  
+
 	if (m_atom)
 	{	GlobalDeleteAtom(m_atom);
 		m_atom = 0;
@@ -67,7 +67,7 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 	static int nTry = 0;
 	BOOL fWideFS = FALSE;
 	int i = 0;
-	
+
 	// abort if already started
 	if (m_pView)
 	{	*pdwResult = FSUIPC_ERR_OPEN;
@@ -76,7 +76,7 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 
 	// Clear version information, so know when connected
 	FSUIPC_Version = FSUIPC_FS_Version = 0;
-	
+
 	m_hWnd = FindWindowEx(NULL, NULL, "UIPCMAIN", NULL);
 	if (!m_hWnd)
 	{	// If there's no UIPCMAIN, we may be using WideClient
@@ -88,12 +88,12 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 			return FALSE;
 		}
 	}
-	
+
 	if (!m_hWnd)
 	{	*pdwResult = FSUIPC_ERR_NOFS;
 		return FALSE;
 	}
-	
+
 	// register the window message
 	m_msg = RegisterWindowMessage(FS6IPC_MSGNAME1);
 	if (m_msg == 0)
@@ -119,12 +119,12 @@ BOOL FSUIPC_Open(DWORD dwFSReq, DWORD *pdwResult)
 					NULL,               // security
 					PAGE_READWRITE,     // protection
 					0, MAX_SIZE+256,       // size
-					szName);            // name 
+					szName);            // name
 
 	if ((m_hMap == 0) || (GetLastError() == ERROR_ALREADY_EXISTS))
 	{	*pdwResult = FSUIPC_ERR_MAP;
 		FSUIPC_Close();
-		return FALSE;    
+		return FALSE;
 	}
 
 	// get a view of the file-mapping object
@@ -199,7 +199,7 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 	F64IPC_READSTATEDATA_HDR *pHdrR;
 	FS6IPC_WRITESTATEDATA_HDR *pHdrW;
 	int i = 0;
-	
+
 	if (!m_pView)
 	{	*pdwResult = FSUIPC_ERR_NOTOPEN;
 		return FALSE;
@@ -212,7 +212,7 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 
 	ZeroMemory(m_pNext, 4); // Terminator
 	m_pNext = m_pView;
-	
+
 	// send the request (allow up to 9 tries)
 	while ((++i < 10) && !SendMessageTimeout(
 			m_hWnd,       // FS6 window handle
@@ -330,7 +330,7 @@ BOOL FSUIPC_Write(DWORD dwOffset, DWORD dwSize, void *pSrce, DWORD *pdwResult)
 	{	*pdwResult = FSUIPC_ERR_NOTOPEN;
 		return FALSE;
 	}
-	
+
 	// Check have spce for this request (including terminator)
 	if (((m_pNext - m_pView) + 4 + (dwSize + sizeof(FS6IPC_WRITESTATEDATA_HDR))) > MAX_SIZE)
 	{	*pdwResult = FSUIPC_ERR_SIZE;
