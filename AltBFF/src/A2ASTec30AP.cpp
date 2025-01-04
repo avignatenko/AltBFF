@@ -3,7 +3,6 @@
 #include <BFFCLAPI/CLStructures.h>
 #include <Utils/Common.h>
 #include <fmt/ranges.h>
-#include <CSV/CSV.hpp>
 #include "Model.h"
 #include "Sim.h"
 
@@ -257,6 +256,7 @@ void A2AStec30AP::computeStepResponseInput(PIDController& controller)
 }
 void A2AStec30AP::readStepResponseInput()
 {
+    /*
     jay::util::CSVread csv(settings_.stepResponseInputFile);
     if (csv.error)
     {
@@ -264,11 +264,14 @@ void A2AStec30AP::readStepResponseInput()
     }
     while (csv.ReadRecord())
         stepResponseInput_.push_back(std::make_pair(std::stoi(csv.fields[0]), std::stod(csv.fields[1])));
+        */
 }
 
 void A2AStec30AP::writeStepResponse()
 {
+    /*
     jay::util::CSVwrite csv(std::string("o-") + settings_.stepResponseInputFile);
     for (const auto& line : stepResponseOutput_)
         csv.WriteRecord({std::to_string(line[0]), std::to_string(line[1]), std::to_string(line[2])});
+    */
 }
