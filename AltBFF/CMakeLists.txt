@@ -7,13 +7,7 @@ add_executable(${PROJECT_NAME})
 
 target_link_libraries(
     ${PROJECT_NAME}
-    PRIVATE
-        BFFCLAPI
-        Utils
-        FSUIPC
-        spdlog::spdlog
-        Catch2::Catch2
-        toml11::toml11
+    PRIVATE BFFCLAPI Utils FSUIPC spdlog::spdlog Catch2::Catch2 toml11::toml11
 )
 
 target_sources(

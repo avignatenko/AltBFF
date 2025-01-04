@@ -5,7 +5,7 @@
 
 #include <Utils/Accumulators.h>
 #include <Utils/Common.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <iostream>
 
 class StandardSettingsTestFixture

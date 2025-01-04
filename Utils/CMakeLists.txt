@@ -10,10 +10,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC)
 
-target_include_directories(
-    ${PROJECT_NAME}
-    INTERFACE "include"
-)
+target_include_directories(${PROJECT_NAME} INTERFACE "include")
 
 target_sources(
     ${PROJECT_NAME}

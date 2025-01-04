@@ -1,4 +1,4 @@
-﻿
+
 #include "A2ASTec30AP.h"
 #include "Model.h"
 #include "ReadSettings.h"
@@ -16,8 +16,7 @@
 
 #include <asio/io_context.hpp>
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include <windows.h>
 
