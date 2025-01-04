@@ -1,4 +1,4 @@
-# CMakeList.txt : Top-level CMake project file, do global configuration
+﻿# CMakeList.txt : Top-level CMake project file, do global configuration
 # and include sub-projects here.
 
 cmake_minimum_required(VERSION 3.15)
@@ -16,8 +16,6 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan_provider.cmake")
         TLS_VERIFY ON
     )
 endif()
-
-#include(${CMAKE_BINARY_DIR}/conan_provider.cmake)
 
 set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES ${CMAKE_BINARY_DIR}/conan_provider.cmake)
 
