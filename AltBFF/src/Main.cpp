@@ -1,4 +1,4 @@
-
+﻿
 #include "A2ASTec30AP.h"
 #include "Model.h"
 #include "ReadSettings.h"
@@ -8,8 +8,6 @@
 #include <BFFCLAPI/UDPClient.h>
 
 #include <Utils/Common.h>
-#include <Utils/QueueRunner.h>
-#include <Utils/Timer.h>
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
