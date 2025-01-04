@@ -1,4 +1,4 @@
-[requires] 
+[requires]
     asio/1.30.2
     spdlog/1.15.0
     catch2/3.7.1

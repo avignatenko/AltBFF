@@ -21,7 +21,7 @@ along with jay::util. If not, see <http://www.gnu.org/licenses/>.
 */
 
 /** Error to string functions
-*/
+ */
 
 #include "strerror.hpp"
 
@@ -31,51 +31,44 @@ along with jay::util. If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-
 using namespace std;
 
-
-namespace jay {
-namespace util {
-
-
-string ios_strerror( ios::iostate state )
+namespace jay
 {
-    if( !state )
-        return "No errors";
+namespace util
+{
+
+string ios_strerror(ios::iostate state)
+{
+    if (!state) return "No errors";
 
     string s;
 
-    if( ( state & ios::eofbit ) )
+    if ((state & ios::eofbit))
     {
-        if( s.length() )
-            s += ", ";
+        if (s.length()) s += ", ";
 
         s += "EOF on input operation";
     }
 
-    if( ( state & ios::failbit ) )
+    if ((state & ios::failbit))
     {
-        if( s.length() )
-            s += ", ";
+        if (s.length()) s += ", ";
 
         s += "Logical error on i/o operation";
     }
 
-    if( ( state & ios::badbit ) )
+    if ((state & ios::badbit))
     {
-        if( s.length() )
-            s += ", ";
+        if (s.length()) s += ", ";
 
         s += "Read/write error on i/o operation";
     }
 
-    if( !s.length() )
-        s = "Unknown error";
+    if (!s.length()) s = "Unknown error";
 
     return s;
 }
 
-
-} // namespace util
-} // namespace jay
+}  // namespace util
+}  // namespace jay

@@ -69,13 +69,12 @@ For more examples refer to ..\Example\Example.sln
 #include <string>
 #include <vector>
 
-
 struct csv_parser;
 
-namespace jay {
-namespace util {
-
-
+namespace jay
+{
+namespace util
+{
 
 class CSVread
 {
@@ -94,7 +93,6 @@ public:
         file/istream does not have a UTF-8 BOM.
         */
         skip_utf8_bom_check = 1 << 0,
-
 
         /* Process empty records.
 
@@ -128,7 +126,6 @@ public:
        */
         process_empty_records = 1 << 1,
 
-
         /* Strict mode.
 
         By default libcsv's parser is forgiving and will parse a field even if it does not strictly
@@ -144,14 +141,12 @@ public:
         */
         strict_mode = 1 << 2,
 
-
         /* Error on NULL byte in field.
 
         If a field contains null bytes those bytes are considered part of the field by default. A
         field is exposed as std::string, and it may be undesirable to allow NULL bytes in a string.
         */
         error_on_null_in_field = 1 << 3,
-
 
         /* Open file in text mode instead of binary mode.
 
@@ -167,7 +162,6 @@ public:
         text_mode = 1 << 4
     };
 
-
     /* Constructor
 
     The constructor calls Init().
@@ -181,12 +175,11 @@ public:
     [in][opt] 'flags' : Refer to CSVread::Flags. The default is no flags are set.
     */
     CSVread();
-    CSVread( std::string filename, Flags flags = none );
-    CSVread( std::istream *stream, Flags flags = none );
+    CSVread(std::string filename, Flags flags = none);
+    CSVread(std::istream* stream, Flags flags = none);
 
     // If a file was opened by this class it's automatically closed when the class destructs.
     ~CSVread();
-
 
     /* CSVread::Reset()
     - Reset to an empty state.
@@ -211,8 +204,7 @@ public:
     [ret][failure] (false) : 'error' and 'error_msg' have been set.
     [ret][success] (true)
     */
-    bool Reset( bool partial_reset = false );
-
+    bool Reset(bool partial_reset = false);
 
     // Closes file if open or dissociates the existing istream, and then calls Reset().
     // If this returns false the file/istream has been closed/dissociated but Reset() failed.
@@ -221,7 +213,6 @@ public:
     // This is the same as Close(). It may make your code easier to understand to call this when you
     // are dissociating a stream not created by the class because it's not closed just dissociated.
     bool Dissociate() { return Close(); };
-
 
     /* CSVread::Open(), CSVread::Associate()
     - Open a file or associate an existing istream.
@@ -250,9 +241,8 @@ public:
     [ret][failure] (false) : 'error' and 'error_msg' are set.
     [ret][success] (true) : 'has_utf8_bom' may be set.
     */
-    bool Open( std::string filename, Flags flags = none );
-    bool Associate( std::istream *stream, Flags flags = none );
-
+    bool Open(std::string filename, Flags flags = none);
+    bool Associate(std::istream* stream, Flags flags = none);
 
     /* CSVread::GetDelimiter(), CSVread::SetDelimiter()
     - Get or set the delimiter character to be used when parsing the stream.
@@ -270,8 +260,7 @@ public:
     The delimiter is persistent and will survive resets. It doesn't need to be set on each open.
     */
     unsigned char GetDelimiter();
-    void SetDelimiter( unsigned char delim );
-
+    void SetDelimiter(unsigned char delim);
 
     /* CSVread::ReadRecord()
     - Read and parse a record.
@@ -297,8 +286,7 @@ public:
     [ret][success] (true) : 'record_num' and 'fields' are set;
         'eof', 'end_record_num' and 'end_record_not_terminated' may also be set.
     */
-    bool ReadRecord( const uintmax_t requested_record_num = 0 );
-
+    bool ReadRecord(const uintmax_t requested_record_num = 0);
 
     /* Change the size of the buffer, in bytes.
 
@@ -313,11 +301,10 @@ public:
         'error' and 'error_msg' are set.
     [ret][success] (true)
     */
-    bool ResizeBuffer( const std::streamsize bytes );
-
+    bool ResizeBuffer(const std::streamsize bytes);
 
     // The size of _buffer. Default 4096. Call ResizeBuffer() to change the size.
-    const std::streamsize &buffer_size; // = _buffer_size
+    const std::streamsize& buffer_size;  // = _buffer_size
 
     /* Stream EOF.
 
@@ -325,22 +312,21 @@ public:
     does not indicate the state of the records. If you want to determine whether the current record
     is the end record refer to 'end_record_num'.
     */
-    const bool &eof; // = _eof
+    const bool& eof;  // = _eof
 
     // Error. Functions will not succeed when this is true. Call Reset() or Close() or Dissociate().
-    const bool &error; // = _error
+    const bool& error;  // = _error
 
     // Contains an error message when 'error' or '_pending_error'.
     // If 'error' you can read this string before calling Reset() or Close() or Dissociate().
-    const std::string &error_msg; // = _error_msg
+    const std::string& error_msg;  // = _error_msg
 
     // File/istream has a UTF-8 BOM
-    const bool &has_utf8_bom; // = _has_utf8_bom
+    const bool& has_utf8_bom;  // = _has_utf8_bom
 
     // The record number of the current record.
     // The first CSV record is record number 1.
-    const uintmax_t &record_num; // = _record_num
-
+    const uintmax_t& record_num;  // = _record_num
 
     /* The record number of the end record.
 
@@ -370,8 +356,7 @@ public:
     since ReadRecord() does not set 'fields' or 'record_num' on failure they would still represent
     the end record in that case.
     */
-    const uintmax_t &end_record_num; // = _end_record_num
-
+    const uintmax_t& end_record_num;  // = _end_record_num
 
     /* The end record was not terminated.
 
@@ -384,14 +369,12 @@ public:
     CSV file it likely will not check earlier records, so what was previously the end record in your
     file and the first appended record would become one corrupted record.
     */
-    const bool &end_record_not_terminated; // = _end_record_not_terminated
-
+    const bool& end_record_not_terminated;  // = _end_record_not_terminated
 
     // The current record parsed into fields (columns), eg fields[0], fields[1], etc.
     // Depending on your CSV data the number of fields may or may not differ between records.
     // You can check fields.size() after each ReadRecord() to confirm the number is what's expected.
-    const std::vector<std::string> &fields; // = _fields
-
+    const std::vector<std::string>& fields;  // = _fields
 
     /* The libcsv parse object.
 
@@ -407,12 +390,11 @@ public:
 
     If 'error' parse_obj is not guaranteed != NULL or a good state; don't call any libcsv function.
     */
-    struct ::csv_parser *parse_obj;
-
+    struct ::csv_parser* parse_obj;
 
 private:
-    CSVread( const CSVread & );
-    CSVread & operator=( const CSVread & );
+    CSVread(const CSVread&);
+    CSVread& operator=(const CSVread&);
 
     // Call this to reset parse_obj.
     bool ResetParser();
@@ -422,7 +404,7 @@ private:
 
     // The stream the records are read from.
     // This points to the user specified istream or _file.
-    std::istream *_input_ptr;
+    std::istream* _input_ptr;
 
     // A list of the records (each as a vector containing the fields) most recently parsed.
     // The back element is always used for the pending record. The size of the cache should never
@@ -443,10 +425,10 @@ private:
     Flags _flags;
 
     // The buffer used to hold data read from the stream.
-    char *_buffer;
+    char* _buffer;
 
     // The field separator character.
-    unsigned char _delimiter; // = ,
+    unsigned char _delimiter;  // = ,
 
     // For a description of any of these refer to their public const references.
     std::streamsize _buffer_size;
@@ -463,16 +445,14 @@ private:
     bool Init();
 };
 
-inline CSVread::Flags operator | (CSVread::Flags a, CSVread::Flags b)
+inline CSVread::Flags operator|(CSVread::Flags a, CSVread::Flags b)
 {
-    return CSVread::Flags( ( (int)a ) | ( (int)b ) );
+    return CSVread::Flags(((int)a) | ((int)b));
 }
-inline CSVread::Flags & operator |= (CSVread::Flags &a, CSVread::Flags b)
+inline CSVread::Flags& operator|=(CSVread::Flags& a, CSVread::Flags b)
 {
-    return (CSVread::Flags &)( ( (int &)a ) |= ( (int)b ) );
+    return (CSVread::Flags&)(((int&)a) |= ((int)b));
 }
-
-
 
 class CSVwrite
 {
@@ -518,7 +498,6 @@ public:
         process_empty_records = 1 << 2
     };
 
-
     /* Constructor
 
     The constructor calls Init().
@@ -532,12 +511,11 @@ public:
     [in][opt] 'flags' : Refer to CSVwrite::Flags. The default is no flags are set.
     */
     CSVwrite();
-    CSVwrite( std::string filename, Flags flags = none );
-    CSVwrite( std::ostream *stream, Flags flags = none );
+    CSVwrite(std::string filename, Flags flags = none);
+    CSVwrite(std::ostream* stream, Flags flags = none);
 
     // If a file was opened by this class it's automatically closed when the class destructs.
     ~CSVwrite();
-
 
     // Closes file if open or dissociates the existing ostream, and then calls Reset().
     // If this returns false the file/ostream has been closed/dissociated but Reset() failed.
@@ -546,7 +524,6 @@ public:
     // This is the same as Close(). It may make your code easier to understand to call this when you
     // are dissociating a stream not created by the class because it's not closed just dissociated.
     bool Dissociate() { return Close(); };
-
 
     /* CSVwrite::Open(), CSVwrite::Associate()
     - Open a file or associate an existing ostream.
@@ -579,9 +556,8 @@ public:
     [ret][failure] (false) : 'error' and 'error_msg' are set.
     [ret][success] (true)
     */
-    bool Open( std::string filename, Flags flags = none );
-    bool Associate( std::ostream *stream, Flags flags = none );
-
+    bool Open(std::string filename, Flags flags = none);
+    bool Associate(std::ostream* stream, Flags flags = none);
 
     /* CSVwrite::WriteUTF8BOM()
     - Write a UTF-8 BOM.
@@ -592,7 +568,6 @@ public:
     [ret][success] (true)
     */
     bool WriteUTF8BOM();
-
 
     /* CSVwrite::WriteTerminator()
     - Write a record terminator.
@@ -606,7 +581,6 @@ public:
     */
     bool WriteTerminator();
 
-
     /* CSVwrite::WriteField()
     - Write a field.
 
@@ -619,8 +593,7 @@ public:
     [ret][failure] (false) : 'error' and 'error_msg' are set.
     [ret][success] (true)
     */
-    bool WriteField( const std::string &field, const bool terminate = false );
-
+    bool WriteField(const std::string& field, const bool terminate = false);
 
     /* CSVwrite::WriteRecord()
     - Write a record.
@@ -641,8 +614,7 @@ public:
     [ret][failure] (false) : 'error' and 'error_msg' are set.
     [ret][success] (true)
     */
-    bool WriteRecord( const std::vector<std::string> &fields, const bool terminate = true );
-
+    bool WriteRecord(const std::vector<std::string>& fields, const bool terminate = true);
 
     /* Change the size of the buffer, in bytes.
 
@@ -657,47 +629,46 @@ public:
         'error' and 'error_msg' are set.
     [ret][success] (true)
     */
-    bool ResizeBuffer( const std::streamsize bytes );
-
+    bool ResizeBuffer(const std::streamsize bytes);
 
     // The size of _buffer. Default 4096. Call ResizeBuffer() to change the size.
-    const std::streamsize &buffer_size; // = _buffer_size
+    const std::streamsize& buffer_size;  // = _buffer_size
 
     // Error. Functions will not succeed when this is true. Call Close() or Dissociate().
-    const bool &error; // = _error
+    const bool& error;  // = _error
 
     // Contains an error message when 'error'.
     // If 'error' you can read this string before calling Close() or Dissociate().
-    const std::string &error_msg; // = _error_msg
+    const std::string& error_msg;  // = _error_msg
 
     // Set this to change the delimiter.
     // The delimiter should be a single character but prepended/appended whitespace is ok.
     // The delimiter is persistent and will survive resets. It doesn't need to be set on each open.
-    std::string delimiter; // = ,
+    std::string delimiter;  // = ,
 
     // Set this to change the terminator.
     // The terminator should be a single character or \r\n but prepended/appended whitespace is ok.
     // \n could be automatically translated and written as \r\n in text mode, depending on your OS.
     // It's not recommended to set the terminator as \r\n explicitly.
     // The terminator is persistent and will survive resets. It doesn't need to be set on each open.
-    std::string terminator; // = \n
+    std::string terminator;  // = \n
 
 private:
-    CSVwrite( const CSVwrite & );
-    CSVwrite & operator=( const CSVwrite & );
+    CSVwrite(const CSVwrite&);
+    CSVwrite& operator=(const CSVwrite&);
 
     // A file stream if one was opened by this class.
     std::ofstream _file;
 
     // The stream the records are written to.
     // This points to the user specified ostream or _file.
-    std::ostream *_output_ptr;
+    std::ostream* _output_ptr;
 
     // The flags passed to Open()/Associate().
     Flags _flags;
 
     // The buffer used to hold data written to the stream.
-    char *_buffer;
+    char* _buffer;
 
     // Whether or not the field to be written is the first field in the record.
     bool _is_first_field;
@@ -714,16 +685,15 @@ private:
     bool Reset();
 };
 
-inline CSVwrite::Flags operator | (CSVwrite::Flags a, CSVwrite::Flags b)
+inline CSVwrite::Flags operator|(CSVwrite::Flags a, CSVwrite::Flags b)
 {
-    return CSVwrite::Flags( ( (int)a ) | ( (int)b ) );
+    return CSVwrite::Flags(((int)a) | ((int)b));
 }
-inline CSVwrite::Flags & operator |= (CSVwrite::Flags &a, CSVwrite::Flags b)
+inline CSVwrite::Flags& operator|=(CSVwrite::Flags& a, CSVwrite::Flags b)
 {
-    return (CSVwrite::Flags &)( ( (int &)a ) |= ( (int)b ) );
+    return (CSVwrite::Flags&)(((int&)a) |= ((int)b));
 }
 
-
-} // namespace util
-} // namespace jay
-#endif // JAY_UTIL_CSV_HPP_
+}  // namespace util
+}  // namespace jay
+#endif  // JAY_UTIL_CSV_HPP_

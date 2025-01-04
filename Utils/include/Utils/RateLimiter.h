@@ -2,9 +2,7 @@
 
 class RateLimiter
 {
-
 public:
-
     RateLimiter(double fallingRate, double risingRate, double input, double sampleTimeMs)
     {
         output_ = input;
@@ -12,15 +10,9 @@ public:
         setRate(fallingRate, risingRate);
     }
 
-    void setInput(double input)
-    {
-        input_ = input;
-    }
+    void setInput(double input) { input_ = input; }
 
-    double getInput() const
-    {
-        return input_;
-    }
+    double getInput() const { return input_; }
 
     void setRate(double fallingRate, double risingRate)
     {
@@ -42,13 +34,9 @@ public:
             output_ = input_;
     }
 
-    double getOutput()
-    {
-        return output_;
-    }
+    double getOutput() { return output_; }
 
 private:
-
 private:
     double getSampleTimeSec() const { return sampleTimeMs_ / 1000.0; }
 

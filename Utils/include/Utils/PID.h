@@ -4,17 +4,16 @@
 
 #include <spdlog/spdlog.h>
 
-#include <optional>
 #include <algorithm>
 #include <array>
-
+#include <optional>
 
 // after http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
 class PIDController
 {
 public:
-
-    PIDController(double kp, double ti, double td, double  duMin, double duMax, double min, double max, double sampleTimeMs, double input, double output)
+    PIDController(double kp, double ti, double td, double duMin, double duMax, double min, double max,
+                  double sampleTimeMs, double input, double output)
     {
         sampleTimeMs_ = sampleTimeMs;
 
@@ -23,7 +22,6 @@ public:
         setTunings(kp, ti, td);
         setOutputLimits(duMin, duMax, min, max);
     }
-
 
     void compute()
     {
@@ -46,10 +44,9 @@ public:
         lastOutput_ = output_;
     }
 
-
     std::array<double, 9> dumpInternals()
     {
-        return {k1_, k2_, k3_, setPoint_,  error_[0], error_[1], error_[2], input_, output_ };
+        return {k1_, k2_, k3_, setPoint_, error_[0], error_[1], error_[2], input_, output_};
     }
 
     void setInput(double input) { input_ = input; }
@@ -78,11 +75,9 @@ public:
     double getOutput() { return output_; }
 
 private:
-
-    double getSampleTimeSec() const { return sampleTimeMs_ / 1000.0;  }
+    double getSampleTimeSec() const { return sampleTimeMs_ / 1000.0; }
 
 private:
-
     double sampleTimeMs_ = 0.0;
 
     double input_ = 0.0;
@@ -102,5 +97,5 @@ private:
     double k2_ = 0.0;
     double k3_ = 0.0;
 
-    double error_[3] = { 0.0 };
+    double error_[3] = {0.0};
 };

@@ -3,7 +3,7 @@ repos:
   rev: v5.0.0  # Use the ref you want to point at
   hooks:
     - id: trailing-whitespace
-    - id: check-toml 
+    - id: check-toml
     - id: end-of-file-fixer
     - id: fix-byte-order-marker
     - id: mixed-line-ending
@@ -12,3 +12,8 @@ repos:
   rev: 0.17.1
   hooks:
   - id: gersemi
+
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v19.1.6
+  hooks:
+  - id: clang-format

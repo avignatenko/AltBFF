@@ -13,23 +13,22 @@ public:
 
     void start()
     {
-
-        m_timer = std::make_unique<std::thread>([this] {
-            std::chrono::time_point<std::chrono::steady_clock> targetTime = std::chrono::steady_clock::now();
-            while (!stopped_)
+        m_timer = std::make_unique<std::thread>(
+            [this]
             {
-                targetTime += delay_;
-                std::this_thread::sleep_until(targetTime);
+                std::chrono::time_point<std::chrono::steady_clock> targetTime = std::chrono::steady_clock::now();
+                while (!stopped_)
+                {
+                    targetTime += delay_;
+                    std::this_thread::sleep_until(targetTime);
 
-                std::promise<bool> result;
+                    std::promise<bool> result;
 
-                bool runOk = d_.run([this, &result] {
-                    result.set_value(callback_());
-                });
+                    bool runOk = d_.run([this, &result] { result.set_value(callback_()); });
 
-                stopped_ = runOk ? result.get_future().get() : true;
-            }
-        });
+                    stopped_ = runOk ? result.get_future().get() : true;
+                }
+            });
     }
 
     void stop()

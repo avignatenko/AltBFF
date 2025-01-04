@@ -35,77 +35,64 @@ Documentation is in CSV.hpp.
 
 #include "strerror.hpp"
 
-
 using namespace std;
 
-
-namespace jay {
-namespace util {
-
-
-CSVwrite::CSVwrite() :
-    buffer_size( _buffer_size), error( _error ), error_msg( _error_msg )
+namespace jay
 {
-    if( !Init() )
-        return;
+namespace util
+{
+
+CSVwrite::CSVwrite() : buffer_size(_buffer_size), error(_error), error_msg(_error_msg)
+{
+    if (!Init()) return;
 }
 
-
-CSVwrite::CSVwrite( string filename, Flags flags /* = none */ ) :
-    buffer_size( _buffer_size), error( _error ), error_msg( _error_msg )
+CSVwrite::CSVwrite(string filename, Flags flags /* = none */)
+    : buffer_size(_buffer_size), error(_error), error_msg(_error_msg)
 {
-    if( !Init() )
-        return;
+    if (!Init()) return;
 
-    Open( filename, flags );
+    Open(filename, flags);
 }
 
-
-CSVwrite::CSVwrite( ostream *stream, Flags flags /* = none */ ) :
-    buffer_size( _buffer_size), error( _error ), error_msg( _error_msg )
+CSVwrite::CSVwrite(ostream* stream, Flags flags /* = none */)
+    : buffer_size(_buffer_size), error(_error), error_msg(_error_msg)
 {
-    if( !Init() )
-        return;
+    if (!Init()) return;
 
-    Associate( stream, flags );
+    Associate(stream, flags);
 }
-
 
 CSVwrite::~CSVwrite()
 {
-    free( _buffer );
+    free(_buffer);
 }
 
+bool CSVshared_ResizeBuffer(const streamsize bytes,   // IN
+                            char*& buffer,            // INOUT
+                            streamsize& buffer_size,  // INOUT
+                            bool& error,              // OUT
+                            string& error_msg         // OUT
+);  // This function defined and documented above CSVread::ResizeBuffer().
 
-bool CSVshared_ResizeBuffer(
-    const streamsize bytes,   // IN
-    char *&buffer,   // INOUT
-    streamsize &buffer_size,   // INOUT
-    bool &error,   // OUT
-    string &error_msg   // OUT
-); // This function defined and documented above CSVread::ResizeBuffer().
-
-
-bool CSVwrite::ResizeBuffer( const streamsize bytes )
+bool CSVwrite::ResizeBuffer(const streamsize bytes)
 {
-    return CSVshared_ResizeBuffer( bytes, _buffer, _buffer_size, _error, _error_msg );
+    return CSVshared_ResizeBuffer(bytes, _buffer, _buffer_size, _error, _error_msg);
 }
-
 
 // REM This function is also called by Init() for initialization
 bool CSVwrite::Reset()
 {
-    if( _output_ptr )
+    if (_output_ptr)
     {
         _error = true;
         _error_msg = "Not implemented";
         return false;
     }
 
-    if( !_buffer )
+    if (!_buffer)
     {
-        if( !ResizeBuffer( 4096 ) )
-            return false;
+        if (!ResizeBuffer(4096)) return false;
     }
 
     _flags = CSVwrite::none;
@@ -116,19 +103,17 @@ bool CSVwrite::Reset()
     return true;
 }
 
-
 bool CSVwrite::Close()
 {
-    if( _file.is_open() )
+    if (_file.is_open())
     {
         _file.close();
     }
 
-    _output_ptr =  NULL;
+    _output_ptr = NULL;
 
     return Reset();
 }
-
 
 // Initialization to be called from the constructor only, first thing.
 bool CSVwrite::Init()
@@ -136,7 +121,7 @@ bool CSVwrite::Init()
     // The vars here must be zeroed before any possible error aborts the initialization.
     _buffer = NULL;
     _buffer_size = 0;
-    _output_ptr =  NULL;
+    _output_ptr = NULL;
 
     delimiter = ",";
     terminator = "\n";
@@ -144,29 +129,25 @@ bool CSVwrite::Init()
     return Reset();
 }
 
-
-
-
-bool CSVwrite::Associate( ostream *stream, const Flags flags /* = none */ )
+bool CSVwrite::Associate(ostream* stream, const Flags flags /* = none */)
 {
-    if( _error )
-        return false;
+    if (_error) return false;
 
-    if( !stream )
+    if (!stream)
     {
         _error = true;
         _error_msg = "The stream parameter is NULL.";
         return false;
     }
 
-    if( _output_ptr )
+    if (_output_ptr)
     {
         _error = true;
         _error_msg = "A stream is already associated. Call Close() to dissociate.";
         return false;
     }
 
-    if( ( flags & text_mode ) && ( stream != &_file ) )
+    if ((flags & text_mode) && (stream != &_file))
     {
         // For the time being text mode is only valid if it's a file opened by this class.
         _error = true;
@@ -177,94 +158,86 @@ bool CSVwrite::Associate( ostream *stream, const Flags flags /* = none */ )
     _flags = flags;
     _output_ptr = stream;
 
-    if( !_output_ptr->good() )
+    if (!_output_ptr->good())
     {
         _error = true;
-        _error_msg = "ostream: " + ios_strerror( _output_ptr->rdstate() );
+        _error_msg = "ostream: " + ios_strerror(_output_ptr->rdstate());
         return false;
     }
 
     return true;
 }
 
-
-bool CSVwrite::Open( string filename, const Flags flags /* = none */ )
+bool CSVwrite::Open(string filename, const Flags flags /* = none */)
 {
-    if( _error )
-        return false;
+    if (_error) return false;
 
-    if( _file.is_open() )
+    if (_file.is_open())
     {
         _error = true;
         _error_msg = "A file is already open. Call Close() to close the file.";
         return false;
     }
 
-    if( _output_ptr )
+    if (_output_ptr)
     {
         _error = true;
         _error_msg = "A stream is already associated. Call Close() to dissociate.";
         return false;
     }
 
-    ios::openmode mode = ( ( flags & text_mode ) ) ? 0 : ios::binary;
-    mode |= ( ( flags & truncate ) ) ? ios::trunc : ios::app;
+    ios::openmode mode = ((flags & text_mode)) ? 0 : ios::binary;
+    mode |= ((flags & truncate)) ? ios::trunc : ios::app;
 
-    _file.open( filename, mode );
-    if( !_file )
+    _file.open(filename, mode);
+    if (!_file)
     {
         _error = true;
         _error_msg = "Failed opening " + filename;
         return false;
     }
 
-    return Associate( &_file, flags );
+    return Associate(&_file, flags);
 }
-
-
-
 
 bool CSVwrite::WriteUTF8BOM()
 {
-    if( _error )
-        return false;
+    if (_error) return false;
 
-    if( !_output_ptr )
+    if (!_output_ptr)
     {
         _error = true;
         _error_msg = "A stream is not associated with the object.";
         return false;
     }
 
-    _output_ptr->write( "\xEF\xBB\xBF", 3 );
-    if( !_output_ptr->good() )
+    _output_ptr->write("\xEF\xBB\xBF", 3);
+    if (!_output_ptr->good())
     {
         _error = true;
-        _error_msg = "ostream: " + ios_strerror( _output_ptr->rdstate() );
+        _error_msg = "ostream: " + ios_strerror(_output_ptr->rdstate());
         return false;
     }
 
     return true;
 }
 
-
 bool CSVwrite::WriteTerminator()
 {
-    if( _error )
-        return false;
+    if (_error) return false;
 
-    if( !_output_ptr )
+    if (!_output_ptr)
     {
         _error = true;
         _error_msg = "A stream is not associated with the object.";
         return false;
     }
 
-    _output_ptr->write( terminator.c_str(), terminator.length() );
-    if( !_output_ptr->good() )
+    _output_ptr->write(terminator.c_str(), terminator.length());
+    if (!_output_ptr->good())
     {
         _error = true;
-        _error_msg = "ostream: " + ios_strerror( _output_ptr->rdstate() );
+        _error_msg = "ostream: " + ios_strerror(_output_ptr->rdstate());
         return false;
     }
 
@@ -272,37 +245,35 @@ bool CSVwrite::WriteTerminator()
     return true;
 }
 
-
-bool CSVwrite::WriteField( const string &field, bool terminate /* = false */ )
+bool CSVwrite::WriteField(const string& field, bool terminate /* = false */)
 {
-    if( _error )
-        return false;
+    if (_error) return false;
 
-    if( !_output_ptr )
+    if (!_output_ptr)
     {
         _error = true;
         _error_msg = "A stream is not associated with the object.";
         return false;
     }
 
-    char *p = _buffer;
-    const char *const buffer_end = _buffer + (size_t)_buffer_size;
+    char* p = _buffer;
+    const char* const buffer_end = _buffer + (size_t)_buffer_size;
 
     list<char> prepend, append;
 
-    if( !_is_first_field )
+    if (!_is_first_field)
     {
-        prepend.assign( delimiter.begin(), delimiter.end() );
+        prepend.assign(delimiter.begin(), delimiter.end());
     }
 
-    if( terminate )
+    if (terminate)
     {
-        append.assign( terminator.begin(), terminator.end() );
+        append.assign(terminator.begin(), terminator.end());
     }
 
     // All fields are qualified with double quotes since that is what libcsv write functions do
-    prepend.push_back( '"' );
-    append.push_front( '"' );
+    prepend.push_back('"');
+    append.push_front('"');
 
     // This is set when there is a quote that needs to be escaped but there's no room in the buffer
     bool quote = false;
@@ -310,19 +281,19 @@ bool CSVwrite::WriteField( const string &field, bool terminate /* = false */ )
     // This is set when the buffer needs to be written to the stream even if the buffer is not full
     bool flush = false;
 
-    for( string::const_iterator it = field.begin();; )
+    for (string::const_iterator it = field.begin();;)
     {
-        if( flush || ( p == buffer_end ) )
+        if (flush || (p == buffer_end))
         {
-            _output_ptr->write( _buffer, ( p - _buffer ) );
-            if( !_output_ptr->good() )
+            _output_ptr->write(_buffer, (p - _buffer));
+            if (!_output_ptr->good())
             {
                 _error = true;
-                _error_msg = "ostream: " + ios_strerror( _output_ptr->rdstate() );
+                _error_msg = "ostream: " + ios_strerror(_output_ptr->rdstate());
                 return false;
             }
 
-            if( flush && ( it == field.end() ) )
+            if (flush && (it == field.end()))
             {
                 break;
             }
@@ -330,40 +301,40 @@ bool CSVwrite::WriteField( const string &field, bool terminate /* = false */ )
             p = _buffer;
         }
 
-        if( it == field.begin() )
+        if (it == field.begin())
         {
-            while( prepend.size() && ( p != buffer_end ) )
+            while (prepend.size() && (p != buffer_end))
             {
                 *p++ = *prepend.begin();
                 prepend.pop_front();
             }
 
-            if( p == buffer_end )
+            if (p == buffer_end)
             {
                 continue;
             }
         }
 
-        if( quote )
+        if (quote)
         {
             *p++ = '"';
             quote = false;
 
-            if( p == buffer_end )
+            if (p == buffer_end)
             {
                 continue;
             }
         }
 
-        if( it == field.end() )
+        if (it == field.end())
         {
-            while( append.size() && ( p != buffer_end ) )
+            while (append.size() && (p != buffer_end))
             {
                 *p++ = *append.begin();
                 append.pop_front();
             }
 
-            if( !append.size() || ( p != buffer_end ) )
+            if (!append.size() || (p != buffer_end))
             {
                 flush = true;
             }
@@ -371,12 +342,12 @@ bool CSVwrite::WriteField( const string &field, bool terminate /* = false */ )
             continue;
         }
 
-        while( ( p != buffer_end ) && ( it != field.end() ) )
+        while ((p != buffer_end) && (it != field.end()))
         {
             *p = *it++;
-            if( *p++ == '"' )
+            if (*p++ == '"')
             {
-                if( p == buffer_end )
+                if (p == buffer_end)
                 {
                     quote = true;
                     break;
@@ -391,43 +362,41 @@ bool CSVwrite::WriteField( const string &field, bool terminate /* = false */ )
     return true;
 }
 
-
-bool CSVwrite::WriteRecord( const vector<string> &fields, bool terminate /* = true */ )
+bool CSVwrite::WriteRecord(const vector<string>& fields, bool terminate /* = true */)
 {
-    if( _error )
-        return false;
+    if (_error) return false;
 
-    if( !_output_ptr )
+    if (!_output_ptr)
     {
         _error = true;
         _error_msg = "A stream is not associated with the object.";
         return false;
     }
 
-    if( !_is_first_field )
+    if (!_is_first_field)
     {
-        if( !WriteTerminator() )
+        if (!WriteTerminator())
         {
             return false;
         }
     }
 
-    if( !fields.size() && !(( _flags & CSVwrite::process_empty_records )) )
+    if (!fields.size() && !((_flags & CSVwrite::process_empty_records)))
     {
         return true;
     }
 
-    for( vector<string>::const_iterator it = fields.begin(); it != fields.end(); ++it )
+    for (vector<string>::const_iterator it = fields.begin(); it != fields.end(); ++it)
     {
-        if( !WriteField( *it ) )
+        if (!WriteField(*it))
         {
             return false;
         }
     }
 
-    if( terminate )
+    if (terminate)
     {
-        if( !WriteTerminator() )
+        if (!WriteTerminator())
         {
             return false;
         }
@@ -436,6 +405,5 @@ bool CSVwrite::WriteRecord( const vector<string> &fields, bool terminate /* = tr
     return true;
 }
 
-
-} // namespace util
-} // namespace jay
+}  // namespace util
+}  // namespace jay

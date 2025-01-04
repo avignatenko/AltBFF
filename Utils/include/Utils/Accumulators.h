@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <optional>
+#include <vector>
 
 // Simple double moving average with explicit computation of mean (O(N))
 // Made to prevent accurary problems with usul increment computation
@@ -9,11 +9,7 @@ template <size_t N>
 class MovingAverage
 {
 public:
-
-    MovingAverage()
-    {
-        samples_.reserve(N);
-    }
+    MovingAverage() { samples_.reserve(N); }
 
     void addSample(double sample)
     {
@@ -35,8 +31,7 @@ public:
         if (samples_.empty()) return 0.0;
 
         double total = 0.0;
-        for (double sample : samples_)
-            total += sample;
+        for (double sample : samples_) total += sample;
         total /= samples_.size();
 
         cachedAverage_ = total;
@@ -54,10 +49,7 @@ private:
 class ExponentialMovingAverage
 {
 public:
-
-    ExponentialMovingAverage(int n): alpha_(2.0 / (n + 1))
-    {
-    }
+    ExponentialMovingAverage(int n) : alpha_(2.0 / (n + 1)) {}
 
     void addSample(double sample)
     {
@@ -72,10 +64,7 @@ public:
         lastAverage_ = average_;
     }
 
-    double get()
-    {
-        return average_;
-    }
+    double get() { return average_; }
 
 private:
     const double alpha_;

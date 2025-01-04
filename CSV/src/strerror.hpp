@@ -26,15 +26,14 @@ along with jay::util. If not, see <http://www.gnu.org/licenses/>.
 #include <ios>
 #include <string>
 
-
-namespace jay {
-namespace util {
-
+namespace jay
+{
+namespace util
+{
 
 // Returns an iostate error message.
-std::string ios_strerror( std::ios::iostate state );
+std::string ios_strerror(std::ios::iostate state);
 
-
-} // namespace util
-} // namespace jay
-#endif // JAY_UTIL_STRERROR_HPP_
+}  // namespace util
+}  // namespace jay
+#endif  // JAY_UTIL_STRERROR_HPP_
