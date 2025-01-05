@@ -1,6 +1,7 @@
 #pragma once
 
 #include <asio/io_context.hpp>
+#include <asio/steady_timer.hpp>
 
 class PeriodicTimer
 {

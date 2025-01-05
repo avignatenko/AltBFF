@@ -3,13 +3,12 @@
 using namespace asio;
 using namespace bffcl;
 
-ClientSender::ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote,
+ClientSender::ClientSender(io_context& io, ip::udp::socket& socket, const std::string& addressRemote, int portRemote,
                            double timerInterval)
     : io_(io),
       socket_(socket),
-      endpointRemote_(endpoint(address::from_string(addressRemote), portRemote)),
-      timer_(io),
-      timerInterval_(int(1000.0 / timerInterval))
+      endpointRemote_(ip::udp::endpoint(ip::address::from_string(addressRemote), portRemote)),
+      sendTimer_(io, std::chrono::milliseconds(static_cast<int>(1000 / timerInterval)))
 {
     // set CL input defaults
     CLInput& input = lockInput();
@@ -18,9 +17,8 @@ ClientSender::ClientSender(io_context& io, socket& socket, const std::string& ad
     localAddress.copy(input.feederIP, localAddress.size());
     input.returnPort = socket_.local_endpoint().port();
 
-    // start sendering (fixme: move to start())
-    timer_.expires_after(std::chrono::milliseconds(0));  // set default value to now
-    send();
+    // start sendering
+    sendTimer_.wait([this] { send(); });
 }
 
 ClientSender::~ClientSender() {}
@@ -32,21 +30,14 @@ CLInput& ClientSender::lockInput()
 
 void ClientSender::send()
 {
-    // reengage the timer
-    timer_.expires_at(timer_.expiry() + timerInterval_);
-    timer_.async_wait([this](const asio::error_code&) { doSend(); });
-}
-
-void ClientSender::doSend()
-{
     // do send
     CLInput& input = lockInput();
     input.packetID = packetId_++;
-    std::shared_ptr<CLInput> clInput = std::make_shared<CLInput>(input);
+    std::unique_ptr<CLInput> clInput = inputPool_.aquire(input);
 
     // clInput captured in lambda, so will be destroyed after handler completes
-    socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
-                          [clInput](const asio::error_code& error, std::size_t bytes_transferred) {});
-
-    send();
+    socket_.async_send_to(
+        buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
+        [this, clInput = std::move(clInput)](const asio::error_code& error, std::size_t bytes_transferred) mutable
+        { inputPool_.release(std::move(clInput)); });
 }

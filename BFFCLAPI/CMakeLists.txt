@@ -8,7 +8,11 @@ project(BFFCLAPI)
 # Add source to this project's executable.
 add_library(${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog asio::asio)
+target_link_libraries(
+    ${PROJECT_NAME}
+    PUBLIC asio::asio
+    PRIVATE Utils spdlog::spdlog
+)
 
 target_include_directories(
     ${PROJECT_NAME}

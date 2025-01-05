@@ -15,11 +15,7 @@ struct CLReturn;
 class ClientReceiver
 {
 public:
-    using io_context = asio::io_context;
-    using socket = asio::ip::udp::socket;
-    using endpoint = asio::ip::udp::endpoint;
-
-    ClientReceiver(io_context& io, socket& socket);
+    ClientReceiver(asio::io_context& io, asio::ip::udp::socket& socket);
     ~ClientReceiver();
 
     CLReturn& lockOutput();
@@ -28,8 +24,8 @@ private:
     void receive();
 
 private:
-    io_context& io_;
-    socket& socket_;
+    asio::io_context& io_;
+    asio::ip::udp::socket& socket_;
 
     unsigned int packetId_ = 1;
 

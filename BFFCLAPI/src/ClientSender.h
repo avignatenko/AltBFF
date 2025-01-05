@@ -2,10 +2,12 @@
 
 #include "CLStructures.h"
 
+#include <Utils/PeriodicTimer.h>
+
 #include <asio.hpp>
 #include <asio/io_context.hpp>
 
-#include <mutex>
+#include <queue>
 
 namespace bffcl
 {
@@ -13,33 +15,50 @@ namespace bffcl
 class ClientSender
 {
 public:
-    using io_context = asio::io_context;
-    using socket = asio::ip::udp::socket;
-    using endpoint = asio::ip::udp::endpoint;
-    using address = asio::ip::address;
-    using steady_timer = asio::steady_timer;
-
-    ClientSender(io_context& io, socket& socket, const std::string& addressRemote, int portRemote, double freq);
+    ClientSender(asio::io_context& io, asio::ip::udp::socket& socket, const std::string& addressRemote, int portRemote,
+                 double freq);
     ~ClientSender();
 
     CLInput& lockInput();
 
 private:
     void send();
-    void doSend();
 
 private:
-    io_context& io_;
-    socket& socket_;
+    asio::io_context& io_;
+    asio::ip::udp::socket& socket_;
+    asio::ip::udp::endpoint endpointRemote_;
 
-    endpoint endpointRemote_;
-
-    std::chrono::milliseconds timerInterval_;
-    steady_timer timer_;
+    PeriodicTimer sendTimer_;
 
     unsigned int packetId_ = 1;
 
     CLInput currentInput_;
+
+    // ObjectPool is to avoid frequest alloc/dealloc when sending in async way
+    template <class T>
+    class ObjectPool
+    {
+    public:
+        std::unique_ptr<T> aquire(const T& data)
+        {
+            if (!objects_.empty())
+            {
+                std::unique_ptr<T> obj = std::move(objects_.front());
+                objects_.pop();
+                *obj = data;
+                return obj;
+            }
+
+            return std::make_unique<T>(data);
+        }
+        void release(std::unique_ptr<T> object) { objects_.push(std::move(object)); }
+
+    private:
+        std::queue<std::unique_ptr<T>> objects_;
+    };
+
+    ObjectPool<CLInput> inputPool_;
 };
 
 }  // namespace bffcl

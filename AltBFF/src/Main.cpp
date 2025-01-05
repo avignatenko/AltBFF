@@ -131,6 +131,7 @@ int checkedMain(int argc, char** argv)
     spdlog::info("Creating main components");
 
     asio::io_context runner;
+    auto work = asio::make_work_guard(runner);
 
     bffcl::UDPClient cl(clSettings, runner);
     Sim sim(simSettings);
