@@ -33,11 +33,11 @@ void ClientSender::send()
     // do send
     CLInput& input = lockInput();
     input.packetID = packetId_++;
-    std::unique_ptr<CLInput> clInput = inputPool_.aquire(input);
+
+    std::shared_ptr<CLInput> clInput = inputPool_.aquire(input);
 
     // clInput captured in lambda, so will be destroyed after handler completes
-    socket_.async_send_to(
-        buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
-        [this, clInput = std::move(clInput)](const asio::error_code& error, std::size_t bytes_transferred) mutable
-        { inputPool_.release(std::move(clInput)); });
+    socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
+                          [this, clInput](const asio::error_code& error, std::size_t bytes_transferred) mutable
+                          { inputPool_.release(clInput); });
 }

@@ -40,22 +40,29 @@ private:
     class ObjectPool
     {
     public:
-        std::unique_ptr<T> aquire(const T& data)
+        ObjectPool(size_t defSize = 1)
+        {
+            for (int i = 0; i < defSize; ++i) objects_.push(std::make_shared<T>());
+        }
+
+        std::shared_ptr<T> aquire(const T& data)
         {
             if (!objects_.empty())
             {
-                std::unique_ptr<T> obj = std::move(objects_.front());
+                std::shared_ptr<T> obj = std::move(objects_.front());
                 objects_.pop();
                 *obj = data;
                 return obj;
             }
 
-            return std::make_unique<T>(data);
+            return std::make_shared<T>(data);
         }
-        void release(std::unique_ptr<T> object) { objects_.push(std::move(object)); }
+        void release(std::shared_ptr<T> object) { objects_.push(std::move(object)); }
+
+        size_t size() const { return objects_.size(); }
 
     private:
-        std::queue<std::unique_ptr<T>> objects_;
+        std::queue<std::shared_ptr<T>> objects_;
     };
 
     ObjectPool<CLInput> inputPool_;

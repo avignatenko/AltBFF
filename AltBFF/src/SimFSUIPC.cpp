@@ -37,6 +37,11 @@ void SimFSUIPC::disconnect()
     connected_ = false;
 }
 
+bool SimFSUIPC::connected() const
+{
+    return connected_;
+}
+
 bool SimFSUIPC::process(SimData& data, SimDataWriteFlags& flags)
 {
     if (!connected()) connect();
