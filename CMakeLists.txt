@@ -45,7 +45,10 @@ find_package(catch2)
 find_package(toml11)
 
 # Include sub-projects.
+if(WIN32)
+    add_subdirectory("FSUIPC")
+endif()
+
 add_subdirectory("AltBFF")
 add_subdirectory("BFFCLAPI")
 add_subdirectory("Utils")
-add_subdirectory("FSUIPC")

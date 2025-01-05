@@ -7,7 +7,7 @@ add_executable(${PROJECT_NAME})
 
 target_link_libraries(
     ${PROJECT_NAME}
-    PRIVATE BFFCLAPI Utils FSUIPC spdlog::spdlog Catch2::Catch2 toml11::toml11
+    PRIVATE BFFCLAPI Utils spdlog::spdlog Catch2::Catch2 toml11::toml11
 )
 
 target_sources(
@@ -25,10 +25,18 @@ target_sources(
         "src/ReadSettings.h"
         "src/SimModelLoop.cpp"
         "src/SimModelLoop.h"
-        "src/SimFSUIPC.cpp"
-        "src/SimFSUIPC.h"
         "src/SimImpl.h"
+        "src/SimDummy.h"
 )
+
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE FSUIPC)
+
+    target_sources(
+        ${PROJECT_NAME}
+        PRIVATE "src/SimFSUIPC.cpp" "src/SimFSUIPC.h"
+    )
+endif()
 
 set(settingsfile_source "${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 

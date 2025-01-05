@@ -26,6 +26,8 @@
 
 using namespace std;
 
+#if defined(_WIN32)
+
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
     // todo: add closing
@@ -33,6 +35,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 
     return FALSE;  // let others work on this
 }
+#endif
 
 using std::filesystem::file_time_type;
 using std::filesystem::path;
@@ -165,7 +168,9 @@ int main(int argc, char** argv)
     // check for tests session
     if (argc > 1 && strcmp(argv[1], "test") == 0) return runTests(argc, argv);
 
+#if defined(_WIN32)
     SetConsoleCtrlHandler(CtrlHandler, TRUE);
+#endif
 
     try
     {

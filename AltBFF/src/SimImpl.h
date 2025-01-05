@@ -21,6 +21,8 @@ public:
 
     virtual bool connect() = 0;
     virtual void disconnect() = 0;
+    virtual ~SimImpl() = default;
+
     [[nodiscard]] virtual bool connected() const = 0;
 
     struct SimData

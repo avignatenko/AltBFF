@@ -123,9 +123,10 @@ public:
     enum Axis
     {
         Elevator = 0,
-        Aileron,
-        AxisCount,
+        Aileron
     };
+
+    constexpr static int AxisCount = 2;
 
     enum class AxisControl
     {

@@ -1,7 +1,14 @@
 #include "Sim.h"
 
 #include <Utils/Common.h>
+
+#ifdef _WIN32
 #include "SimFSUIPC.h"
+using SimImplementation = SimFSUIPC;
+#else
+#include "SimDummy.h"
+using SimImplementation = SimDummy;
+#endif
 
 #include <spdlog/spdlog.h>
 
@@ -19,7 +26,7 @@ bool isNear(T x, T y)
     return isCloseToZero(x - y);
 }
 
-Sim::Sim(const SimImpl::Settings& settings) : simImpl_(std::make_unique<SimFSUIPC>(settings))
+Sim::Sim(const SimImpl::Settings& settings) : simImpl_(std::make_unique<SimImplementation>(settings))
 {
     connect();
 }
