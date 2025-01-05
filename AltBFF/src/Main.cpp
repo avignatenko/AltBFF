@@ -19,8 +19,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include <windows.h>
-
 #include <stdio.h>
 #include <filesystem>
 #include <iostream>
