@@ -27,9 +27,9 @@ public:
 
     struct SimData
     {
-        int16_t elevator = 0;
-        int16_t elevatorTrim = 0;
-        int16_t aileron = 0;
+        double elevator = 0;
+        double elevatorTrim = 0;
+        double aileron = 0;
         int32_t tas = 0;
         int16_t relativeAoA = 0;
         double propWash = 0;
@@ -50,7 +50,7 @@ public:
         int16_t slewMode = 0;   // 05DC
         int16_t pauseMode = 0;  // 0264
         int8_t inmenuMode = 0;  // 3365
-        int16_t clElevatorTrim = 0;
+        double clElevatorTrim = 0;
         int8_t apRollEngaged = 0;
         int8_t apPitchEnaged = 0;
         int8_t apPitchLimits = 0;

@@ -6,6 +6,18 @@
 
 #include <set>
 
+template <typename T>
+bool isCloseToZero(T x)
+{
+    return std::abs(x) < std::numeric_limits<T>::epsilon();
+}
+
+template <typename T>
+bool isNear(T x, T y)
+{
+    return isCloseToZero(x - y);
+}
+
 Sim::Sim(const SimFSUIPC::Settings& settings) : simImpl_(settings)
 {
     connect();
@@ -33,10 +45,9 @@ bool Sim::connected() const
 
 void Sim::writeElevator(double elevator, bool force /*= false*/)
 {
-    int16_t newElevator = static_cast<int16_t>(elevator * 16383 / 100);
-    if (!force && simData_.elevator == newElevator) return;
+    if (!force && isNear(simData_.elevator, elevator)) return;
 
-    simData_.elevator = newElevator;
+    simData_.elevator = elevator;
     simDataWriteFlags_.elevator = true;
 
     spdlog::trace("Sim Elevator Write: {}", simData_.elevator);
@@ -44,32 +55,30 @@ void Sim::writeElevator(double elevator, bool force /*= false*/)
 
 void Sim::writeAileron(double aileron, bool force /*= false*/)
 {
-    int16_t newAileron = static_cast<int16_t>(aileron * 16383 / 100);
-    if (!force && simData_.aileron == newAileron) return;
+    if (!force && isNear(simData_.aileron, aileron)) return;
 
-    simData_.aileron = newAileron;
+    simData_.aileron = aileron;
     simDataWriteFlags_.aileron = true;
 }
 
 double Sim::readElevator()
 {
     spdlog::trace("Sim Elevator: {}", simData_.elevator);
-    return simData_.elevator * 100.0 / 16383;
+    return simData_.elevator;
 }
 
 double Sim::readAileron()
 {
     spdlog::trace("Sim Aileron: {}", simData_.aileron);
-    return simData_.aileron * 100.0 / 16383;
+    return simData_.aileron;
 }
 
 void Sim::writeElevatorTrim(double trim, bool force /*= false*/)
 {
-    int16_t newElevatorTrim = static_cast<int16_t>(trim * 16383);
-    if (!force && simData_.elevatorTrim == newElevatorTrim) return;
+    if (!force && isNear(simData_.elevatorTrim, trim)) return;
 
-    spdlog::trace("Sim trim: {}", newElevatorTrim);
-    simData_.elevatorTrim = newElevatorTrim;
+    spdlog::trace("Sim trim: {}", trim);
+    simData_.elevatorTrim = trim;
     simDataWriteFlags_.elevatorTrim = true;
 }
 
@@ -190,7 +199,7 @@ Sim::GroundType Sim::readGroundType()
 
 double Sim::readCLElevatorTrim()
 {
-    return simData_.clElevatorTrim / 16383.0;
+    return simData_.clElevatorTrim;
 }
 
 Sim::CLEngage Sim::readCLEngage()

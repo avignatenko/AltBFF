@@ -47,19 +47,22 @@ bool SimFSUIPC::process(SimData& data, SimDataWriteFlags& flags)
     if (!connected()) connect();
 
     // ajust values according to settings
-    int16_t newElevator = data.elevator * (settings_.invertFSElevator ? -1 : 1);
-    int16_t newAileron = data.aileron * (settings_.invertFSAileron ? -1 : 1);
+
+    int16_t newElevator = static_cast<int16_t>(data.elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
+    int16_t newAileron = static_cast<int16_t>(data.aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
+    int16_t newElevatorTrim = static_cast<int16_t>(data.elevatorTrim * 16383);
+    int16_t newCLElevatorTrim = 0;  // static_cast<int16_t>(data.clElevatorTrim * 16383);
 
     DWORD dwResult = FSUIPC_ERR_OK;
 
     BOOL failed =
         !FSUIPC_Write_IF(0x0BB2, 2, &newElevator, flags.elevator, &dwResult) ||
-        !FSUIPC_Write_IF(0x0BC0, 2, &data.elevatorTrim, flags.elevatorTrim, &dwResult) ||
+        !FSUIPC_Write_IF(0x0BC0, 2, &newElevatorTrim, flags.elevatorTrim, &dwResult) ||
         !FSUIPC_Write_IF(0x0BB6, 2, &newAileron, flags.aileron, &dwResult) ||
         !FSUIPC_Write_IF(settings_.apPitchLimitsOffset, 1, &data.apPitchLimits, flags.apPitchLimits, &dwResult) ||
         !FSUIPC_Write_IF(settings_.clForceEnabledOffset, 1, &data.clForceEnabled, flags.clForceEnabled, &dwResult) ||
 
-        !FSUIPC_Read(0x0BB2, 2, &data.elevator, &dwResult) || !FSUIPC_Read(0x0BB6, 2, &data.aileron, &dwResult) ||
+        !FSUIPC_Read(0x0BB2, 2, &newElevator, &dwResult) || !FSUIPC_Read(0x0BB6, 2, &newAileron, &dwResult) ||
         !FSUIPC_Read(0x28C0, 8, &data.airDensity, &dwResult) || !FSUIPC_Read(0x28C8, 8, &data.airPressure, &dwResult) ||
         !FSUIPC_Read(0x34B0, 8, &data.pressureAltitude, &dwResult) || !FSUIPC_Read(0x02B8, 4, &data.tas, &dwResult) ||
         !FSUIPC_Read(0x2410, 8, &data.thrust, &dwResult) || !FSUIPC_Read(0x2ED0, 8, &data.alpha, &dwResult) ||
@@ -71,7 +74,7 @@ bool SimFSUIPC::process(SimData& data, SimDataWriteFlags& flags)
         !FSUIPC_Read(0x31E8, 4, &data.surfaceType, &dwResult) || !FSUIPC_Read(0x05DC, 2, &data.slewMode, &dwResult) ||
         !FSUIPC_Read(0x0264, 2, &data.pauseMode, &dwResult) || !FSUIPC_Read(0x3365, 1, &data.inmenuMode, &dwResult) ||
         !FSUIPC_Read(settings_.propWashOffset, 8, &data.propWash, &dwResult) ||
-        !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &data.clElevatorTrim, &dwResult) ||
+        !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &newCLElevatorTrim, &dwResult) ||
         !FSUIPC_Read(settings_.apRollEngagedOffset, 1, &data.apRollEngaged, &dwResult) ||
         !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &data.apPitchEnaged, &dwResult) ||
         !FSUIPC_Read(settings_.clEngageOffset, 1, &data.clEngage, &dwResult);
@@ -79,9 +82,10 @@ bool SimFSUIPC::process(SimData& data, SimDataWriteFlags& flags)
     failed = failed || !FSUIPC_Process(&dwResult);
 
     // ajust values according to settings
-    data.clElevatorTrim *= (settings_.invertCLElevatorTrim ? -1 : 1);
-    data.aileron *= (settings_.invertFSAileron ? -1 : 1);
-    data.elevator *= (settings_.invertFSElevator ? -1 : 1);
+    data.aileron = newAileron * 100.0 / 16383 * (settings_.invertFSAileron ? -1 : 1);
+    data.elevator = newElevator * 100.0 / 16383 * (settings_.invertFSElevator ? -1 : 1);
+    // data.elevatorTrim = newElevatorTrim / 16383.0;
+    data.clElevatorTrim = newCLElevatorTrim / 16383.0 * (settings_.invertCLElevatorTrim ? -1 : 1);
 
     if (failed)
     {
