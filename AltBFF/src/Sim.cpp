@@ -238,6 +238,8 @@ BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void* pSrce, bool write, DWOR
 
 void Sim::process()
 {
+    if (!connected()) connect();
+
     DWORD dwResult = FSUIPC_ERR_OK;
 
     BOOL failed =
@@ -275,7 +277,11 @@ void Sim::process()
     // process
     failed = failed || !FSUIPC_Process(&dwResult);
 
-    if (failed) spdlog::error("FSUIPC error: {}", dwResult);
+    if (failed)
+    {
+        spdlog::error("FSUIPC error: {}", dwResult);
+        disconnect();  // assume FSUIPC closed, will try to re connect next time
+    }
 
     // set flags back to false (meaning we won't send values again until somebody raise the flag)
     if (!failed) simDataWriteFlags_.reset();
