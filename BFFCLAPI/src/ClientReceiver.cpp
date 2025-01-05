@@ -18,16 +18,16 @@ CLReturn& ClientReceiver::lockOutput()
 
 void ClientReceiver::receive()
 {
-    // do receive
-    auto clOutput = std::make_shared<CLReturn>();
-    auto senderEndpoint = std::make_shared<ip::udp::endpoint>();
+    auto clOutput = inputPool_.aquire();
 
-    socket_.async_receive_from(asio::buffer(clOutput.get(), sizeof(CLReturn)), *senderEndpoint,
-                               [this, clOutput, senderEndpoint](const asio::error_code& error, std::size_t reply_length)
+    socket_.async_receive_from(asio::buffer(clOutput.get(), sizeof(CLReturn)), senderEndpoint_,
+                               [this, clOutput](const asio::error_code& error, std::size_t reply_length)
                                {
                                    // copy to destination
                                    CLReturn& currentOutput = lockOutput();
                                    currentOutput = *clOutput;
+
+                                   inputPool_.release(clOutput);
 
                                    receive();
                                });
