@@ -2,14 +2,11 @@
 
 #include <Utils/Common.h>
 
-#include <windows.h>
-#include "FSUIPC_User64.h"
-
 #include <spdlog/spdlog.h>
 
 #include <set>
 
-Sim::Sim(const Settings& settings) : settings_(settings)
+Sim::Sim(const SimFSUIPC::Settings& settings) : simImpl_(settings)
 {
     connect();
 }
@@ -21,27 +18,22 @@ Sim::~Sim()
 
 bool Sim::connect()
 {
-    DWORD dwResult;
-    bool fsuipcPresent = FSUIPC_Open(SIM_ANY, &dwResult);
-    if (fsuipcPresent)
-        spdlog::info("FSUIPC found");
-    else
-        spdlog::error("FSUIPC not found (error {}), continue in test mode", dwResult);
-
-    connected_ = fsuipcPresent;
-
-    return fsuipcPresent;
+    return simImpl_.connect();
 }
 
 void Sim::disconnect()
 {
-    FSUIPC_Close();
-    connected_ = false;
+    return simImpl_.disconnect();
+}
+
+bool Sim::connected() const
+{
+    return simImpl_.connected();
 }
 
 void Sim::writeElevator(double elevator, bool force /*= false*/)
 {
-    int16_t newElevator = static_cast<int16_t>(elevator * 16383 / 100) * (settings_.invertFSElevator ? -1 : 1);
+    int16_t newElevator = static_cast<int16_t>(elevator * 16383 / 100);
     if (!force && simData_.elevator == newElevator) return;
 
     simData_.elevator = newElevator;
@@ -52,7 +44,7 @@ void Sim::writeElevator(double elevator, bool force /*= false*/)
 
 void Sim::writeAileron(double aileron, bool force /*= false*/)
 {
-    int16_t newAileron = static_cast<int16_t>(aileron * 16383 / 100) * (settings_.invertFSAileron ? -1 : 1);
+    int16_t newAileron = static_cast<int16_t>(aileron * 16383 / 100);
     if (!force && simData_.aileron == newAileron) return;
 
     simData_.aileron = newAileron;
@@ -62,13 +54,13 @@ void Sim::writeAileron(double aileron, bool force /*= false*/)
 double Sim::readElevator()
 {
     spdlog::trace("Sim Elevator: {}", simData_.elevator);
-    return simData_.elevator * 100.0 / 16383 * (settings_.invertFSElevator ? -1 : 1);
+    return simData_.elevator * 100.0 / 16383;
 }
 
 double Sim::readAileron()
 {
     spdlog::trace("Sim Aileron: {}", simData_.aileron);
-    return simData_.aileron * 100.0 / 16383 * (settings_.invertFSAileron ? -1 : 1);
+    return simData_.aileron * 100.0 / 16383;
 }
 
 void Sim::writeElevatorTrim(double trim, bool force /*= false*/)
@@ -198,7 +190,7 @@ Sim::GroundType Sim::readGroundType()
 
 double Sim::readCLElevatorTrim()
 {
-    return simData_.clElevatorTrim / 16383.0 * (settings_.invertCLElevatorTrim ? -1 : 1);
+    return simData_.clElevatorTrim / 16383.0;
 }
 
 Sim::CLEngage Sim::readCLEngage()
@@ -226,62 +218,9 @@ Sim::AxisControl Sim::readAxisControlState(Axis axis)
     return AxisControl::Manual;  // just in case
 }
 
-namespace
-{
-BOOL FSUIPC_Write_IF(DWORD dwOffset, DWORD dwSize, void* pSrce, bool write, DWORD* pdwResult)
-{
-    if (!write) return TRUE;
-
-    return FSUIPC_Write(dwOffset, dwSize, pSrce, pdwResult);
-}
-}  // namespace
-
 void Sim::process()
 {
-    if (!connected()) connect();
-
-    DWORD dwResult = FSUIPC_ERR_OK;
-
-    BOOL failed =
-        !FSUIPC_Write_IF(0x0BB2, 2, &simData_.elevator, simDataWriteFlags_.elevator, &dwResult) ||
-        !FSUIPC_Write_IF(0x0BC0, 2, &simData_.elevatorTrim, simDataWriteFlags_.elevatorTrim, &dwResult) ||
-        !FSUIPC_Write_IF(0x0BB6, 2, &simData_.aileron, simDataWriteFlags_.aileron, &dwResult) ||
-        !FSUIPC_Write_IF(settings_.apPitchLimitsOffset, 1, &simData_.apPitchLimits, simDataWriteFlags_.apPitchLimits,
-                         &dwResult) ||
-        !FSUIPC_Write_IF(settings_.clForceEnabledOffset, 1, &simData_.clForceEnabled, simDataWriteFlags_.clForceEnabled,
-                         &dwResult) ||
-
-        !FSUIPC_Read(0x0BB2, 2, &simData_.elevator, &dwResult) ||
-        !FSUIPC_Read(0x0BB6, 2, &simData_.aileron, &dwResult) ||
-        !FSUIPC_Read(0x28C0, 8, &simData_.airDensity, &dwResult) ||
-        !FSUIPC_Read(0x28C8, 8, &simData_.airPressure, &dwResult) ||
-        !FSUIPC_Read(0x34B0, 8, &simData_.pressureAltitude, &dwResult) ||
-        !FSUIPC_Read(0x02B8, 4, &simData_.tas, &dwResult) || !FSUIPC_Read(0x2410, 8, &simData_.thrust, &dwResult) ||
-        !FSUIPC_Read(0x2ED0, 8, &simData_.alpha, &dwResult) || !FSUIPC_Read(0x02B4, 4, &simData_.gs, &dwResult) ||
-        !FSUIPC_Read(0x0366, 2, &simData_.onGround, &dwResult) ||
-        !FSUIPC_Read(0x2EF8, 8, &simData_.cgPosFrac, &dwResult) ||
-        !FSUIPC_Read(0x0578, 4, &simData_.pitch, &dwResult) ||
-        !FSUIPC_Read(0x30A8, 8, &simData_.pitchRate, &dwResult) || !FSUIPC_Read(0x02C8, 4, &simData_.fpm, &dwResult) ||
-        !FSUIPC_Read(0x0918, 8, &simData_.engine1Flow, &dwResult) ||
-        !FSUIPC_Read(0x0898, 2, &simData_.engine1RPM, &dwResult) ||
-        !FSUIPC_Read(0x11BE, 2, &simData_.relativeAoA, &dwResult) ||
-        !FSUIPC_Read(0x31E8, 4, &simData_.surfaceType, &dwResult) ||
-        !FSUIPC_Read(0x05DC, 2, &simData_.slewMode, &dwResult) ||
-        !FSUIPC_Read(0x0264, 2, &simData_.pauseMode, &dwResult) ||
-        !FSUIPC_Read(0x3365, 1, &simData_.inmenuMode, &dwResult) ||
-        !FSUIPC_Read(settings_.propWashOffset, 8, &simData_.propWash, &dwResult) ||
-        !FSUIPC_Read(settings_.clElevatorTrimOffset, 2, &simData_.clElevatorTrim, &dwResult) ||
-        !FSUIPC_Read(settings_.apRollEngagedOffset, 1, &simData_.apRollEngaged, &dwResult) ||
-        !FSUIPC_Read(settings_.apPitchEngagedOffset, 1, &simData_.apPitchEnaged, &dwResult) ||
-        !FSUIPC_Read(settings_.clEngageOffset, 1, &simData_.clEngage, &dwResult);
-    // process
-    failed = failed || !FSUIPC_Process(&dwResult);
-
-    if (failed)
-    {
-        spdlog::error("FSUIPC error: {}", dwResult);
-        disconnect();  // assume FSUIPC closed, will try to re connect next time
-    }
+    bool failed = simImpl_.process(simData_, simDataWriteFlags_);
 
     // set flags back to false (meaning we won't send values again until somebody raise the flag)
     if (!failed) simDataWriteFlags_.reset();

@@ -20,6 +20,6 @@ toml::value readSettings(const std::filesystem::path& file);
 
 LogSettings readLogSettings(const toml::value& settings);
 bffcl::UDPClient::Settings readCLSettings(const toml::value& settings);
-Sim::Settings readSimSettings(const toml::value& settings);
+SimFSUIPC::Settings readSimSettings(const toml::value& settings);
 A2AStec30AP::Settings readAPSettings(const toml::value& settings);
 Model::Settings readModelSettings(const toml::value& settings);
