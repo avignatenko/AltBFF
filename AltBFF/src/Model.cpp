@@ -130,8 +130,9 @@ double Model::calculateForceLiftDueToSpeed(double surfaceArea, double propWashCo
     spdlog::debug("Airspeeds tas: {}, propwash_new: {}", tas_, airSpeed2);
 
     // Calculate lift force for elevator
-    // From lift equation: L = Cl * pho * V^2 * A / 2 ((https://www.grc.nasa.gov/www/k-12/airplane/lifteq.html)
-    // note: I sue kBaseAirDensity because it's already accounted in TAS
+    // From lift equation: L = Cl * pho * V^2 * A / 2
+    // ((https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-equation/) note: I sue kBaseAirDensity because
+    // it's already accounted in TAS
     double flElevatorDueToSpeed =
         surfaceArea * kBaseAirDensity / 2.0 * std::pow(std::abs(airSpeed2), settings_.clExponent);
 
