@@ -27,6 +27,7 @@ target_sources(
         "src/SimModelLoop.h"
         "src/SimFSUIPC.cpp"
         "src/SimFSUIPC.h"
+        "src/SimImpl.h"
 )
 
 set(settingsfile_source "${CMAKE_CURRENT_SOURCE_DIR}/resources/")

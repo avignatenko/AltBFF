@@ -1,13 +1,13 @@
 #pragma once
 
-#include <cstdint>
+#include "SimImpl.h"
 
-#include "SimFSUIPC.h"
+#include <memory>
 
 class Sim
 {
 public:
-    explicit Sim(const SimFSUIPC::Settings& settings);
+    explicit Sim(const SimImpl::Settings& settings);
     ~Sim();
 
     bool connect();
@@ -138,7 +138,7 @@ public:
     void process();
 
 private:
-    SimFSUIPC::SimData simData_;
-    SimFSUIPC::SimDataWriteFlags simDataWriteFlags_;
-    SimFSUIPC simImpl_;
+    SimImpl::SimData simData_;
+    SimImpl::SimDataWriteFlags simDataWriteFlags_;
+    std::unique_ptr<SimImpl> simImpl_;
 };

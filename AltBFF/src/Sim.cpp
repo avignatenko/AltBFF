@@ -1,6 +1,7 @@
 #include "Sim.h"
 
 #include <Utils/Common.h>
+#include "SimFSUIPC.h"
 
 #include <spdlog/spdlog.h>
 
@@ -18,7 +19,7 @@ bool isNear(T x, T y)
     return isCloseToZero(x - y);
 }
 
-Sim::Sim(const SimFSUIPC::Settings& settings) : simImpl_(settings)
+Sim::Sim(const SimImpl::Settings& settings) : simImpl_(std::make_unique<SimFSUIPC>(settings))
 {
     connect();
 }
@@ -30,17 +31,17 @@ Sim::~Sim()
 
 bool Sim::connect()
 {
-    return simImpl_.connect();
+    return simImpl_->connect();
 }
 
 void Sim::disconnect()
 {
-    return simImpl_.disconnect();
+    return simImpl_->disconnect();
 }
 
 bool Sim::connected() const
 {
-    return simImpl_.connected();
+    return simImpl_->connected();
 }
 
 void Sim::writeElevator(double elevator, bool force /*= false*/)
@@ -229,7 +230,7 @@ Sim::AxisControl Sim::readAxisControlState(Axis axis)
 
 void Sim::process()
 {
-    bool failed = simImpl_.process(simData_, simDataWriteFlags_);
+    bool failed = simImpl_->process(simData_, simDataWriteFlags_);
 
     // set flags back to false (meaning we won't send values again until somebody raise the flag)
     if (!failed) simDataWriteFlags_.reset();

@@ -40,9 +40,9 @@ bffcl::UDPClient::Settings readCLSettings(const toml::value& settings)
     return clSettings;
 }
 
-SimFSUIPC::Settings readSimSettings(const toml::value& settings)
+SimImpl::Settings readSimSettings(const toml::value& settings)
 {
-    SimFSUIPC::Settings simSettings;
+    SimImpl::Settings simSettings;
 
     const auto simTable = settings.at("Sim");
 

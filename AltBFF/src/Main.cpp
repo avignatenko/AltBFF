@@ -118,7 +118,7 @@ int checkedMain(int argc, char** argv)
     auto settings = readSettings(settingsPath);
 
     bffcl::UDPClient::Settings clSettings = readCLSettings(settings);
-    SimFSUIPC::Settings simSettings = readSimSettings(settings);
+    SimImpl::Settings simSettings = readSimSettings(settings);
     Model::Settings modelSettings = readModelSettings(settings);
     LogSettings logSettings = readLogSettings(settings);
     A2AStec30AP::Settings apSettings = readAPSettings(settings);
