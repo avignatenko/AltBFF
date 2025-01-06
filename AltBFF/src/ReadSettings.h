@@ -18,6 +18,15 @@ struct LogSettings
 
 toml::value readSettings(const std::filesystem::path& file);
 
+struct ControlSettings
+{
+    double clFrequency = 50;
+    double simFrequency = 30;
+    double modelFrequency = 30;
+    double aPFrequency = 30;
+};
+
+ControlSettings readControlSettings(const toml::value& settings);
 LogSettings readLogSettings(const toml::value& settings);
 bffcl::UDPClient::Settings readCLSettings(const toml::value& settings);
 SimImpl::Settings readSimSettings(const toml::value& settings);

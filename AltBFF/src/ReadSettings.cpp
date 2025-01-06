@@ -10,6 +10,18 @@ toml::value readSettings(const path& file)
     return toml::parse(file);
 }
 
+ControlSettings readControlSettings(const toml::value& settings)
+{
+    ControlSettings controlSettings;
+    auto appSettings = settings.at("App");
+    controlSettings.aPFrequency = appSettings.at("APFrequency").as_floating();
+    controlSettings.clFrequency = appSettings.at("CLFrequency").as_floating();
+    controlSettings.modelFrequency = appSettings.at("ModelFrequency").as_floating();
+    controlSettings.simFrequency = appSettings.at("SimFrequency").as_floating();
+
+    return controlSettings;
+}
+
 LogSettings readLogSettings(const toml::value& settings)
 {
     LogSettings logSettings;

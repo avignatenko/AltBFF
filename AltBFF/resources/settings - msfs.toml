@@ -2,6 +2,10 @@
 
 LogLevel = "trace"
 
+CLFrequency = 50
+SimFrequency = 30
+ModelFrequency = 30
+APFrequency = 30
 [CL]
 
 CLIPAddress = "127.0.0.1"

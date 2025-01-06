@@ -121,6 +121,7 @@ int checkedMain(int argc, char** argv)
 
     auto settings = readSettings(settingsPath);
 
+    ControlSettings controlSettings = readControlSettings(settings);
     bffcl::UDPClient::Settings clSettings = readCLSettings(settings);
     SimImpl::Settings simSettings = readSimSettings(settings);
     Model::Settings modelSettings = readModelSettings(settings);
@@ -144,10 +145,10 @@ int checkedMain(int argc, char** argv)
 
     updateCLDefaultsFromModel(cl, model);
 
-    PeriodicLoop clLoop(50, runner, [&cl] { cl.process(); });
-    PeriodicLoop simLoop(30, runner, [&sim] { sim.process(); });
-    PeriodicLoop modelLoop(30, runner, [&model] { model.process(); });
-    PeriodicLoop apLoop(30, runner, [&autopilot] { autopilot.process(); });
+    PeriodicLoop clLoop(controlSettings.clFrequency, runner, [&cl] { cl.process(); });
+    PeriodicLoop simLoop(controlSettings.simFrequency, runner, [&sim] { sim.process(); });
+    PeriodicLoop modelLoop(controlSettings.modelFrequency, runner, [&model] { model.process(); });
+    PeriodicLoop apLoop(controlSettings.aPFrequency, runner, [&autopilot] { autopilot.process(); });
 
     PeriodicLoop controlLooper(30, runner, [&cl, &sim, &model, &autopilot] { controlLoop(cl, sim, model, autopilot); });
 
