@@ -30,7 +30,7 @@ LogSettings readLogSettings(const toml::value& settings)
 bffcl::UDPClient::Settings readCLSettings(const toml::value& settings)
 {
     bffcl::UDPClient::Settings clSettings;
-    auto networkTable = settings.at("Network");
+    auto networkTable = settings.at("CL");
     clSettings.toAddress = networkTable.at("CLIPAddress").as_string();
     clSettings.toPort = networkTable.at("CLPort").as_integer();
     clSettings.fromAddress = networkTable.at("ThisIPAddress").as_string();

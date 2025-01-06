@@ -2,7 +2,7 @@
 
 LogLevel = "trace"
 
-[Network]
+[CL]
 
 CLIPAddress = "127.0.0.1"
 CLPort = 48010
