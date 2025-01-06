@@ -64,13 +64,13 @@ ElevatorTrimGain = 1.2
 ElevatorTrimNeutralPos = 0.0
 
 ElevatorAlphaGain = -1.0
-ElevatorAlphaScaleSpeedKn = 30
+ElevatorAlphaScaleSpeedKn = 30.0
 # FIXME
 ElevatorPRGain = 0.0
 
 PropWashElevatorCoeff = 1.0
 
-ElevatorEngineFlowGain = 35
+ElevatorEngineFlowGain = 35.0
 ElevatorEngineFreqGain = 1.0
 ElevatorEngineFreqMin = 2.5
 
@@ -94,7 +94,7 @@ PropWashAileronCoeff = 0.0
 MaxAileronLift = 2.83
 MaxAileronAngleDegrees = 17.0
 
-AileronEngineFlowGain = 25
+AileronEngineFlowGain = 25.0
 AileronEngineFreqGain = 1.0
 AileronEngineFreqMin = 2.5
 
