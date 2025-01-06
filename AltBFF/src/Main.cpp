@@ -60,24 +60,6 @@ void initLogging(const LogSettings& settings)
     spdlog::info("AltBFF logging started");
 }
 
-void updateCLDefaultsFromModel(bffcl::UDPClient& cl, Model& model)
-{
-    auto& input = cl.lockInput();
-    input.aileron.frictionCoeff = model.getFrictionCoeff(Model::Aileron);
-    input.aileron.dumpingCoeff = model.getDumpingCoeff(Model::Aileron);
-
-    input.aileron.positionFollowingP = model.getPositionFollowingP(Model::Aileron);
-    input.aileron.positionFollowingI = model.getPositionFollowingI(Model::Aileron);
-    input.aileron.positionFollowingD = model.getPositionFollowingD(Model::Aileron);
-
-    input.elevator.frictionCoeff = model.getFrictionCoeff(Model::Elevator);
-    input.elevator.dumpingCoeff = model.getDumpingCoeff(Model::Elevator);
-
-    input.elevator.positionFollowingP = model.getPositionFollowingP(Model::Elevator);
-    input.elevator.positionFollowingI = model.getPositionFollowingI(Model::Elevator);
-    input.elevator.positionFollowingD = model.getPositionFollowingD(Model::Elevator);
-}
-
 int runTests(int argc, char** argv)
 {
     // remove "test" from command line
@@ -90,29 +72,47 @@ int runTests(int argc, char** argv)
     return result;
 }
 
-bool settingsUpdateLoop(bffcl::UDPClient& cl, Model& model, A2AStec30AP& autopilot, const path& settingsPath,
-                        file_time_type& settingsWriteTime)
+class SettingsUpdateLoop
 {
-    file_time_type newSettingsWriteTime = last_write_time(settingsPath);
-    if (newSettingsWriteTime > settingsWriteTime)
+public:
+    SettingsUpdateLoop(ControlLoop& control, bffcl::UDPClient& cl, Model& model, A2AStec30AP& autopilot,
+                       const path& settingsPath)
+        : control_(control), cl_(cl), model_(model), autopilot_(autopilot), settingsPath_(settingsPath)
     {
-        spdlog::info("Settings updated, reloading model settings...");
-        auto settings = readSettings(settingsPath);
-        Model::Settings modelSettings = readModelSettings(settings);
-        model.setSettings(modelSettings);
-
-        updateCLDefaultsFromModel(cl, model);
-
-        spdlog::info("Model settings updated");
-
-        A2AStec30AP::Settings apSettings = readAPSettings(settings);
-        autopilot.setSettings(apSettings);
-        spdlog::info("AP settings updated");
-
-        settingsWriteTime = newSettingsWriteTime;
+        settingsWriteTime_ = last_write_time(settingsPath);
     }
-    return false;  // call again
-}
+
+    void process()
+    {
+        file_time_type newSettingsWriteTime = last_write_time(settingsPath_);
+        if (newSettingsWriteTime > settingsWriteTime_)
+        {
+            spdlog::info("Settings updated, reloading model settings...");
+            auto settings = readSettings(settingsPath_);
+            Model::Settings modelSettings = readModelSettings(settings);
+            model_.setSettings(modelSettings);
+
+            control_.updateCLDefaultsFromModel();
+
+            spdlog::info("Model settings updated");
+
+            A2AStec30AP::Settings apSettings = readAPSettings(settings);
+            autopilot_.setSettings(apSettings);
+            spdlog::info("AP settings updated");
+
+            settingsWriteTime_ = newSettingsWriteTime;
+        }
+    }
+
+private:
+    file_time_type settingsWriteTime_;
+
+    ControlLoop& control_;
+    bffcl::UDPClient& cl_;
+    Model& model_;
+    A2AStec30AP& autopilot_;
+    const path& settingsPath_;
+};
 
 int checkedMain(int argc, char** argv)
 {
@@ -141,20 +141,17 @@ int checkedMain(int argc, char** argv)
     Model model(modelSettings);
     A2AStec30AP autopilot(apSettings);
 
+    ControlLoop controlLoop(cl, sim, model, autopilot);
+    SettingsUpdateLoop settingsUpdater(controlLoop, cl, model, autopilot, settingsPath);
+
     spdlog::info("Main components created successfully");
 
-    updateCLDefaultsFromModel(cl, model);
-
-    PeriodicLoop clLoop(controlSettings.clFrequency, runner, [&cl] { cl.process(); });
-    PeriodicLoop simLoop(controlSettings.simFrequency, runner, [&sim] { sim.process(); });
-    PeriodicLoop modelLoop(controlSettings.modelFrequency, runner, [&model] { model.process(); });
-    PeriodicLoop apLoop(controlSettings.aPFrequency, runner, [&autopilot] { autopilot.process(); });
-
-    PeriodicLoop controlLooper(30, runner, [&cl, &sim, &model, &autopilot] { controlLoop(cl, sim, model, autopilot); });
-
-    file_time_type settingsWriteTime = last_write_time(settingsPath);
-    PeriodicLoop settingsLooper(0.5, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
-                                { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
+    PeriodicLoop2 clLooper(controlSettings.clFrequency, runner, cl);
+    PeriodicLoop2 simLooper(controlSettings.simFrequency, runner, sim);
+    PeriodicLoop2 modelLooper(controlSettings.modelFrequency, runner, model);
+    PeriodicLoop2 apLooper(controlSettings.aPFrequency, runner, autopilot);
+    PeriodicLoop2 controlLooper(controlSettings.modelFrequency, runner, controlLoop);
+    PeriodicLoop2 settingsLooper(0.5, runner, settingsUpdater);
 
     spdlog::info("Starting main loop");
     runner.run();

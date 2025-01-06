@@ -5,17 +5,16 @@
 #include <asio.hpp>
 #include <asio/io_context.hpp>
 
-template <class F>
-class PeriodicLoop
+template <class S>
+class PeriodicLoop2
 {
 public:
-    PeriodicLoop(double freq, asio::io_context& io, F&& func)
-        : io_(io), processTimer_(io, std::chrono::milliseconds(static_cast<int>(1000 / freq)))
+    PeriodicLoop2(double freq, asio::io_context& io, S& obj)
+        : processTimer_(io, std::chrono::milliseconds(static_cast<int>(1000 / freq)))
     {
-        processTimer_.wait(std::move(func));
+        processTimer_.wait([&obj] { obj.process(); });
     }
 
 private:
-    asio::io_context& io_;
     PeriodicTimer processTimer_;
 };
