@@ -2,8 +2,8 @@
 
 #include "CLStructures.h"
 
-#include <asio.hpp>
 #include <asio/io_context.hpp>
+#include <asio/ip/udp.hpp>
 
 namespace bffcl
 {
@@ -19,8 +19,6 @@ public:
         int toPort;
         std::string fromAddress;
         int fromPort;
-
-        double sendFreq = 50;  // 50hz
     };
 
     UDPClient(const Settings& settings, asio::io_context& io);
@@ -32,6 +30,8 @@ public:
     CLInput& lockInput();
 
     const CLReturn& lockOutput();
+
+    void process();
 
 private:
     using io_context = asio::io_context;

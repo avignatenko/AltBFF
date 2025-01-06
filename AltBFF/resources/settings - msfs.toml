@@ -9,7 +9,6 @@ CLPort = 48010
 
 ThisIPAddress = "127.0.0.1"
 ThisPort = 50001
-SendFreqHz = 30.0
 
 [Sim]
 

@@ -35,7 +35,6 @@ bffcl::UDPClient::Settings readCLSettings(const toml::value& settings)
     clSettings.toPort = networkTable.at("CLPort").as_integer();
     clSettings.fromAddress = networkTable.at("ThisIPAddress").as_string();
     clSettings.fromPort = networkTable.at("ThisPort").as_integer();
-    clSettings.sendFreq = networkTable.at("SendFreqHz").as_floating();
 
     return clSettings;
 }

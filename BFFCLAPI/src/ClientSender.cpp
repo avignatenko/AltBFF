@@ -3,12 +3,8 @@
 using namespace asio;
 using namespace bffcl;
 
-ClientSender::ClientSender(io_context& io, ip::udp::socket& socket, const std::string& addressRemote, int portRemote,
-                           double timerInterval)
-    : io_(io),
-      socket_(socket),
-      endpointRemote_(ip::udp::endpoint(ip::address::from_string(addressRemote), portRemote)),
-      sendTimer_(io, std::chrono::milliseconds(static_cast<int>(1000 / timerInterval)))
+ClientSender::ClientSender(io_context& io, ip::udp::socket& socket, const std::string& addressRemote, int portRemote)
+    : io_(io), socket_(socket), endpointRemote_(ip::udp::endpoint(ip::address::from_string(addressRemote), portRemote))
 {
     // set CL input defaults
     CLInput& input = lockInput();
@@ -16,9 +12,6 @@ ClientSender::ClientSender(io_context& io, ip::udp::socket& socket, const std::s
     std::string localAddress = socket_.local_endpoint().address().to_string();
     localAddress.copy(input.feederIP, localAddress.size());
     input.returnPort = socket_.local_endpoint().port();
-
-    // start sending
-    sendTimer_.wait([this] { send(); });
 }
 
 ClientSender::~ClientSender() {}
@@ -41,4 +34,9 @@ void ClientSender::send()
     socket_.async_send_to(buffer(clInput.get(), sizeof(CLInput)), endpointRemote_,
                           [this, clInput](const asio::error_code& error, std::size_t bytes_transferred) mutable
                           { inputPool_.release(clInput); });
+}
+
+void ClientSender::process()
+{
+    send();
 }

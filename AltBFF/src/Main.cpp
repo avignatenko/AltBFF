@@ -2,6 +2,7 @@
 #include "A2ASTec30AP.h"
 #include "ControlLoop.h"
 #include "Model.h"
+#include "PeriodicLoop.h"
 #include "ReadSettings.h"
 #include "Sim.h"
 
@@ -143,17 +144,16 @@ int checkedMain(int argc, char** argv)
 
     updateCLDefaultsFromModel(cl, model);
 
-    constexpr auto kModelLoopPeriod = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    PeriodicTimer modelTimer(runner, kModelLoopPeriod);
-    modelTimer.wait([&cl, &sim, &model, &autopilot] { controlLoop(cl, sim, model, autopilot); });
+    PeriodicLoop clLoop(50, runner, [&cl] { cl.process(); });
+    PeriodicLoop simLoop(30, runner, [&sim] { sim.process(); });
+    PeriodicLoop modelLoop(30, runner, [&model] { model.process(); });
+    PeriodicLoop apLoop(30, runner, [&autopilot] { autopilot.process(); });
 
-    // settings refresh utility
+    PeriodicLoop controlLooper(30, runner, [&cl, &sim, &model, &autopilot] { controlLoop(cl, sim, model, autopilot); });
+
     file_time_type settingsWriteTime = last_write_time(settingsPath);
-    auto kSettingsLoopPeriod = std::chrono::milliseconds(2000);  // run at 0.5Hz
-
-    PeriodicTimer settingsTimer(runner, kSettingsLoopPeriod);
-    settingsTimer.wait([&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
-                       { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
+    PeriodicLoop settingsLooper(0.5, runner, [&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
+                                { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
 
     spdlog::info("Starting main loop");
     runner.run();

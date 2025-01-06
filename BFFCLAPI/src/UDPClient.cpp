@@ -25,7 +25,7 @@ UDPClient::UDPClient(const Settings& settings, asio::io_context& io) : socket_(i
     socket_.bind(send_endpoint);
     spdlog::info("Socket opened successfully");
 
-    sender_ = std::make_unique<ClientSender>(io_, socket_, settings.toAddress, settings.toPort, settings.sendFreq);
+    sender_ = std::make_unique<ClientSender>(io_, socket_, settings.toAddress, settings.toPort);
     receiver_ = std::make_unique<ClientReceiver>(io_, socket_);
 }
 
@@ -42,4 +42,9 @@ CLInput& UDPClient::lockInput()
 const CLReturn& UDPClient::lockOutput()
 {
     return receiver_->lockOutput();
+}
+
+void UDPClient::process()
+{
+    sender_->process();
 }
