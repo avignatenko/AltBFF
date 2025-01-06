@@ -146,8 +146,8 @@ int checkedMain(int argc, char** argv)
 
     spdlog::info("Main components created successfully");
 
-   spdlog::info("Starting main loop");
-  
+    spdlog::info("Starting main loop");
+
     PeriodicLoop2 clLooper(controlSettings.clFrequency, runner, cl);
     PeriodicLoop2 simLooper(controlSettings.simFrequency, runner, sim);
     PeriodicLoop2 modelLooper(controlSettings.modelFrequency, runner, model);

@@ -1,10 +1,6 @@
 #include "A2ASTec30AP.h"
 
-#include <BFFCLAPI/CLStructures.h>
-#include <Utils/Common.h>
 #include <fmt/ranges.h>
-#include "Model.h"
-#include "Sim.h"
 
 void A2AStec30AP::enableRollAxis(bool enable)
 {
