@@ -1,4 +1,4 @@
-#include "SimModelLoop.h"
+#include "ControlLoop.h"
 
 #include "A2ASTec30AP.h"
 #include "Model.h"
@@ -6,7 +6,7 @@
 
 #include <BFFCLAPI/UDPClient.h>
 
-bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& autopilot)
+bool controlLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& autopilot)
 {
     // 0. deal with pause first of all
     if (sim.simulationPaused())
@@ -14,9 +14,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
         // send CL disengage
         auto& input = cl.lockInput();
         input.loadingEngage = 0;
-
-        // we only process sim to update pause status
-        sim.process();
 
         // and that's it until simulation not restored
         return false;  // false means call again
@@ -52,9 +49,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
     model.setRelativeAoA(sim.readRelativeAoA());
     model.setPropWash(sim.readPropWash());
 
-    // 3. update model
-    model.process();
-
     // 3.1 update autopilot
     autopilot.enablePitchAxis(sim.readAxisControlState(Sim::Elevator) != Sim::AxisControl::Manual);
     autopilot.enableRollAxis(sim.readAxisControlState(Sim::Aileron) != Sim::AxisControl::Manual);
@@ -65,8 +59,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
     autopilot.setSimFpm(sim.readFpm());
     autopilot.setTotalAxisCLForceAileron(model.getTotalForce(Model::Aileron));
     autopilot.setTotalAxisCLForceElevator(model.getTotalForce(Model::Elevator));
-
-    autopilot.process();
 
     // get autopilot messages, etc.
     if (sim.readAxisControlState(Sim::Elevator) == Sim::AxisControl::Auto)
@@ -163,8 +155,6 @@ bool simModelLoop(bffcl::UDPClient& cl, Sim& sim, Model& model, A2AStec30AP& aut
     if (model.getForceTrimIntoSim()) sim.writeElevatorTrim(model.getForcedSimElevatorTrim());
 
     sim.writeCLForceEnabled(clForceEnabled);
-
-    sim.process();
 
     return false;  // false means call again
 }

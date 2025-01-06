@@ -1,9 +1,9 @@
 
 #include "A2ASTec30AP.h"
+#include "ControlLoop.h"
 #include "Model.h"
 #include "ReadSettings.h"
 #include "Sim.h"
-#include "SimModelLoop.h"
 
 #include <BFFCLAPI/UDPClient.h>
 
@@ -143,15 +143,15 @@ int checkedMain(int argc, char** argv)
 
     updateCLDefaultsFromModel(cl, model);
 
-    constexpr auto kModelLoopFreq = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
-    PeriodicTimer modelTimer(runner, kModelLoopFreq);
-    modelTimer.wait([&cl, &sim, &model, &autopilot] { simModelLoop(cl, sim, model, autopilot); });
+    constexpr auto kModelLoopPeriod = std::chrono::milliseconds(1000 / 30);  // run at 30Hz
+    PeriodicTimer modelTimer(runner, kModelLoopPeriod);
+    modelTimer.wait([&cl, &sim, &model, &autopilot] { controlLoop(cl, sim, model, autopilot); });
 
     // settings refresh utility
     file_time_type settingsWriteTime = last_write_time(settingsPath);
-    auto kSettingsLoopFreq = std::chrono::milliseconds(2000);  // run at 0.5Hz
+    auto kSettingsLoopPeriod = std::chrono::milliseconds(2000);  // run at 0.5Hz
 
-    PeriodicTimer settingsTimer(runner, kSettingsLoopFreq);
+    PeriodicTimer settingsTimer(runner, kSettingsLoopPeriod);
     settingsTimer.wait([&cl, &model, &autopilot, settingsPath, &settingsWriteTime]
                        { return settingsUpdateLoop(cl, model, autopilot, settingsPath, settingsWriteTime); });
 

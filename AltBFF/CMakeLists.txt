@@ -23,10 +23,11 @@ target_sources(
         "src/A2ASTec30AP.cpp"
         "src/ReadSettings.cpp"
         "src/ReadSettings.h"
-        "src/SimModelLoop.cpp"
-        "src/SimModelLoop.h"
+        "src/ControlLoop.cpp"
+        "src/ControlLoop.h"
         "src/SimImpl.h"
         "src/SimDummy.h"
+        "src/PeriodicLoop.h"
 )
 
 if(WIN32)

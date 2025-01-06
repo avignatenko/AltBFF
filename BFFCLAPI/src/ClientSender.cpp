@@ -17,7 +17,7 @@ ClientSender::ClientSender(io_context& io, ip::udp::socket& socket, const std::s
     localAddress.copy(input.feederIP, localAddress.size());
     input.returnPort = socket_.local_endpoint().port();
 
-    // start sendering
+    // start sending
     sendTimer_.wait([this] { send(); });
 }
 
